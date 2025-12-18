@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mindful/profile_screen.dart';
 import 'package:mindful/resource_screen.dart';
 import 'package:mindful/face_detection.dart';
+import 'package:mindful/screens/initial_questionnaire_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MindfulAIScreen extends StatefulWidget {
@@ -78,6 +79,35 @@ class _MindfulAIScreenState extends State<MindfulAIScreen> {
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: Colors.black87,
+                  ),
+                ),
+              ),
+            ),
+
+            // Start Screening Button
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const InitialQuestionnaireScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.assessment),
+                  label: const Text('Start Mental Health Screening'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ),

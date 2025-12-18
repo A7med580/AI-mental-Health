@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'dart:typed_data';
 
 class ModelService {
   // TODO: Update with your backend URL
@@ -70,6 +69,50 @@ class ModelService {
       }
     } catch (e) {
       throw Exception('Error extracting audio features: $e');
+    }
+  }
+
+  /// Screen specifically for ADHD (runs all ADHD models and fuses results)
+  Future<Map<String, dynamic>> screenADHD({
+    File? videoFile,
+    File? audioFile,
+    Map<String, dynamic>? questionnaireData,
+  }) async {
+    try {
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/screening/adhd'),
+      );
+
+      // Add video file if provided
+      if (videoFile != null) {
+        request.files.add(
+          await http.MultipartFile.fromPath('video_file', videoFile.path),
+        );
+      }
+
+      // Add audio file if provided
+      if (audioFile != null) {
+        request.files.add(
+          await http.MultipartFile.fromPath('audio_file', audioFile.path),
+        );
+      }
+
+      // Add questionnaire data if provided
+      if (questionnaireData != null) {
+        request.fields['questionnaire_data'] = json.encode(questionnaireData);
+      }
+
+      var response = await request.send();
+      var responseBody = await response.stream.bytesToString();
+
+      if (response.statusCode == 200) {
+        return json.decode(responseBody);
+      } else {
+        throw Exception('ADHD screening failed: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error running ADHD screening: $e');
     }
   }
 

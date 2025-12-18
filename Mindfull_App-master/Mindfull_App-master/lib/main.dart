@@ -6,7 +6,6 @@ import 'package:mindful/register_page.dart';
 import 'package:mindful/chat_screen.dart';
 import 'package:mindful/face_detection.dart';
 import 'package:mindful/results_screen.dart';
-import 'package:mindful/screens/screening_chat_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {

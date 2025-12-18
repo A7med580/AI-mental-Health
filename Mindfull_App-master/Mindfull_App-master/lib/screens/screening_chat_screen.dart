@@ -27,9 +27,9 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
   bool _isRecording = false;
   bool _isProcessing = false;
   String? _recordedVideoPath;
-  List<String> _messages = [];
+  final List<String> _messages = [];
   int _currentConditionIndex = 0;
-  List<String> _availableModalities = [];
+  final List<String> _availableModalities = [];
 
   @override
   void initState() {

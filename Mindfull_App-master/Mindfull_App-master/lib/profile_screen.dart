@@ -47,7 +47,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           setState(() {
             firstName = data['first_name'] ?? '';
             lastName = data['last_name'] ?? '';
-            userName = data['full_name'] ?? '${firstName} ${lastName}';
+            userName = data['full_name'] ?? '$firstName $lastName';
             userEmail = data['email'] ?? user.email ?? 'No email';
             phoneNumber = data['phone_number'] ?? 'Not provided';
 

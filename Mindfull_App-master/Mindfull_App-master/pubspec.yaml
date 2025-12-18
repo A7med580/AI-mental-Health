@@ -22,7 +22,6 @@ dependencies:
   http: ^1.1.0
   camera: ^0.10.5+5
   video_player: ^2.8.1
-  record: ^5.0.4
   path_provider: ^2.1.1
   permission_handler: ^11.1.0
 
