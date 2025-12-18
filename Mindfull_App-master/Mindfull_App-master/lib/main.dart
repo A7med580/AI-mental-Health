@@ -6,6 +6,7 @@ import 'package:mindful/register_page.dart';
 import 'package:mindful/chat_screen.dart';
 import 'package:mindful/face_detection.dart';
 import 'package:mindful/results_screen.dart';
+import 'package:mindful/screens/notifications_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
@@ -37,6 +38,7 @@ class MyApp extends StatelessWidget {
         '/chat': (context) => const MindfulAIScreen(),
         '/emotion': (context) => const EmotionDetectionScreen(),
         '/resources': (context) => const ResourcesScreen(),
+        '/notifications': (context) => const NotificationsScreen(),
         '/results': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
           return ResultsScreen(

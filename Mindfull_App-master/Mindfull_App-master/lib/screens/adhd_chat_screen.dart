@@ -2,8 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mindful/app_colors.dart';
-import 'package:mindful/services/model_service.dart';
-import 'package:mindful/screens/adhd_result_screen.dart';
+import 'package:mindful/services/video_storage_service.dart';
+import 'package:mindful/screens/video_preview_screen.dart';
+import 'package:mindful/screens/processing_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:camera/camera.dart';
 import 'package:path_provider/path_provider.dart';
@@ -25,7 +26,6 @@ class ADHDChatScreen extends StatefulWidget {
 }
 
 class _ADHDChatScreenState extends State<ADHDChatScreen> {
-  final ModelService _modelService = ModelService();
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _textController = TextEditingController();
   
@@ -38,7 +38,7 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
   final List<ChatMessage> _messages = [];
   int _currentQuestionIndex = 0;
   final Map<int, String> _questionAnswers = {}; // question_index -> user_answer_text
-  final Map<int, String?> _questionVideos = {}; // question_index -> video_path
+  final Map<int, String?> _questionVideos = {}; // question_index -> saved_video_path
   
   // DSM-5 aligned ADHD questions (inattention, hyperactivity, impulsivity)
   final List<ADHDQuestion> _adhdQuestions = [
@@ -260,38 +260,90 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
     if (!_isRecording) return;
 
     try {
-      final XFile videoFile = await _cameraController!.stopVideoRecording();
+      final XFile tempVideoFile = await _cameraController!.stopVideoRecording();
       setState(() {
         _isRecording = false;
-        _questionVideos[_currentQuestionIndex] = videoFile.path;
       });
 
-      _addUserMessage("✓ Video recorded");
-      
-      // Move to next question after short delay
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Save video permanently
+      final savedPath = await VideoStorageService.saveVideo(
+        File(tempVideoFile.path),
+        customName: 'adhd_q${_currentQuestionIndex}_${DateTime.now().millisecondsSinceEpoch}.mp4',
+      );
+
+      // Verify file exists and has content
+      final savedFile = File(savedPath);
+      if (!await savedFile.exists()) {
+        throw Exception('Failed to save video file');
+      }
+
+      final fileSize = await savedFile.length();
+      if (fileSize == 0) {
+        throw Exception('Video file is empty');
+      }
+
+      // Store saved path
       setState(() {
-        _currentQuestionIndex++;
+        _questionVideos[_currentQuestionIndex] = savedPath;
       });
-      _askNextQuestion();
+
+      // Navigate to video preview screen
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VideoPreviewScreen(
+              videoPath: savedPath,
+              onRetake: () async {
+                // Delete saved video
+                try {
+                  await VideoStorageService.deleteVideo(savedPath);
+                } catch (e) {
+                  print('Error deleting video: $e');
+                }
+
+                // Remove from map
+                setState(() {
+                  _questionVideos[_currentQuestionIndex] = null;
+                });
+
+                // Pop preview screen and return to chat
+                Navigator.pop(context);
+              },
+              onContinue: () {
+                // Move to next question
+                Navigator.pop(context);
+                setState(() {
+                  _currentQuestionIndex++;
+                });
+                _askNextQuestion();
+              },
+            ),
+          ),
+        );
+      }
+
+      _addUserMessage("✓ Video recorded");
     } catch (e) {
       print('Error stopping recording: $e');
       setState(() {
         _isRecording = false;
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving video: $e')),
+      );
     }
   }
 
   Future<void> _completeScreening() async {
-    _addSystemMessage("Thank you for your responses! Processing your screening results...");
+    _addSystemMessage("Thank you for your responses! Preparing your screening...");
     
     setState(() {
       _isProcessing = true;
     });
 
     try {
-      // Prepare questionnaire data for behavior model
-      // Map answers to feature format (simplified - would need proper mapping)
+      // Prepare questionnaire data
       Map<String, dynamic> questionnaireData = {};
       for (var entry in widget.questionnaireAnswers.entries) {
         questionnaireData['q${entry.key}'] = entry.value;
@@ -300,42 +352,55 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
         questionnaireData['adhd_q${entry.key}'] = entry.value;
       }
 
-      // Collect video files
+      // Collect video file (use first available video)
       File? videoFile;
       if (_questionVideos.isNotEmpty) {
-        // Use the first video for now (in full implementation, would combine or use all)
-        final firstVideoPath = _questionVideos.values.firstWhere((path) => path != null, orElse: () => null);
+        final firstVideoPath = _questionVideos.values.firstWhere(
+          (path) => path != null, 
+          orElse: () => null,
+        );
         if (firstVideoPath != null) {
           videoFile = File(firstVideoPath);
         }
       }
 
-      // Call ADHD-specific screening endpoint
-      final result = await _modelService.screenADHD(
-        questionnaireData: questionnaireData,
-        videoFile: videoFile,
-      );
+      if (videoFile == null) {
+        throw Exception('No video file available. Please record at least one video response.');
+      }
 
-      if (result['success'] == true) {
-        // Navigate to ADHD result screen
+      // Verify video file exists
+      if (!await videoFile.exists()) {
+        throw Exception('Video file not found');
+      }
+
+      // Navigate to processing screen
+      if (mounted && videoFile != null) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => ADHDResultScreen(
-              screeningResult: result['fused_result'],
-              individualResults: result['individual_results'],
-              modalitiesUsed: result['modalities_used'],
+            builder: (context) => ProcessingScreen(
+              videoFile: videoFile!,
+              questionnaireData: questionnaireData,
             ),
           ),
         );
-      } else {
-        throw Exception('Screening failed');
       }
+      
     } catch (e) {
-      _addSystemMessage("Error processing screening: $e");
       setState(() {
         _isProcessing = false;
       });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          action: SnackBarAction(
+            label: 'Retry',
+            onPressed: _completeScreening,
+          ),
+          duration: const Duration(seconds: 5),
+        ),
+      );
     }
   }
 
@@ -496,7 +561,17 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
           else if (_isProcessing)
             Container(
               padding: const EdgeInsets.all(16),
-              child: const Center(child: CircularProgressIndicator()),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Preparing screening...',
+                    style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
             ),
         ],
       ),

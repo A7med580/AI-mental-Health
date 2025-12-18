@@ -33,7 +33,7 @@ class ADHDResultScreen extends StatelessWidget {
           onPressed: () => Navigator.popUntil(context, (route) => route.isFirst),
         ),
         title: Text(
-          'Screening Results',
+          'Your ADHD Screening Result',
           style: GoogleFonts.inter(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -114,15 +114,15 @@ class ADHDResultScreen extends StatelessWidget {
 
                   const SizedBox(height: 20),
 
-                  // Result Title
+                  // Result Title - Show "ADHD" or "Not ADHD"
                   Text(
                     thresholdMet
-                        ? 'Patterns Suggestive of ADHD'
-                        : 'Low Likelihood of ADHD Patterns',
+                        ? 'ADHD'
+                        : 'Not ADHD',
                     style: GoogleFonts.inter(
-                      fontSize: 24,
+                      fontSize: 32,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: thresholdMet ? Colors.orange.shade900 : Colors.green.shade700,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -265,7 +265,7 @@ class ADHDResultScreen extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  'Return to Home',
+                  'Done',
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,

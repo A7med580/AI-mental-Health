@@ -3,6 +3,8 @@ import 'package:mindful/profile_screen.dart';
 import 'package:mindful/resource_screen.dart';
 import 'package:mindful/face_detection.dart';
 import 'package:mindful/screens/initial_questionnaire_screen.dart';
+import 'package:mindful/screens/notifications_screen.dart';
+import 'package:mindful/services/notification_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MindfulAIScreen extends StatefulWidget {
@@ -16,6 +18,7 @@ class _MindfulAIScreenState extends State<MindfulAIScreen> {
   final supabase = Supabase.instance.client;
   final TextEditingController _messageController = TextEditingController();
   int _selectedIndex = 0;
+  int _unreadNotificationCount = 0;
 
   late Map<String, dynamic> currentUser;
 
@@ -23,6 +26,14 @@ class _MindfulAIScreenState extends State<MindfulAIScreen> {
   void initState() {
     super.initState();
     getCurrentUser();
+    _loadNotificationCount();
+  }
+
+  Future<void> _loadNotificationCount() async {
+    final count = await NotificationService.getUnreadCount();
+    setState(() {
+      _unreadNotificationCount = count;
+    });
   }
 
   void getCurrentUser() {
@@ -71,16 +82,64 @@ class _MindfulAIScreenState extends State<MindfulAIScreen> {
             // Header
             Container(
               color: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: const Center(
-                child: Text(
-                  'MindfulAI',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Expanded(
+                    child: Center(
+                      child: Text(
+                        'MindfulAI',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                  Stack(
+                    children: [
+                      IconButton(
+                      icon: const Icon(Icons.notifications_outlined),
+                      onPressed: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const NotificationsScreen(),
+                          ),
+                        );
+                        _loadNotificationCount(); // Refresh count when returning
+                      },
+                    ),
+                      if (_unreadNotificationCount > 0)
+                        Positioned(
+                          right: 8,
+                          top: 8,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 16,
+                              minHeight: 16,
+                            ),
+                            child: Text(
+                              '$_unreadNotificationCount',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
               ),
             ),
 

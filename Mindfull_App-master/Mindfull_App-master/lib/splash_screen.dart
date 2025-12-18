@@ -49,13 +49,18 @@ class _SplashScreenState extends State<SplashScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text('        Your mental wellness companion, \n                 always here to listen.\n Empowering you with AI-driven support, \n                 anytime, anywhere.',
+                      Flexible(
+                        child: Text(
+                          'Your mental wellness companion, always here to listen. Empowering you with AI-driven support, anytime, anywhere.',
+                          textAlign: TextAlign.center,
                           maxLines: 4,
+                          overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.inter(
                             fontWeight: FontWeight.normal,
                             fontSize: 18,
                             color: Colors.black,
-                          )
+                          ),
+                        ),
                       ),
                     ],
                   ),

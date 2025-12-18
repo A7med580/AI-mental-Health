@@ -1,18 +1,16 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:mindful/core/config/api_config.dart';
 
 class ModelService {
-  // TODO: Update with your backend URL
-  static const String baseUrl = 'http://localhost:8000';
-  // For mobile device, use: 'http://10.0.2.2:8000' (Android emulator)
-  // or your actual server IP: 'http://192.168.1.X:8000'
 
   /// Check if backend is healthy
   Future<bool> checkHealth() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/health'),
+        Uri.parse(ApiConfig.getUrl('health')),
         headers: {'Content-Type': 'application/json'},
       );
       return response.statusCode == 200;
@@ -27,7 +25,7 @@ class ModelService {
     try {
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('$baseUrl/extract-features?modality=video'),
+        Uri.parse('${ApiConfig.getUrl('extract-features')}?modality=video'),
       );
       
       request.files.add(
@@ -52,7 +50,7 @@ class ModelService {
     try {
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('$baseUrl/extract-features?modality=audio'),
+        Uri.parse('${ApiConfig.getUrl('extract-features')}?modality=audio'),
       );
       
       request.files.add(
@@ -81,7 +79,7 @@ class ModelService {
     try {
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('$baseUrl/screening/adhd'),
+        Uri.parse(ApiConfig.getUrl('screening/adhd')),
       );
 
       // Add video file if provided
@@ -103,14 +101,39 @@ class ModelService {
         request.fields['questionnaire_data'] = json.encode(questionnaireData);
       }
 
-      var response = await request.send();
-      var responseBody = await response.stream.bytesToString();
+      // Set timeouts
+      final client = http.Client();
+      final streamedResponse = await request.send().timeout(
+        const Duration(minutes: 2), // Total timeout including upload
+        onTimeout: () {
+          client.close();
+          throw TimeoutException('Request timed out');
+        },
+      );
+
+      // Read response with timeout
+      final responseBody = await streamedResponse.stream.bytesToString().timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw TimeoutException('Response timeout');
+        },
+      );
+
+      final response = http.Response(responseBody, streamedResponse.statusCode);
 
       if (response.statusCode == 200) {
-        return json.decode(responseBody);
+        return json.decode(response.body);
       } else {
-        throw Exception('ADHD screening failed: ${response.statusCode}');
+        throw HttpException(
+          'ADHD screening failed: ${response.statusCode} - ${response.body}',
+        );
       }
+    } on SocketException catch (e) {
+      rethrow;
+    } on TimeoutException catch (e) {
+      rethrow;
+    } on HttpException catch (e) {
+      rethrow;
     } catch (e) {
       throw Exception('Error running ADHD screening: $e');
     }
@@ -127,7 +150,7 @@ class ModelService {
     try {
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('$baseUrl/run-screening'),
+        Uri.parse(ApiConfig.getUrl('run-screening')),
       );
 
       // Add ranked conditions
@@ -172,7 +195,7 @@ class ModelService {
   ) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/predict/adhd/behavior'),
+        Uri.parse(ApiConfig.getUrl('predict/adhd/behavior')),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(features),
       );
@@ -193,7 +216,7 @@ class ModelService {
   ) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/predict/adhd/eye'),
+        Uri.parse(ApiConfig.getUrl('predict/adhd/eye')),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(eyeFeatures),
       );
@@ -213,7 +236,7 @@ class ModelService {
     try {
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('$baseUrl/predict/adhd/voice'),
+        Uri.parse(ApiConfig.getUrl('predict/adhd/voice')),
       );
       
       request.files.add(
@@ -238,7 +261,7 @@ class ModelService {
     try {
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('$baseUrl/predict/adhd/facial'),
+        Uri.parse(ApiConfig.getUrl('predict/adhd/facial')),
       );
       
       request.files.add(
@@ -264,7 +287,7 @@ class ModelService {
   ) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/predict/anxiety'),
+        Uri.parse(ApiConfig.getUrl('predict/anxiety')),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(features),
       );
@@ -284,7 +307,7 @@ class ModelService {
     try {
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('$baseUrl/predict/asd/face'),
+        Uri.parse(ApiConfig.getUrl('predict/asd/face')),
       );
       
       request.files.add(
@@ -308,7 +331,7 @@ class ModelService {
   Future<Map<String, dynamic>> predictASDText(List<int> aq10Scores) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/predict/asd/text'),
+        Uri.parse(ApiConfig.getUrl('predict/asd/text')),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(aq10Scores),
       );
