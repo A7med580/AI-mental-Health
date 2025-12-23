@@ -3,13 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mindful/app_colors.dart';
-import 'package:mindful/services/model_service.dart';
 import 'package:mindful/screens/adhd_result_screen.dart';
-import 'package:mindful/core/config/api_config.dart';
+import 'package:mindful/services/job_service.dart';
 
-/// Screen shown while processing ADHD screening
 class ProcessingScreen extends StatefulWidget {
-  final File videoFile;
+  final File? videoFile;
   final Map<String, dynamic> questionnaireData;
 
   const ProcessingScreen({
@@ -25,99 +23,104 @@ class ProcessingScreen extends StatefulWidget {
 class _ProcessingScreenState extends State<ProcessingScreen> {
   bool _isProcessing = true;
   bool _hasError = false;
+
+  String _statusText = 'Uploading video…';
   String _errorMessage = '';
   String? _technicalError;
-  final ModelService _modelService = ModelService();
+
+  String? _jobId;
 
   @override
   void initState() {
     super.initState();
-    // Prevent back navigation
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _processScreening();
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _startJobFlow());
   }
 
-  Future<void> _processScreening() async {
+  Future<void> _startJobFlow() async {
     try {
-      // Verify video file exists and has content
-      if (!await widget.videoFile.exists()) {
+      // ✅ Validate video
+      if (widget.videoFile == null) {
+        throw Exception('No video provided. Please record at least one video response.');
+      }
+      if (!await widget.videoFile!.exists()) {
         throw Exception('Video file not found');
       }
-
-      final fileSize = await widget.videoFile.length();
-      if (fileSize == 0) {
-        throw Exception('Video file is empty');
+      final size = await widget.videoFile!.length();
+      if (size < 2000) {
+        throw Exception('Video file too small/empty');
       }
 
-      // Call backend with timeout
-      final result = await _modelService.screenADHD(
-        videoFile: widget.videoFile,
+      _setStatus('Uploading video…');
+
+      // 1) Submit
+      final jobId = await JobService.submitADHDJob(
+        videoFile: widget.videoFile!,
         questionnaireData: widget.questionnaireData,
-      ).timeout(
-        const Duration(minutes: 2), // 2 minute timeout for upload + processing
-        onTimeout: () {
-          throw TimeoutException(
-            'Request timed out. Please check your connection and try again.',
-            const Duration(minutes: 2),
-          );
+      );
+
+      _jobId = jobId;
+      _setStatus('Job submitted.\nWaiting for AI result…');
+
+      // 2) Poll
+      final result = await JobService.pollJobUntilDone(
+        jobId,
+        pollInterval: const Duration(seconds: 2),
+        maxAttempts: 180, // 6 minutes
+        onStatus: (status, error) {
+          if (!mounted) return;
+          if (status == 'queued') {
+            _setStatus('Queued…\n(waiting to start)');
+          } else if (status == 'processing') {
+            _setStatus('Processing…\nAI is working now');
+          } else if (status == 'failed') {
+            _setStatus('Failed…');
+          }
+          if (error != null && error.isNotEmpty) {
+            _technicalError = error;
+          }
         },
       );
 
       if (!mounted) return;
 
-      if (result['success'] == true) {
-        // Navigate to result screen
-        // Cast modalities_used from List<dynamic> to List<String>
-        final modalitiesUsedRaw = result['modalities_used'] as List<dynamic>? ?? [];
-        final modalitiesUsed = modalitiesUsedRaw.map((e) => e.toString()).toList();
-        
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ADHDResultScreen(
-              screeningResult: result['fused_result'] ?? {},
-              individualResults: result['individual_results'] ?? [],
-              modalitiesUsed: modalitiesUsed,
-            ),
+      final fused = (result['fused_result'] ?? {}) as Map<String, dynamic>;
+      final individual = (result['individual_results'] ?? []) as List<dynamic>;
+      final modalitiesUsedRaw = (result['modalities_used'] ?? []) as List<dynamic>;
+      final modalitiesUsed = modalitiesUsedRaw.map((e) => e.toString()).toList();
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ADHDResultScreen(
+            screeningResult: fused,
+            individualResults: individual,
+            modalitiesUsed: modalitiesUsed,
           ),
-        );
-      } else {
-        throw Exception('Screening failed: ${result['error'] ?? 'Unknown error'}');
-      }
-    } on SocketException catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isProcessing = false;
-        _hasError = true;
-        _errorMessage = "Couldn't connect to the AI server. Please try again.";
-        _technicalError = 'SocketException: ${e.message}';
-      });
+        ),
+      );
     } on TimeoutException catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isProcessing = false;
-        _hasError = true;
-        _errorMessage = e.message ?? 'Request timed out. Please try again.';
-        _technicalError = 'TimeoutException: ${e.toString()}';
-      });
-    } on HttpException catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isProcessing = false;
-        _hasError = true;
-        _errorMessage = "Server error occurred. Please try again.";
-        _technicalError = 'HttpException: ${e.message}';
-      });
+      _fail(
+        "It’s taking too long. Backend may be stuck.",
+        "TimeoutException: $e",
+      );
     } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isProcessing = false;
-        _hasError = true;
-        _errorMessage = "Couldn't connect to the AI server. Please try again.";
-        _technicalError = e.toString();
-      });
+      _fail("Couldn't complete the screening. Please try again.", e.toString());
     }
+  }
+
+  void _setStatus(String txt) {
+    if (!mounted) return;
+    setState(() => _statusText = txt);
+  }
+
+  void _fail(String userMsg, String tech) {
+    if (!mounted) return;
+    setState(() {
+      _isProcessing = false;
+      _hasError = true;
+      _errorMessage = userMsg;
+      _technicalError = tech;
+    });
   }
 
   void _retry() {
@@ -126,8 +129,10 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
       _hasError = false;
       _errorMessage = '';
       _technicalError = null;
+      _jobId = null;
+      _statusText = 'Uploading video…';
     });
-    _processScreening();
+    _startJobFlow();
   }
 
   void _goBackToHome() {
@@ -137,13 +142,7 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: () async {
-        // Prevent back navigation while processing
-        if (_isProcessing) {
-          return false;
-        }
-        return true;
-      },
+      onWillPop: () async => !_isProcessing,
       child: Scaffold(
         backgroundColor: Colors.grey[50],
         appBar: AppBar(
@@ -170,22 +169,20 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
                         valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                         strokeWidth: 4,
                       ),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 24),
                       Text(
-                        'Processing your screening...',
+                        'Processing your screening…',
                         style: GoogleFonts.inter(
-                          fontSize: 20,
+                          fontSize: 18,
                           fontWeight: FontWeight.w600,
                           color: Colors.black87,
                         ),
+                        textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                       Text(
-                        'This may take a few moments.',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          color: Colors.grey[600],
-                        ),
+                        _jobId == null ? _statusText : '$_statusText\n\nJob: $_jobId',
+                        style: GoogleFonts.inter(fontSize: 13, color: Colors.grey[700]),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -194,23 +191,19 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
                     ? Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.error_outline,
-                            size: 64,
-                            color: Colors.red[400],
-                          ),
-                          const SizedBox(height: 24),
+                          Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
+                          const SizedBox(height: 16),
                           Text(
                             _errorMessage,
                             style: GoogleFonts.inter(
-                              fontSize: 18,
+                              fontSize: 16,
                               fontWeight: FontWeight.w600,
                               color: Colors.black87,
                             ),
                             textAlign: TextAlign.center,
                           ),
                           if (_technicalError != null) ...[
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 12),
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
@@ -219,15 +212,12 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
                               ),
                               child: Text(
                                 _technicalError!,
-                                style: GoogleFonts.inter(
-                                  fontSize: 10,
-                                  color: Colors.grey[700],
-                                ),
+                                style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[700]),
                                 textAlign: TextAlign.center,
                               ),
                             ),
                           ],
-                          const SizedBox(height: 32),
+                          const SizedBox(height: 24),
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
@@ -235,39 +225,31 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primary,
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
                               child: Text(
                                 'Retry',
-                                style: GoogleFonts.inter(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
                               ),
                             ),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 10),
                           SizedBox(
                             width: double.infinity,
                             child: OutlinedButton(
                               onPressed: _goBackToHome,
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: AppColors.primary,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
                                 side: BorderSide(color: AppColors.primary, width: 2),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
                               child: Text(
                                 'Back to Home',
-                                style: GoogleFonts.inter(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
                               ),
                             ),
                           ),

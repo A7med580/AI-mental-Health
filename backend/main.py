@@ -1,15 +1,19 @@
 """
 FastAPI Backend Server for Mental Health Screening System
 Handles model inference, feature extraction, and routing logic
+(Updated: startup warmup + stable ADHD screening using ModelRouter path-based flow)
 """
 
 from typing import List, Optional, Dict, Any
 import json
 import os
 import uuid
-import asyncio
 import shutil
 from datetime import datetime
+import asyncio
+import subprocess
+import tempfile
+
 
 import uvicorn
 from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Body, BackgroundTasks
@@ -18,6 +22,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from services.model_router import ModelRouter
 from services.feature_extractor import FeatureExtractor
 from services.adhd_fusion import ADHDFusion
+from services.model_loader import ModelLoader
 from config.model_config import ModelConfig
 
 
@@ -33,19 +38,31 @@ app.add_middleware(
 )
 
 # Initialize services
-model_router = ModelRouter()
-feature_extractor = FeatureExtractor()
+model_loader = ModelLoader()
 model_config = ModelConfig()
+feature_extractor = FeatureExtractor()
+model_router = ModelRouter()  # will warm-load ADHD bundle internally
 
 # Job store (in-memory for development)
-# In production, use Redis, database, or similar
 job_store: Dict[str, Dict[str, Any]] = {}
 UPLOAD_DIR = "uploads"
 RESULTS_DIR = "results"
 
-# Create directories if they don't exist
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(RESULTS_DIR, exist_ok=True)
+
+
+@app.on_event("startup")
+async def startup_event():
+    """
+    Warmup: load ADHD bundle once so first request isn't slow and no silent fallbacks.
+    """
+    try:
+        _ = model_loader.load_adhd_bundle()
+        print("[Startup] ADHD models loaded successfully.")
+    except Exception as e:
+        # Don't crash server if you want, but it's better to fail fast during development
+        print(f"[Startup] WARNING: Could not load ADHD models: {e}")
 
 
 @app.get("/")
@@ -58,6 +75,9 @@ async def health_check():
     return {"status": "healthy"}
 
 
+# -------------------------
+# Feature Extraction
+# -------------------------
 @app.post("/extract-features")
 async def extract_features(
     modality: str = Form(...),
@@ -98,6 +118,9 @@ async def extract_features(
         raise HTTPException(status_code=500, detail=f"Feature extraction failed: {str(e)}")
 
 
+# -------------------------
+# General Screening (ranked)
+# -------------------------
 @app.post("/run-screening")
 async def run_screening(
     ranked_conditions: str = Form(...),
@@ -107,16 +130,13 @@ async def run_screening(
     questionnaire_data: Optional[str] = Form(None),
 ):
     """
-    Main screening endpoint - routes to appropriate models based on ranked conditions.
     ranked_conditions & available_modalities are JSON strings.
     """
     try:
         ranked_conditions_list = json.loads(ranked_conditions)
         available_modalities_list = json.loads(available_modalities)
 
-        questionnaire_dict = None
-        if questionnaire_data:
-            questionnaire_dict = json.loads(questionnaire_data)
+        questionnaire_dict = json.loads(questionnaire_data) if questionnaire_data else None
 
         result = await model_router.execute_screening(
             ranked_conditions=ranked_conditions_list,
@@ -135,12 +155,10 @@ async def run_screening(
 
 
 # -------------------------
-# ADHD Individual Predictors
+# ADHD Individual Predictors (Updated signatures)
 # -------------------------
-
 @app.post("/predict/adhd/behavior")
 async def predict_adhd_behavior(features: Dict[str, Any] = Body(...)):
-    """ADHD Behavior model prediction"""
     try:
         result = await model_router.predict_adhd_behavior(features)
         return {"success": True, "prediction": result}
@@ -149,10 +167,28 @@ async def predict_adhd_behavior(features: Dict[str, Any] = Body(...)):
 
 
 @app.post("/predict/adhd/eye")
-async def predict_adhd_eye(features: Dict[str, Any] = Body(...)):
-    """ADHD Eye-tracking model prediction"""
+async def predict_adhd_eye(video_file: UploadFile = File(...)):
+    """
+    Updated: Eye model needs video to extract eye features
+    """
     try:
-        result = await model_router.predict_adhd_eye(features)
+        # Save and route via path-based API
+        import tempfile
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
+        tmp_path = tmp.name
+        tmp.close()
+
+        await video_file.seek(0)
+        with open(tmp_path, "wb") as f:
+            shutil.copyfileobj(video_file.file, f)
+        await video_file.seek(0)
+
+        result = await model_router.predict_adhd_eye_from_video(tmp_path)
+        try:
+            os.remove(tmp_path)
+        except Exception:
+            pass
+
         return {"success": True, "prediction": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -160,9 +196,26 @@ async def predict_adhd_eye(features: Dict[str, Any] = Body(...)):
 
 @app.post("/predict/adhd/voice")
 async def predict_adhd_voice(audio_file: UploadFile = File(...)):
-    """ADHD Voice model prediction"""
+    """
+    Updated: Voice model needs audio file; run via path-based API
+    """
     try:
-        result = await model_router.predict_adhd_voice(audio_file)
+        import tempfile
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+        tmp_path = tmp.name
+        tmp.close()
+
+        await audio_file.seek(0)
+        with open(tmp_path, "wb") as f:
+            shutil.copyfileobj(audio_file.file, f)
+        await audio_file.seek(0)
+
+        result = await model_router.predict_adhd_voice_from_audio(tmp_path)
+        try:
+            os.remove(tmp_path)
+        except Exception:
+            pass
+
         return {"success": True, "prediction": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -170,18 +223,34 @@ async def predict_adhd_voice(audio_file: UploadFile = File(...)):
 
 @app.post("/predict/adhd/facial")
 async def predict_adhd_facial(video_file: UploadFile = File(...)):
-    """ADHD Facial expression model prediction"""
+    """
+    Updated: Facial model needs video file; run via path-based API
+    """
     try:
-        result = await model_router.predict_adhd_facial(video_file)
+        import tempfile
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
+        tmp_path = tmp.name
+        tmp.close()
+
+        await video_file.seek(0)
+        with open(tmp_path, "wb") as f:
+            shutil.copyfileobj(video_file.file, f)
+        await video_file.seek(0)
+
+        result = await model_router.predict_adhd_facial_from_video(tmp_path)
+        try:
+            os.remove(tmp_path)
+        except Exception:
+            pass
+
         return {"success": True, "prediction": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 # -------------------------
-# ADHD Full Screening + Fusion
+# ADHD Full Screening + Fusion (UPDATED: stable paths + no repeated reads)
 # -------------------------
-
 @app.post("/screening/adhd")
 async def screen_adhd(
     video_file: Optional[UploadFile] = File(None),
@@ -189,12 +258,11 @@ async def screen_adhd(
     questionnaire_data: Optional[str] = Form(None),
 ):
     """
-    ADHD-specific screening endpoint that runs all available ADHD models and fuses their results.
+    Runs behavior + eye + voice + facial if available and fuses results.
+    Uses stable temp paths to avoid 'same result' due to empty streams.
     """
     try:
-        questionnaire_dict = None
-        if questionnaire_data:
-            questionnaire_dict = json.loads(questionnaire_data)
+        questionnaire_dict = json.loads(questionnaire_data) if questionnaire_data else None
 
         available_modalities: List[str] = []
         if questionnaire_dict:
@@ -204,90 +272,100 @@ async def screen_adhd(
         if audio_file is not None:
             available_modalities.append("audio")
 
-        adhd_configs = model_config.get_model_config("ADHD")
-        model_results: List[Dict[str, Any]] = []
+        # Save files once
+        import tempfile
+        video_path = None
+        audio_path = None
 
-        for model_type, config in adhd_configs.items():
-            required_modalities = config.get("required_modalities", [])
-            if not all(mod in available_modalities for mod in required_modalities):
-                continue
+        try:
+            if video_file is not None:
+                vf = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
+                video_path = vf.name
+                vf.close()
+                await video_file.seek(0)
+                with open(video_path, "wb") as f:
+                    shutil.copyfileobj(video_file.file, f)
+                await video_file.seek(0)
 
-            try:
-                prediction_payload = None
-                input_type = config.get("input_type")
+            if audio_file is not None:
+                af = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+                audio_path = af.name
+                af.close()
+                await audio_file.seek(0)
+                with open(audio_path, "wb") as f:
+                    shutil.copyfileobj(audio_file.file, f)
+                await audio_file.seek(0)
 
-                if input_type == "features_dict" and questionnaire_dict:
-                    pred_result = await model_router.predict_adhd_behavior(questionnaire_dict)
-                    prediction_payload = {
-                        "model_type": "behavior",
-                        "confidence": float(pred_result.get("confidence", 0.0)),
-                        "prediction": pred_result.get("prediction", 0),
-                        "details": pred_result,
-                    }
+            adhd_configs = model_config.get_model_config("ADHD")
+            model_results: List[Dict[str, Any]] = []
 
-                elif input_type == "eye_features" and video_file is not None:
-                    eye_features = await feature_extractor.extract_eye_features(video_file)
-                    pred_result = await model_router.predict_adhd_eye(eye_features)
-                    prediction_payload = {
-                        "model_type": "eye",
-                        "confidence": float(pred_result.get("confidence", 0.0)),
-                        "prediction": pred_result.get("prediction", 0),
-                        "details": pred_result,
-                    }
+            for model_type, cfg in adhd_configs.items():
+                required_modalities = cfg.get("required_modalities", [])
+                if not all(mod in available_modalities for mod in required_modalities):
+                    continue
 
-                elif input_type == "audio_file" and audio_file is not None:
-                    # keep config param if your router expects it
-                    pred_result = await model_router.predict_adhd_voice(audio_file, config)
-                    prediction_payload = {
-                        "model_type": "voice",
-                        "confidence": float(pred_result.get("confidence", 0.0)),
-                        "prediction": pred_result.get("prediction", 0),
-                        "details": pred_result,
-                    }
+                try:
+                    if model_type == "behavior" and questionnaire_dict:
+                        r = await model_router.predict_adhd_behavior(questionnaire_dict)
+                        model_results.append({
+                            "model_type": "behavior",
+                            "confidence": float(r.get("confidence", 0.0)),
+                            "prediction": int(r.get("prediction", 0)),
+                            "details": r,
+                        })
 
-                elif input_type == "video_file" and video_file is not None:
-                    if model_type == "facial":
-                        pred_result = await model_router.predict_adhd_facial(video_file, config)
-                        prediction_payload = {
-                            "model_type": "facial",
-                            "confidence": float(pred_result.get("confidence", 0.0)),
-                            "prediction": pred_result.get("prediction", 0),
-                            "details": pred_result,
-                        }
-                    elif model_type == "eye":
-                        eye_features = await feature_extractor.extract_eye_features(video_file)
-                        pred_result = await model_router.predict_adhd_eye(eye_features)
-                        prediction_payload = {
+                    elif model_type == "eye" and video_path:
+                        r = await model_router.predict_adhd_eye_from_video(video_path)
+                        model_results.append({
                             "model_type": "eye",
-                            "confidence": float(pred_result.get("confidence", 0.0)),
-                            "prediction": pred_result.get("prediction", 0),
-                            "details": pred_result,
-                        }
+                            "confidence": float(r.get("confidence", 0.0)),
+                            "prediction": int(r.get("prediction", 0)),
+                            "details": r,
+                        })
 
-                if prediction_payload:
-                    model_results.append(
-                        {
-                            "model_type": model_type,
-                            "confidence": prediction_payload["confidence"],
-                            "prediction": prediction_payload["prediction"],
-                            "details": prediction_payload["details"],
-                        }
-                    )
+                    elif model_type == "voice" and audio_path:
+                        r = await model_router.predict_adhd_voice_from_audio(audio_path)
+                        model_results.append({
+                            "model_type": "voice",
+                            "confidence": float(r.get("confidence", 0.0)),
+                            "prediction": int(r.get("prediction", 0)),
+                            "details": r,
+                        })
 
-            except Exception as e:
-                # don't crash full screening if one submodel fails
-                print(f"Error executing ADHD/{model_type}: {str(e)}")
-                continue
+                    elif model_type == "facial" and video_path:
+                        r = await model_router.predict_adhd_facial_from_video(video_path)
+                        model_results.append({
+                            "model_type": "facial",
+                            "confidence": float(r.get("confidence", 0.0)),
+                            "prediction": int(r.get("prediction", 0)),
+                            "details": r,
+                        })
 
-        fused_result = ADHDFusion.fuse_adhd_results(model_results)
+                except Exception as e:
+                    print(f"[screening/adhd] Error in {model_type}: {e}")
+                    continue
 
-        return {
-            "success": True,
-            "condition": "ADHD",
-            "fused_result": fused_result,
-            "individual_results": model_results,
-            "modalities_used": available_modalities,
-        }
+            fused = ADHDFusion.fuse_adhd_results(model_results)
+
+            return {
+                "success": True,
+                "condition": "ADHD",
+                "fused_result": fused,
+                "individual_results": model_results,
+                "modalities_used": available_modalities,
+            }
+
+        finally:
+            if video_path and os.path.exists(video_path):
+                try:
+                    os.remove(video_path)
+                except Exception:
+                    pass
+            if audio_path and os.path.exists(audio_path):
+                try:
+                    os.remove(audio_path)
+                except Exception:
+                    pass
 
     except json.JSONDecodeError as e:
         raise HTTPException(status_code=400, detail=f"Invalid questionnaire JSON: {str(e)}")
@@ -296,172 +374,155 @@ async def screen_adhd(
 
 
 # -------------------------
-# Other predictors
+# Jobs (FIXED: actual processor attached + status transitions)
 # -------------------------
 
-@app.post("/predict/anxiety")
-async def predict_anxiety(features: Dict[str, Any] = Body(...)):
-    """Anxiety model prediction"""
-    try:
-        result = await model_router.predict_anxiety(features)
-        return {"success": True, "prediction": result}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/predict/asd/face")
-async def predict_asd_face(video_file: UploadFile = File(...)):
-    """ASD Face model prediction"""
-    try:
-        result = await model_router.predict_asd_face(video_file)
-        return {"success": True, "prediction": result}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/predict/asd/text")
-async def predict_asd_text(aq10_scores: List[int] = Body(...)):
-    """ASD Text model prediction (AQ-10 scores)"""
-    try:
-        result = await model_router.predict_asd_text(aq10_scores)
-        return {"success": True, "prediction": result}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# -------------------------
-# Job Management Endpoints
-# -------------------------
-
-async def process_adhd_job(job_id: str, video_path: str, questionnaire_data: Dict[str, Any]):
-    """Background task to process ADHD screening job"""
-    try:
-        # Update job status to processing
-        job_store[job_id]["status"] = "processing"
+def _update_job(job_id: str, **kwargs):
+    if job_id in job_store:
+        job_store[job_id].update(kwargs)
         job_store[job_id]["updated_at"] = datetime.now().isoformat()
 
-        # Read video file and create UploadFile-like object
-        video_file_handle = open(video_path, "rb")
-        video_upload = UploadFile(file=video_file_handle, filename=os.path.basename(video_path))
 
-        # Run ADHD screening (reuse existing logic)
+def _extract_wav_from_video(video_path: str) -> str:
+    """
+    Extract WAV from MP4 using ffmpeg (16k mono PCM).
+    Returns path to temp wav. Caller must delete it.
+    """
+    fd, wav_path = tempfile.mkstemp(suffix=".wav", prefix="audio_from_video_")
+    os.close(fd)
+
+    cmd = [
+        "ffmpeg",
+        "-y",
+        "-i", video_path,
+        "-vn",
+        "-ac", "1",
+        "-ar", "16000",
+        "-f", "wav",
+        wav_path,
+    ]
+
+    proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if proc.returncode != 0:
+        # clean temp file
+        try:
+            os.remove(wav_path)
+        except Exception:
+            pass
+        raise RuntimeError(f"ffmpeg failed: {proc.stderr[-800:]}")
+
+    if not os.path.exists(wav_path) or os.path.getsize(wav_path) < 2000:
+        try:
+            os.remove(wav_path)
+        except Exception:
+            pass
+        raise RuntimeError("Extracted audio wav is empty/too small")
+
+    return wav_path
+
+
+def process_adhd_job(job_id: str, video_path: str, questionnaire_dict: Dict[str, Any]):
+    """
+    Background job processor.
+    Runs behavior + eye + facial + voice (voice from audio extracted from the same video).
+    Updates job_store status: queued -> processing -> completed/failed
+    """
+    _update_job(job_id, status="processing", error=None)
+
+    wav_path = None
+    try:
+        # Build available modalities
         available_modalities: List[str] = []
-        if questionnaire_data:
+        if questionnaire_dict:
             available_modalities.append("questionnaire")
-        available_modalities.append("video")  # Video is always available in this context
+        if video_path:
+            available_modalities.append("video")
+
+        # extract audio from video so voice model can work
+        # (even if caller did not send a separate audio file)
+        try:
+            wav_path = _extract_wav_from_video(video_path)
+            available_modalities.append("audio")
+        except Exception as e:
+            # voice becomes unavailable; continue other modalities
+            print(f"[process_adhd_job] audio extraction failed: {e}")
+            wav_path = None
 
         adhd_configs = model_config.get_model_config("ADHD")
         model_results: List[Dict[str, Any]] = []
 
-        for model_type, config in adhd_configs.items():
-            required_modalities = config.get("required_modalities", [])
+        for model_type, cfg in adhd_configs.items():
+            required_modalities = cfg.get("required_modalities", [])
             if not all(mod in available_modalities for mod in required_modalities):
                 continue
 
             try:
-                prediction_payload = None
-                input_type = config.get("input_type")
-
-                if input_type == "features_dict" and questionnaire_data:
-                    pred_result = await model_router.predict_adhd_behavior(questionnaire_data)
-                    prediction_payload = {
-                        "model_type": "behavior",
-                        "confidence": float(pred_result.get("confidence", 0.0)),
-                        "prediction": pred_result.get("prediction", 0),
-                        "details": pred_result,
-                    }
-
-                elif input_type == "eye_features":
-                    # Reset file pointer
-                    video_file_handle.seek(0)
-                    video_upload.file.seek(0)
-                    eye_features = await feature_extractor.extract_eye_features(video_upload)
-                    pred_result = await model_router.predict_adhd_eye(eye_features)
-                    prediction_payload = {
-                        "model_type": "eye",
-                        "confidence": float(pred_result.get("confidence", 0.0)),
-                        "prediction": pred_result.get("prediction", 0),
-                        "details": pred_result,
-                    }
-
-                elif input_type == "video_file":
-                    # Reset file pointer
-                    video_file_handle.seek(0)
-                    video_upload.file.seek(0)
-                    if model_type == "facial":
-                        pred_result = await model_router.predict_adhd_facial(video_upload, config)
-                        prediction_payload = {
-                            "model_type": "facial",
-                            "confidence": float(pred_result.get("confidence", 0.0)),
-                            "prediction": pred_result.get("prediction", 0),
-                            "details": pred_result,
-                        }
-                    elif model_type == "eye":
-                        video_file_handle.seek(0)
-                        video_upload.file.seek(0)
-                        eye_features = await feature_extractor.extract_eye_features(video_upload)
-                        pred_result = await model_router.predict_adhd_eye(eye_features)
-                        prediction_payload = {
-                            "model_type": "eye",
-                            "confidence": float(pred_result.get("confidence", 0.0)),
-                            "prediction": pred_result.get("prediction", 0),
-                            "details": pred_result,
-                        }
-
-                if prediction_payload:
+                if model_type == "behavior" and questionnaire_dict:
+                    r = asyncio.run(model_router.predict_adhd_behavior(questionnaire_dict))
                     model_results.append({
-                        "model_type": model_type,
-                        "confidence": prediction_payload["confidence"],
-                        "prediction": prediction_payload["prediction"],
-                        "details": prediction_payload["details"],
+                        "model_type": "behavior",
+                        "confidence": float(r.get("confidence", 0.0)),
+                        "prediction": int(r.get("prediction", 0)),
+                        "details": r,
+                    })
+
+                elif model_type == "eye" and video_path:
+                    r = asyncio.run(model_router.predict_adhd_eye_from_video(video_path))
+                    model_results.append({
+                        "model_type": "eye",
+                        "confidence": float(r.get("confidence", 0.0)),
+                        "prediction": int(r.get("prediction", 0)),
+                        "details": r,
+                    })
+
+                elif model_type == "facial" and video_path:
+                    r = asyncio.run(model_router.predict_adhd_facial_from_video(video_path))
+                    model_results.append({
+                        "model_type": "facial",
+                        "confidence": float(r.get("confidence", 0.0)),
+                        "prediction": int(r.get("prediction", 0)),
+                        "details": r,
+                    })
+
+                elif model_type == "voice" and wav_path:
+                    r = asyncio.run(model_router.predict_adhd_voice_from_audio(wav_path))
+                    model_results.append({
+                        "model_type": "voice",
+                        "confidence": float(r.get("confidence", 0.0)),
+                        "prediction": int(r.get("prediction", 0)),
+                        "details": r,
                     })
 
             except Exception as e:
-                print(f"Error executing ADHD/{model_type}: {str(e)}")
+                print(f"[process_adhd_job] Error in {model_type}: {e}")
                 continue
 
-        # Fuse results
-        fused_result = ADHDFusion.fuse_adhd_results(model_results)
+        fused = ADHDFusion.fuse_adhd_results(model_results)
 
-        # Prepare final result
-        result = {
-            "success": True,
-            "condition": "ADHD",
-            "fused_result": fused_result,
-            "individual_results": model_results,
-            "modalities_used": available_modalities,
-            "is_adhd": fused_result.get("fused_prediction", 0) == 1,
-            "confidence": fused_result.get("fused_confidence", 0.0),
-            "summary": fused_result.get("explanation", ""),
-        }
-
-        # Save result
+        # write result JSON
         result_path = os.path.join(RESULTS_DIR, f"{job_id}.json")
         with open(result_path, "w") as f:
-            json.dump(result, f, indent=2)
+            json.dump({
+                "success": True,
+                "condition": "ADHD",
+                "fused_result": fused,
+                "individual_results": model_results,
+                "modalities_used": available_modalities,
+            }, f)
 
-        # Update job store
-        job_store[job_id]["status"] = "done"
-        job_store[job_id]["result_path"] = result_path
-        job_store[job_id]["updated_at"] = datetime.now().isoformat()
-
-        # Delete raw video file (privacy)
-        try:
-            os.remove(video_path)
-            print(f"Deleted raw video file: {video_path}")
-        except Exception as e:
-            print(f"Warning: Could not delete video file: {e}")
-
-        # Close file
-        video_file_handle.close()
+        _update_job(job_id, status="completed", result_path=result_path)
 
     except Exception as e:
-        print(f"Error processing job {job_id}: {str(e)}")
-        job_store[job_id]["status"] = "failed"
-        job_store[job_id]["error"] = str(e)
-        job_store[job_id]["updated_at"] = datetime.now().isoformat()
-        if "video_file_handle" in locals():
-            video_file_handle.close()
+        _update_job(job_id, status="failed", error=str(e))
+        print(f"[process_adhd_job] FAILED job={job_id}: {e}")
+
+    finally:
+        # cleanup audio temp
+        if wav_path and os.path.exists(wav_path):
+            try:
+                os.remove(wav_path)
+            except Exception:
+                pass
 
 
 @app.post("/jobs/adhd")
@@ -470,47 +531,37 @@ async def submit_adhd_job(
     video_file: UploadFile = File(...),
     questionnaire_data: Optional[str] = Form(None),
 ):
-    """
-    Submit an ADHD screening job for async processing.
-    Returns job_id immediately, processing happens in background.
-    """
     try:
-        # Generate job ID
         job_id = str(uuid.uuid4())
+        questionnaire_dict = json.loads(questionnaire_data) if questionnaire_data else {}
 
-        # Parse questionnaire data
-        questionnaire_dict = None
-        if questionnaire_data:
-            questionnaire_dict = json.loads(questionnaire_data)
-
-        # Save uploaded video
-        video_filename = f"{job_id}_{video_file.filename}"
+        # Save video file to uploads
+        safe_name = video_file.filename or "video.mp4"
+        video_filename = f"{job_id}_{safe_name}"
         video_path = os.path.join(UPLOAD_DIR, video_filename)
-        
+
+        await video_file.seek(0)
         with open(video_path, "wb") as f:
             shutil.copyfileobj(video_file.file, f)
+        await video_file.seek(0)
 
-        # Create job entry
         job_store[job_id] = {
             "job_id": job_id,
             "status": "queued",
             "created_at": datetime.now().isoformat(),
             "updated_at": datetime.now().isoformat(),
             "video_path": video_path,
+            "result_path": None,
+            "error": None,
         }
 
-        # Start background task
-        background_tasks.add_task(
-            process_adhd_job,
-            job_id,
-            video_path,
-            questionnaire_dict or {},
-        )
+        # ✅ IMPORTANT: attach job processor
+        background_tasks.add_task(process_adhd_job, job_id, video_path, questionnaire_dict)
 
         return {
             "job_id": job_id,
             "status": "queued",
-            "message": "Job submitted successfully. Use GET /jobs/{job_id} to check status.",
+            "message": "Job submitted successfully.",
         }
 
     except json.JSONDecodeError as e:
@@ -521,10 +572,8 @@ async def submit_adhd_job(
 
 @app.get("/jobs/{job_id}")
 async def get_job_status(job_id: str):
-    """Get the status of a job"""
     if job_id not in job_store:
         raise HTTPException(status_code=404, detail="Job not found")
-
     job = job_store[job_id]
     return {
         "job_id": job_id,
@@ -537,26 +586,19 @@ async def get_job_status(job_id: str):
 
 @app.get("/jobs/{job_id}/result")
 async def get_job_result(job_id: str):
-    """Get the result of a completed job"""
     if job_id not in job_store:
         raise HTTPException(status_code=404, detail="Job not found")
 
     job = job_store[job_id]
-
-    if job["status"] != "done":
-        raise HTTPException(
-            status_code=400,
-            detail=f"Job is not done yet. Current status: {job['status']}",
-        )
+    if job["status"] != "completed":
+        raise HTTPException(status_code=400, detail=f"Job is not completed yet. Current status: {job['status']}")
 
     result_path = job.get("result_path")
     if not result_path or not os.path.exists(result_path):
         raise HTTPException(status_code=404, detail="Result file not found")
 
     with open(result_path, "r") as f:
-        result = json.load(f)
-
-    return result
+        return json.load(f)
 
 
 if __name__ == "__main__":

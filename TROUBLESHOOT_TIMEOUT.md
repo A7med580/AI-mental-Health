@@ -179,3 +179,6 @@ Should show: `0.0.0.0:8000` or `192.168.1.2:8000`
 3. Flutter app → Connects successfully, no timeout
 4. Processing screen → Shows "Processing your screening..."
 5. Result → Shows ADHD screening result
+
+
+

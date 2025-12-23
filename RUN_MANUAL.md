@@ -297,3 +297,6 @@ curl http://localhost:8000/jobs/{job_id}/result
 ✅ **Error Handling**: Connection errors, retry buttons, clear messages  
 
 The app now supports async ADHD screening with proper video management and user notifications!
+
+
+

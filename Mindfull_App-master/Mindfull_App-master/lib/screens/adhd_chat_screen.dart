@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mindful/app_colors.dart';
@@ -10,7 +11,6 @@ import 'package:camera/camera.dart';
 import 'package:path_provider/path_provider.dart';
 
 /// ADHD-specific chat interview screen
-/// Implements therapist-style questioning aligned with DSM-5 ADHD criteria
 class ADHDChatScreen extends StatefulWidget {
   final double initialProbability;
   final Map<int, int> questionnaireAnswers;
@@ -28,19 +28,24 @@ class ADHDChatScreen extends StatefulWidget {
 class _ADHDChatScreenState extends State<ADHDChatScreen> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _textController = TextEditingController();
-  
+
   CameraController? _cameraController;
+
   bool _isRecording = false;
   bool _isProcessing = false;
+
   bool _cameraPermissionGranted = false;
+  bool _microphonePermissionGranted = false;
+
   bool _cameraPermissionRequested = false;
-  
+
   final List<ChatMessage> _messages = [];
   int _currentQuestionIndex = 0;
-  final Map<int, String> _questionAnswers = {}; // question_index -> user_answer_text
-  final Map<int, String?> _questionVideos = {}; // question_index -> saved_video_path
-  
-  // DSM-5 aligned ADHD questions (inattention, hyperactivity, impulsivity)
+
+  final Map<int, String> _questionAnswers = {};
+  final Map<int, String?> _questionVideos = {};
+
+  // DSM-5 aligned questions
   final List<ADHDQuestion> _adhdQuestions = [
     ADHDQuestion(
       text: "Do you often find it hard to stay focused on tasks that require long attention, like reading or listening to lectures?",
@@ -60,12 +65,12 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
     ADHDQuestion(
       text: "Do you often feel restless, like you need to move around even when you're supposed to stay seated?",
       category: "hyperactivity",
-      requiresVideo: true, // Video helps assess restlessness
+      requiresVideo: true,
     ),
     ADHDQuestion(
       text: "Do you often have difficulty waiting your turn in conversations or activities?",
       category: "impulsivity",
-      requiresVideo: true, // Video helps assess impulsivity
+      requiresVideo: true,
     ),
     ADHDQuestion(
       text: "Do you often interrupt others when they're speaking or finish their sentences?",
@@ -88,70 +93,103 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
   void initState() {
     super.initState();
     _initializeChat();
-    _checkPermissions();
+    _precheckPermissions();
   }
 
   Future<void> _initializeChat() async {
-    // Welcome message
     _addSystemMessage(
       "Hello! I'm here to help you understand patterns related to attention and focus. "
       "This is a screening tool, not a medical diagnosis. "
-      "I'll ask you some questions - please answer honestly and take your time."
+      "I'll ask you some questions - please answer honestly and take your time.",
     );
-    
-    await Future.delayed(const Duration(milliseconds: 500));
-    
-    // Start with first question
+
+    await Future.delayed(const Duration(milliseconds: 400));
     _askNextQuestion();
   }
 
-  Future<void> _checkPermissions() async {
-    final cameraStatus = await Permission.camera.status;
-    final microphoneStatus = await Permission.microphone.status;
-    
+  /// Pre-check permissions (does NOT force popup)
+  Future<void> _precheckPermissions() async {
+    final cam = await Permission.camera.status;
+    final mic = await Permission.microphone.status;
+
     setState(() {
-      _cameraPermissionGranted = cameraStatus.isGranted;
+      _cameraPermissionGranted = cam.isGranted;
+      _microphonePermissionGranted = mic.isGranted;
     });
-    
-    if (cameraStatus.isGranted) {
-      _initializeCamera();
+
+    // If already granted, init camera immediately
+    if (_cameraPermissionGranted) {
+      await _initCameraController();
     }
   }
 
-  Future<void> _requestCameraPermission() async {
+  /// ✅ THE ONLY correct way to force iOS popup reliably:
+  /// actually initialize camera (and enableAudio) -> iOS shows permission dialog.
+  Future<void> _requestCameraAndMicPermission() async {
     if (_cameraPermissionRequested) return;
-    
+
     setState(() {
       _cameraPermissionRequested = true;
     });
-    
-    final status = await Permission.camera.request();
-    
-    if (status.isGranted) {
+
+    try {
+      // Optional: request mic explicitly (some iOS versions need it)
+      final micStatus = await Permission.microphone.request();
+      setState(() => _microphonePermissionGranted = micStatus.isGranted);
+
+      // This will trigger iOS camera permission popup when needed
+      await _initCameraController();
+
+      if (!mounted) return;
+
+      _addSystemMessage("Camera access granted. You can now record your response.");
+      await Future.delayed(const Duration(milliseconds: 200));
+      _askNextQuestion();
+    } catch (e) {
+      if (!mounted) return;
+
+      _addSystemMessage(
+        "I couldn't access the camera. We'll continue with text-only responses. "
+        "If you want to enable camera later, go to iPhone Settings → Privacy & Security.",
+      );
+
       setState(() {
-        _cameraPermissionGranted = true;
+        _cameraPermissionGranted = false;
       });
-      _initializeCamera();
-      _addSystemMessage("Thank you! Camera access granted. This helps us better understand your responses.");
-    } else {
-      _addSystemMessage("That's okay. We can continue without video. Your privacy is important to us.");
+
+      await Future.delayed(const Duration(milliseconds: 200));
+      _askNextQuestion();
     }
   }
 
-  Future<void> _initializeCamera() async {
-    try {
-      final cameras = await availableCameras();
-      if (cameras.isNotEmpty) {
-        _cameraController = CameraController(
-          cameras[0],
-          ResolutionPreset.medium,
-        );
-        await _cameraController!.initialize();
-        setState(() {});
-      }
-    } catch (e) {
-      print('Error initializing camera: $e');
-    }
+  Future<void> _initCameraController() async {
+    // Dispose old controller
+    await _cameraController?.dispose();
+    _cameraController = null;
+
+    final cameras = await availableCameras();
+    if (cameras.isEmpty) throw Exception("No cameras found");
+
+    // Prefer front camera
+    final front = cameras.where((c) => c.lensDirection == CameraLensDirection.front).toList();
+    final selected = front.isNotEmpty ? front.first : cameras.first;
+
+    final controller = CameraController(
+      selected,
+      ResolutionPreset.medium,
+      enableAudio: true, // ✅ important for voice extraction
+    );
+
+    await controller.initialize();
+
+    // Update state only after successful init
+    _cameraController = controller;
+
+    // Now camera permission is effectively granted
+    final cam = await Permission.camera.status;
+    setState(() {
+      _cameraPermissionGranted = cam.isGranted || controller.value.isInitialized;
+    });
   }
 
   void _addSystemMessage(String text) {
@@ -173,7 +211,7 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
+          duration: const Duration(milliseconds: 250),
           curve: Curves.easeOut,
         );
       }
@@ -187,57 +225,65 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
     }
 
     final question = _adhdQuestions[_currentQuestionIndex];
-    
-    // Ask for camera permission if needed and not yet requested
-    if (question.requiresVideo && !_cameraPermissionGranted && !_cameraPermissionRequested) {
-      _addSystemMessage(
-        "For the next question, it would be helpful to see your response. "
-        "May I access your camera? This helps us better understand your communication patterns. "
-        "You can decline and continue with text-only responses."
-      );
-      // Don't ask question yet - wait for permission response
+
+    // If video required but we have no camera permission: ask once
+    if (question.requiresVideo && !_cameraPermissionGranted) {
+      if (!_cameraPermissionRequested) {
+        _addSystemMessage(
+          "For the next question, it would be helpful to record a short video response. "
+          "Tap the button below to allow camera access (you can still continue with text if you prefer).",
+        );
+      } else {
+        // Permission already requested/failed -> fallback to text prompt
+        _addSystemMessage(question.text);
+        _addSystemMessage("Please answer in text (camera not available).");
+      }
       return;
     }
-    
+
     _addSystemMessage(question.text);
-    
-    // If video is required and available, prompt for video response
-    if (question.requiresVideo && _cameraPermissionGranted && _cameraController != null) {
+
+    if (question.requiresVideo) {
       _addSystemMessage(
-        "Please record a short video (30-60 seconds) responding to this question. "
-        "Speak naturally and be yourself."
+        "Please record a short video (15–60 seconds). Speak naturally and be yourself.",
       );
     }
   }
 
   Future<void> _submitTextAnswer(String text) async {
-    if (text.trim().isEmpty) return;
-    
-    _addUserMessage(text);
-    _questionAnswers[_currentQuestionIndex] = text;
-    
-    // Move to next question
+    final cleaned = text.trim();
+    if (cleaned.isEmpty) return;
+
+    _addUserMessage(cleaned);
+    _questionAnswers[_currentQuestionIndex] = cleaned;
+    _textController.clear();
+
     setState(() {
       _currentQuestionIndex++;
     });
-    
-    await Future.delayed(const Duration(milliseconds: 500));
+
+    await Future.delayed(const Duration(milliseconds: 300));
     _askNextQuestion();
   }
 
   Future<void> _startVideoRecording() async {
-    if (_cameraController == null || !_cameraController!.value.isInitialized) {
+    final controller = _cameraController;
+    if (controller == null || !controller.value.isInitialized) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Camera not available')),
       );
       return;
     }
 
-    try {
-      final Directory appDocDir = await getApplicationDocumentsDirectory();
-      final String videoPath = '${appDocDir.path}/adhd_q${_currentQuestionIndex}_${DateTime.now().millisecondsSinceEpoch}.mp4';
+    if (_isRecording) return;
 
-      await _cameraController!.startVideoRecording();
+    try {
+      // Create local temp (camera plugin writes its own file, this is just for sanity/logging)
+      final Directory appDocDir = await getApplicationDocumentsDirectory();
+      final String _ = '${appDocDir.path}/adhd_q${_currentQuestionIndex}_${DateTime.now().millisecondsSinceEpoch}.mp4';
+
+      await controller.startVideoRecording();
+
       setState(() {
         _isRecording = true;
       });
@@ -249,7 +295,7 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
         }
       });
     } catch (e) {
-      print('Error starting recording: $e');
+      setState(() => _isRecording = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error starting recording: $e')),
       );
@@ -259,147 +305,121 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
   Future<void> _stopVideoRecording() async {
     if (!_isRecording) return;
 
-    try {
-      final XFile tempVideoFile = await _cameraController!.stopVideoRecording();
-      setState(() {
-        _isRecording = false;
-      });
+    final controller = _cameraController;
+    if (controller == null) return;
 
-      // Save video permanently
+    try {
+      final XFile tempVideoFile = await controller.stopVideoRecording();
+
+      setState(() => _isRecording = false);
+
+      // Save permanently
       final savedPath = await VideoStorageService.saveVideo(
         File(tempVideoFile.path),
         customName: 'adhd_q${_currentQuestionIndex}_${DateTime.now().millisecondsSinceEpoch}.mp4',
       );
 
-      // Verify file exists and has content
       final savedFile = File(savedPath);
-      if (!await savedFile.exists()) {
-        throw Exception('Failed to save video file');
-      }
+      if (!await savedFile.exists()) throw Exception('Failed to save video file');
+      if (await savedFile.length() < 2000) throw Exception('Video file is too small / empty');
 
-      final fileSize = await savedFile.length();
-      if (fileSize == 0) {
-        throw Exception('Video file is empty');
-      }
-
-      // Store saved path
       setState(() {
         _questionVideos[_currentQuestionIndex] = savedPath;
       });
 
-      // Navigate to video preview screen
-      if (mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => VideoPreviewScreen(
-              videoPath: savedPath,
-              onRetake: () async {
-                // Delete saved video
-                try {
-                  await VideoStorageService.deleteVideo(savedPath);
-                } catch (e) {
-                  print('Error deleting video: $e');
-                }
-
-                // Remove from map
-                setState(() {
-                  _questionVideos[_currentQuestionIndex] = null;
-                });
-
-                // Pop preview screen and return to chat
-                Navigator.pop(context);
-              },
-              onContinue: () {
-                // Move to next question
-                Navigator.pop(context);
-                setState(() {
-                  _currentQuestionIndex++;
-                });
-                _askNextQuestion();
-              },
-            ),
-          ),
-        );
-      }
+      if (!mounted) return;
 
       _addUserMessage("✓ Video recorded");
+
+      // Preview -> Continue
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => VideoPreviewScreen(
+            videoPath: savedPath,
+            onRetake: () async {
+              try {
+                await VideoStorageService.deleteVideo(savedPath);
+              } catch (_) {}
+              setState(() => _questionVideos[_currentQuestionIndex] = null);
+              Navigator.pop(context);
+            },
+            onContinue: () {
+              Navigator.pop(context);
+              setState(() => _currentQuestionIndex++);
+              _askNextQuestion();
+            },
+          ),
+        ),
+      );
     } catch (e) {
-      print('Error stopping recording: $e');
-      setState(() {
-        _isRecording = false;
-      });
+      setState(() => _isRecording = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error saving video: $e')),
       );
     }
   }
 
+  /// Build final payload and go to ProcessingScreen
   Future<void> _completeScreening() async {
-    _addSystemMessage("Thank you for your responses! Preparing your screening...");
-    
-    setState(() {
-      _isProcessing = true;
-    });
+    _addSystemMessage("Thank you! Preparing your screening...");
+
+    setState(() => _isProcessing = true);
 
     try {
-      // Prepare questionnaire data
-      Map<String, dynamic> questionnaireData = {};
-      for (var entry in widget.questionnaireAnswers.entries) {
-        questionnaireData['q${entry.key}'] = entry.value;
-      }
-      for (var entry in _questionAnswers.entries) {
-        questionnaireData['adhd_q${entry.key}'] = entry.value;
+      final Map<String, dynamic> questionnaireData = {};
+
+      for (final entry in widget.questionnaireAnswers.entries) {
+        questionnaireData['initial_q_${entry.key}'] = entry.value;
       }
 
-      // Collect video file (use first available video)
-      File? videoFile;
-      if (_questionVideos.isNotEmpty) {
-        final firstVideoPath = _questionVideos.values.firstWhere(
-          (path) => path != null, 
-          orElse: () => null,
+      for (final entry in _questionAnswers.entries) {
+        questionnaireData['chat_q_${entry.key}_text'] = entry.value;
+      }
+
+      // Pick LAST recorded video (best)
+      final recorded = _questionVideos.entries
+          .where((e) => e.value != null)
+          .toList()
+        ..sort((a, b) => a.key.compareTo(b.key));
+
+      if (recorded.isEmpty) {
+        // ✅ fallback: allow text-only screening (still submit job without video)
+        _addSystemMessage(
+          "No video recorded. We'll continue with text-only screening.",
         );
-        if (firstVideoPath != null) {
-          videoFile = File(firstVideoPath);
-        }
-      }
-
-      if (videoFile == null) {
-        throw Exception('No video file available. Please record at least one video response.');
-      }
-
-      // Verify video file exists
-      if (!await videoFile.exists()) {
-        throw Exception('Video file not found');
-      }
-
-      // Navigate to processing screen
-      if (mounted && videoFile != null) {
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => ProcessingScreen(
-              videoFile: videoFile!,
+              videoFile: null, // text-only
               questionnaireData: questionnaireData,
             ),
           ),
         );
+        return;
       }
-      
-    } catch (e) {
-      setState(() {
-        _isProcessing = false;
-      });
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          action: SnackBarAction(
-            label: 'Retry',
-            onPressed: _completeScreening,
+
+      final lastPath = recorded.last.value!;
+      final videoFile = File(lastPath);
+      if (!await videoFile.exists()) throw Exception("Video file not found");
+
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProcessingScreen(
+            videoFile: videoFile,
+            questionnaireData: questionnaireData,
           ),
-          duration: const Duration(seconds: 5),
         ),
+      );
+    } catch (e) {
+      setState(() => _isProcessing = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
       );
     }
   }
@@ -417,8 +437,10 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
     final currentQuestion = _currentQuestionIndex < _adhdQuestions.length
         ? _adhdQuestions[_currentQuestionIndex]
         : null;
-    final showVideoControls = currentQuestion != null &&
-        currentQuestion.requiresVideo &&
+
+    final needsVideo = currentQuestion != null && currentQuestion.requiresVideo;
+
+    final showVideoControls = needsVideo &&
         _cameraPermissionGranted &&
         _cameraController != null &&
         _cameraController!.value.isInitialized;
@@ -436,30 +458,22 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
             color: Colors.black87,
           ),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.pop(context),
-        ),
       ),
       body: Column(
         children: [
-          // Chat messages
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
               padding: const EdgeInsets.all(16),
               itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                final message = _messages[index];
-                return _buildMessageBubble(message);
-              },
+              itemBuilder: (context, index) => _buildMessageBubble(_messages[index]),
             ),
           ),
 
-          // Camera preview (if available and needed)
+          // Camera Preview when needed
           if (showVideoControls && !_isRecording)
             Container(
-              height: 150,
+              height: 160,
               margin: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
@@ -471,17 +485,31 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
               ),
             ),
 
-          // Input area
-          if (!_isProcessing && _currentQuestionIndex < _adhdQuestions.length)
+          if (!_isProcessing && currentQuestion != null)
             Container(
               padding: const EdgeInsets.all(16),
               color: Colors.white,
               child: Column(
                 children: [
-                  // Video recording button (if needed)
+                  // Permission button if video required but not granted
+                  if (needsVideo && !_cameraPermissionGranted && !_cameraPermissionRequested)
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _requestCameraAndMicPermission,
+                        icon: const Icon(Icons.lock_open),
+                        label: const Text('Allow Camera & Microphone'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+
                   if (showVideoControls && !_isRecording)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.only(top: 12),
                       child: SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
@@ -497,10 +525,9 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
                       ),
                     ),
 
-                  // Stop recording button
                   if (_isRecording)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.only(top: 12),
                       child: SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
@@ -516,9 +543,10 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
                       ),
                     ),
 
-                  // Text input
-                  if (!currentQuestion!.requiresVideo || !_cameraPermissionGranted)
-                    Row(
+                  // Text input always available (fallback)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Row(
                       children: [
                         Expanded(
                           child: TextField(
@@ -528,10 +556,7 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(24),
                               ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 12,
-                              ),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                             ),
                             onSubmitted: _submitTextAnswer,
                           ),
@@ -543,18 +568,7 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
                         ),
                       ],
                     ),
-
-                  // Camera permission request button
-                  if (currentQuestion.requiresVideo &&
-                      !_cameraPermissionGranted &&
-                      !_cameraPermissionRequested)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: TextButton(
-                        onPressed: _requestCameraPermission,
-                        child: const Text('Allow Camera Access'),
-                      ),
-                    ),
+                  ),
                 ],
               ),
             )
@@ -565,7 +579,7 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const CircularProgressIndicator(),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   Text(
                     'Preparing screening...',
                     style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[600]),
@@ -584,23 +598,15 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 4),
         padding: const EdgeInsets.all(12),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
-        ),
+        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
         decoration: BoxDecoration(
           color: message.isSystem ? Colors.white : AppColors.primary.withOpacity(0.1),
           borderRadius: BorderRadius.circular(12),
-          border: message.isSystem
-              ? Border.all(color: Colors.grey[300]!)
-              : null,
+          border: message.isSystem ? Border.all(color: Colors.grey[300]!) : null,
         ),
         child: Text(
           message.text,
-          style: GoogleFonts.inter(
-            fontSize: 15,
-            color: Colors.black87,
-            height: 1.4,
-          ),
+          style: GoogleFonts.inter(fontSize: 15, color: Colors.black87, height: 1.4),
         ),
       ),
     );
@@ -621,7 +627,7 @@ class ChatMessage {
 
 class ADHDQuestion {
   final String text;
-  final String category; // "inattention", "hyperactivity", "impulsivity"
+  final String category;
   final bool requiresVideo;
 
   ADHDQuestion({
@@ -630,4 +636,3 @@ class ADHDQuestion {
     this.requiresVideo = false,
   });
 }
-

@@ -88,12 +88,12 @@ class _MindfulAIScreenState extends State<MindfulAIScreen> {
                 children: [
                   const Expanded(
                     child: Center(
-                      child: Text(
-                        'MindfulAI',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                child: Text(
+                  'MindfulAI',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
                         ),
                       ),
                     ),

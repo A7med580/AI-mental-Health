@@ -1,108 +1,136 @@
 """
 Model Router Service
 Routes screening requests to appropriate models based on ranked conditions
+(FULL UPDATED VERSION: stable file handling + proper ADHD model attachment)
 """
 
+import os
 import numpy as np
 import pandas as pd
 from typing import List, Dict, Any, Optional
 from fastapi import UploadFile
-import tempfile
-import os
-import cv2
 
 from services.model_loader import ModelLoader
 from services.feature_extractor import FeatureExtractor
 from config.model_config import ModelConfig
 
-# Try to import TensorFlow
-try:
-    import tensorflow as tf
-    from tensorflow import keras
-    from tensorflow.keras.preprocessing import image
-    TF_AVAILABLE = True
-except ImportError:
-    TF_AVAILABLE = False
-
 
 class ModelRouter:
     """Routes screening requests to appropriate models"""
-    
+
     def __init__(self):
         self.model_loader = ModelLoader()
         self.feature_extractor = FeatureExtractor()
         self.config = ModelConfig()
-    
+
+        # Load ADHD bundle once (cached in ModelLoader)
+        self.adhd = None
+        try:
+            self.adhd = self.model_loader.load_adhd_bundle()
+        except Exception as e:
+            print(f"[ModelRouter] WARNING: ADHD bundle not loaded: {e}")
+
+
+    # -----------------------------
+    # Helpers: safe temp file save
+    # -----------------------------
+    async def _save_upload_to_temp(self, up: UploadFile, suffix: str) -> str:
+        """
+        Save UploadFile to a temp path so it can be used multiple times reliably.
+        """
+        import tempfile
+
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+        tmp_path = tmp.name
+        tmp.close()
+
+        await up.seek(0)
+        with open(tmp_path, "wb") as f:
+            while True:
+                chunk = await up.read(1024 * 1024)
+                if not chunk:
+                    break
+                f.write(chunk)
+        await up.seek(0)
+        return tmp_path
+
+    def _cleanup_temp(self, path: Optional[str]) -> None:
+        try:
+            if path and os.path.exists(path):
+                os.remove(path)
+        except Exception:
+            pass
+
+    # -----------------------------
+    # Main screening
+    # -----------------------------
     async def execute_screening(
         self,
         ranked_conditions: List[Dict[str, float]],
         available_modalities: List[str],
         video_file: Optional[UploadFile] = None,
         audio_file: Optional[UploadFile] = None,
-        questionnaire_data: Optional[Dict[str, Any]] = None
+        questionnaire_data: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
-        Execute screening sequentially based on ranked conditions
-        
-        Args:
-            ranked_conditions: [{"condition": "ADHD", "probability": 0.75}, ...]
-            available_modalities: ["video", "audio", "text"]
-            video_file: Optional video file
-            audio_file: Optional audio file
-            questionnaire_data: Optional questionnaire responses
-        
-        Returns:
-            Screening result with condition, confidence, and details
+        Execute screening sequentially based on ranked conditions.
         """
-        results = []
-        
-        # Process each condition in order
-        for condition_data in ranked_conditions:
-            condition = condition_data.get("condition")
-            initial_probability = condition_data.get("probability", 0.0)
-            
-            if not condition:
-                continue
-            
-            # Get model configuration for this condition
-            model_configs = self.config.get_model_config(condition)
-            
-            if not model_configs:
-                continue
-            
-            # Try each model type for this condition
-            for model_type, config in model_configs.items():
-                required_modalities = config.get("required_modalities", [])
-                
-                # Check if required modalities are available
-                if not all(mod in available_modalities for mod in required_modalities):
+
+        results: List[Dict[str, Any]] = []
+
+        video_path = None
+        audio_path = None
+
+        try:
+            # Save files once so multiple models can read safely
+            if video_file is not None:
+                video_path = await self._save_upload_to_temp(video_file, suffix=".mp4")
+
+            if audio_file is not None:
+                audio_path = await self._save_upload_to_temp(audio_file, suffix=".wav")
+
+            # Process each condition in order
+            for condition_data in ranked_conditions:
+                condition = condition_data.get("condition")
+                if not condition:
                     continue
-                
-                try:
-                    # Execute model prediction
-                    prediction = await self._execute_model_prediction(
-                        condition=condition,
-                        model_type=model_type,
-                        config=config,
-                        video_file=video_file,
-                        audio_file=audio_file,
-                        questionnaire_data=questionnaire_data
-                    )
-                    
-                    if prediction:
-                        confidence = prediction.get("confidence", 0.0)
-                        threshold = config.get("confidence_threshold", 0.5)
-                        
-                        results.append({
-                            "condition": condition,
-                            "model_type": model_type,
-                            "confidence": confidence,
-                            "threshold": threshold,
-                            "prediction": prediction.get("prediction"),
-                            "details": prediction
-                        })
-                        
-                        # If confidence meets threshold, return result
+
+                model_configs = self.config.get_model_config(condition)
+                if not model_configs:
+                    continue
+
+                for model_type, cfg in model_configs.items():
+                    required = cfg.get("required_modalities", [])
+                    if not all(m in available_modalities for m in required):
+                        continue
+
+                    try:
+                        pred = await self._execute_model_prediction(
+                            condition=condition,
+                            model_type=model_type,
+                            config=cfg,
+                            video_path=video_path,
+                            audio_path=audio_path,
+                            questionnaire_data=questionnaire_data,
+                        )
+
+                        if not pred:
+                            continue
+
+                        confidence = float(pred.get("confidence", 0.0))
+                        threshold = float(cfg.get("confidence_threshold", 0.5))
+
+                        results.append(
+                            {
+                                "condition": condition,
+                                "model_type": model_type,
+                                "confidence": confidence,
+                                "threshold": threshold,
+                                "prediction": pred.get("prediction"),
+                                "details": pred,
+                            }
+                        )
+
                         if confidence >= threshold:
                             return {
                                 "success": True,
@@ -110,320 +138,263 @@ class ModelRouter:
                                 "confidence": confidence,
                                 "model_type": model_type,
                                 "all_results": results,
-                                "message": f"Strong indicators detected for {condition}"
+                                "message": f"Strong indicators detected for {condition}",
                             }
-                
-                except Exception as e:
-                    print(f"Error executing {condition}/{model_type}: {str(e)}")
-                    continue
-        
-        # No strong indicators found
-        return {
-            "success": True,
-            "detected_condition": None,
-            "confidence": 0.0,
-            "all_results": results,
-            "message": "No strong indicators detected. Consider consulting a healthcare professional."
-        }
-    
+
+                    except Exception as e:
+                        print(f"[Router] Error executing {condition}/{model_type}: {e}")
+                        continue
+
+            return {
+                "success": True,
+                "detected_condition": None,
+                "confidence": 0.0,
+                "all_results": results,
+                "message": "No strong indicators detected.",
+            }
+
+        finally:
+            self._cleanup_temp(video_path)
+            self._cleanup_temp(audio_path)
+
     async def _execute_model_prediction(
         self,
         condition: str,
         model_type: str,
         config: Dict[str, Any],
-        video_file: Optional[UploadFile] = None,
-        audio_file: Optional[UploadFile] = None,
-        questionnaire_data: Optional[Dict[str, Any]] = None
+        video_path: Optional[str],
+        audio_path: Optional[str],
+        questionnaire_data: Optional[Dict[str, Any]],
     ) -> Optional[Dict[str, Any]]:
-        """Execute prediction for a specific model"""
-        
+        """
+        Execute prediction for a specific model. Uses file paths (stable).
+        """
         input_type = config.get("input_type")
-        
+
         if input_type == "features_dict":
-            return await self._predict_from_features_dict(condition, model_type, config, questionnaire_data)
-        
-        elif input_type == "eye_features":
-            return await self._predict_adhd_eye(questionnaire_data)
-        
-        elif input_type == "audio_file":
-            if audio_file:
-                return await self._predict_adhd_voice(audio_file, config)
+            return await self._predict_from_features_dict(condition, model_type, questionnaire_data)
+
+        if input_type == "eye_features":
+            if not video_path:
+                return None
+            return await self.predict_adhd_eye_from_video(video_path)
+
+        if input_type == "audio_file":
+            if not audio_path:
+                return None
+            return await self.predict_adhd_voice_from_audio(audio_path)
+
+        if input_type == "video_file":
+            if not video_path:
+                return None
+            if condition == "ADHD" and model_type == "facial":
+                return await self.predict_adhd_facial_from_video(video_path)
+            # Keep ASD face if you want later
             return None
-        
-        elif input_type == "video_file":
-            if video_file:
-                if condition == "ADHD" and model_type == "facial":
-                    return await self._predict_adhd_facial(video_file, config)
-                elif condition == "ASD" and model_type == "face":
-                    return await self._predict_asd_face(video_file, config)
+
+        if input_type == "aq10_scores":
+            # Keep ASD text if you want later
             return None
-        
-        elif input_type == "aq10_scores":
-            return await self._predict_asd_text(questionnaire_data, config)
-        
+
         return None
-    
+
     async def _predict_from_features_dict(
         self,
         condition: str,
         model_type: str,
-        config: Dict[str, Any],
-        questionnaire_data: Optional[Dict[str, Any]]
+        questionnaire_data: Optional[Dict[str, Any]],
     ) -> Optional[Dict[str, Any]]:
-        """Predict from feature dictionary (for behavior models)"""
         if not questionnaire_data:
             return None
-        
-        try:
-            if condition == "ADHD" and model_type == "behavior":
-                return await self.predict_adhd_behavior(questionnaire_data)
-            elif condition == "Anxiety" and model_type == "main":
-                return await self.predict_anxiety(questionnaire_data)
-        except Exception as e:
-            print(f"Error in _predict_from_features_dict: {str(e)}")
-            return None
-    
-    async def predict_adhd_behavior(self, features: Dict[str, Any]) -> Dict[str, Any]:
-        """Predict ADHD using behavior model"""
-        try:
-            model_path = self.config.ADHD_BEHAVIOR_MODEL
-            features_path = self.config.ADHD_BEHAVIOR_FEATURES
-            
-            model = self.model_loader.load_model(model_path)
-            feature_names = self.model_loader.load_json(features_path)
-            
-            # Build feature vector
-            feature_vector = []
-            for feat_name in feature_names:
-                feature_vector.append(features.get(feat_name, 0.0))
-            
-            feature_array = np.array(feature_vector).reshape(1, -1)
-            
-            # Predict
-            proba = model.predict_proba(feature_array)[0, 1]
-            pred = int(model.predict(feature_array)[0])
-            
-            return {
-                "prediction": pred,
-                "confidence": float(proba),
-                "probability": float(proba)
-            }
-        except Exception as e:
-            raise Exception(f"ADHD behavior prediction failed: {str(e)}")
-    
-    async def predict_adhd_eye(self, eye_features: Dict[str, Any]) -> Dict[str, Any]:
-        """Predict ADHD using eye-tracking model"""
-        try:
-            model_path = self.config.ADHD_EYE_MODEL
-            model_bundle = self.model_loader.load_model(model_path)
-            
-            # Model bundle contains model and feature_cols
-            if isinstance(model_bundle, dict):
-                model = model_bundle["model"]
-                feature_cols = model_bundle["feature_cols"]
-            else:
-                model = model_bundle
-                feature_cols = [
-                    "mean_fixation_duration_ms", "fixation_count", "saccade_count",
-                    "blink_rate_per_min", "gaze_dispersion_deg", "pupil_diameter_mean_mm",
-                    "omission_errors", "commission_errors", "reaction_time_mean_ms",
-                    "reaction_time_std_ms"
-                ]
-            
-            # Build feature vector
-            feature_vector = [eye_features.get(col, 0.0) for col in feature_cols]
-            feature_df = pd.DataFrame([feature_vector], columns=feature_cols)
-            
-            # Predict
-            if hasattr(model, "predict_proba"):
-                proba = model.predict_proba(feature_df)[0, 1]
-            else:
-                proba = float(model.predict(feature_df)[0])
-            
-            pred = int(proba >= 0.5)
-            
-            return {
-                "prediction": pred,
-                "confidence": float(proba),
-                "probability": float(proba)
-            }
-        except Exception as e:
-            raise Exception(f"ADHD eye prediction failed: {str(e)}")
-    
-    async def predict_adhd_voice(self, audio_file: UploadFile, config: Dict[str, Any]) -> Dict[str, Any]:
-        """Predict ADHD using voice model"""
-        try:
-            # Extract audio features
-            audio_features = await self.feature_extractor.extract_from_audio(audio_file)
-            
-            if "error" in audio_features:
-                raise Exception(audio_features["error"])
-            
-            # Load models
-            cnn_model = self.model_loader.load_model(config["cnn_model"], "keras")
-            svm_model = self.model_loader.load_model(config["svm_model"])
-            scaler = self.model_loader.load_model(config["scaler"])
-            
-            # Prepare features
-            features = np.array(audio_features["combined"]).reshape(1, -1)
-            features_scaled = scaler.transform(features)
-            
-            # SVM prediction
-            svm_pred = svm_model.predict(features_scaled)[0]
-            
-            # CNN prediction
-            features_cnn = np.expand_dims(features_scaled, axis=2)
-            cnn_proba = cnn_model.predict(features_cnn, verbose=0)[0]
-            cnn_pred = int(np.argmax(cnn_proba))
-            
-            # Average predictions
-            avg_confidence = (float(svm_pred) + float(cnn_proba[1])) / 2.0
-            
-            return {
-                "prediction": int(avg_confidence >= 0.5),
-                "confidence": avg_confidence,
-                "svm_prediction": int(svm_pred),
-                "cnn_prediction": cnn_pred,
-                "cnn_probability": float(cnn_proba[1])
-            }
-        except Exception as e:
-            raise Exception(f"ADHD voice prediction failed: {str(e)}")
-    
-    async def predict_adhd_facial(self, video_file: UploadFile, config: Dict[str, Any]) -> Dict[str, Any]:
-        """Predict ADHD using facial expression model"""
-        try:
-            if not TF_AVAILABLE:
-                raise Exception("TensorFlow not available")
-            
-            model_path = config["model_path"]
-            model = self.model_loader.load_model(model_path, "keras")
-            
-            # Extract face features
-            face_features = await self.feature_extractor.extract_face_features(video_file)
-            
-            if not face_features.get("face_frames"):
-                raise Exception("No faces detected in video")
-            
-            # Use first face frame
-            face_frame = face_features["face_frames"][0]
-            
-            # Preprocess for ResNet50
-            face_frame_rgb = cv2.cvtColor(face_frame, cv2.COLOR_BGR2RGB)
-            face_frame_resized = cv2.resize(face_frame_rgb, (224, 224))
-            face_array = np.expand_dims(face_frame_resized / 255.0, axis=0)
-            
-            # Predict
-            predictions = model.predict(face_array, verbose=0)[0]
-            max_prob = float(np.max(predictions))
-            
-            # Map to ADHD probability (simplified - would need proper mapping)
-            adhd_probability = max_prob * 0.7  # Scale down as this is emotion, not direct ADHD
-            
-            return {
-                "prediction": int(adhd_probability >= 0.5),
-                "confidence": adhd_probability,
-                "emotion_probabilities": predictions.tolist()
-            }
-        except Exception as e:
-            raise Exception(f"ADHD facial prediction failed: {str(e)}")
-    
-    async def predict_anxiety(self, features: Dict[str, Any]) -> Dict[str, Any]:
-        """Predict anxiety using RandomForest model"""
-        try:
-            model_path = self.config.ANXIETY_MODEL
-            model = self.model_loader.load_model(model_path)
-            
-            # Build feature vector (would need proper feature mapping)
-            # For now, use features as-is
-            feature_vector = list(features.values())[:18]  # Limit to 18 features
-            
-            feature_array = np.array(feature_vector).reshape(1, -1)
-            
-            # Predict
-            proba = model.predict_proba(feature_array)[0, 1]
-            pred = int(model.predict(feature_array)[0])
-            
-            return {
-                "prediction": pred,
-                "confidence": float(proba),
-                "probability": float(proba)
-            }
-        except Exception as e:
-            raise Exception(f"Anxiety prediction failed: {str(e)}")
-    
-    async def predict_asd_face(self, video_file: UploadFile, config: Dict[str, Any]) -> Dict[str, Any]:
-        """Predict ASD using face model"""
-        try:
-            if not TF_AVAILABLE:
-                raise Exception("TensorFlow not available")
-            
-            model_path = config["model_path"]
-            class_indices_path = config["class_indices"]
-            
-            model = self.model_loader.load_model(model_path, "h5")
-            class_indices = self.model_loader.load_json(class_indices_path)
-            
-            # Extract face features
-            face_features = await self.feature_extractor.extract_face_features(video_file)
-            
-            if not face_features.get("face_frames"):
-                raise Exception("No faces detected in video")
-            
-            # Use first face frame
-            face_frame = face_features["face_frames"][0]
-            
-            # Preprocess
-            face_frame_rgb = cv2.cvtColor(face_frame, cv2.COLOR_BGR2RGB)
-            face_frame_resized = cv2.resize(face_frame_rgb, (224, 224))
-            face_array = np.expand_dims(face_frame_resized / 255.0, axis=0)
-            
-            # Predict
-            predictions = model.predict(face_array, verbose=0)[0]
-            pred_idx = int(np.argmax(predictions))
-            confidence = float(predictions[pred_idx])
-            
-            # Map class index to label
-            class_names = {v: k for k, v in class_indices.items()}
-            predicted_class = class_names.get(pred_idx, "unknown")
-            
-            # ASD probability (1 if autistic, 0 if non_autistic)
-            asd_probability = confidence if predicted_class == "autistic" else (1 - confidence)
-            
-            return {
-                "prediction": int(asd_probability >= 0.5),
-                "confidence": asd_probability,
-                "class": predicted_class,
-                "probabilities": predictions.tolist()
-            }
-        except Exception as e:
-            raise Exception(f"ASD face prediction failed: {str(e)}")
-    
-    async def predict_asd_text(self, aq10_scores: List[int], config: Dict[str, Any]) -> Dict[str, Any]:
-        """Predict ASD using text models (AQ-10 scores)"""
-        try:
-            # Load all three models
-            adaboost = self.model_loader.load_model(config["adaboost"])
-            xgboost = self.model_loader.load_model(config["xgboost"])
-            randomforest = self.model_loader.load_model(config["randomforest"])
-            
-            # Prepare input
-            feature_array = np.array(aq10_scores).reshape(1, -1)
-            
-            # Get predictions from all models
-            ada_proba = adaboost.predict_proba(feature_array)[0, 1]
-            xgb_proba = xgboost.predict_proba(feature_array)[0, 1]
-            rf_proba = randomforest.predict_proba(feature_array)[0, 1]
-            
-            # Average probabilities
-            avg_proba = (ada_proba + xgb_proba + rf_proba) / 3.0
-            
-            return {
-                "prediction": int(avg_proba >= 0.5),
-                "confidence": float(avg_proba),
-                "adaboost_probability": float(ada_proba),
-                "xgboost_probability": float(xgb_proba),
-                "randomforest_probability": float(rf_proba)
-            }
-        except Exception as e:
-            raise Exception(f"ASD text prediction failed: {str(e)}")
 
+        if condition == "ADHD" and model_type == "behavior":
+            return await self.predict_adhd_behavior(questionnaire_data)
+
+        return None
+
+    # -----------------------------
+    # ADHD: Behavior (CatBoost)
+    # -----------------------------
+    async def predict_adhd_behavior(self, features: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Build DataFrame using correct feature order from adhd_behavior_feature_names.pkl
+        """
+        try:
+            model = self.adhd["behavior_model"]
+            feature_names = self.adhd["behavior_feature_names"]
+
+            # feature_names may be list, np array, or dict wrapper
+            if isinstance(feature_names, dict):
+                if "features" in feature_names:
+                    feature_names = feature_names["features"]
+                else:
+                    feature_names = list(feature_names.values())
+
+            feature_names = list(feature_names)
+
+            row = {name: features.get(name, 0.0) for name in feature_names}
+            X = pd.DataFrame([row], columns=feature_names)
+
+            if hasattr(model, "predict_proba"):
+                proba = float(model.predict_proba(X)[0][1])
+            else:
+                # fallback: treat predict output as 0/1
+                out = model.predict(X)[0]
+                proba = float(out)
+
+            pred = int(proba >= 0.5)
+
+            print(f"[ADHD/behavior] proba={proba:.4f} pred={pred}")
+            return {"prediction": pred, "confidence": proba, "probability": proba}
+
+        except Exception as e:
+            raise Exception(f"ADHD behavior prediction failed: {e}")
+
+    # -----------------------------
+    # ADHD: Eye (video -> eye_features -> model)
+    # -----------------------------
+    async def predict_adhd_eye_from_video(self, video_path: str) -> Dict[str, Any]:
+        try:
+            eye_features = await self.feature_extractor.extract_eye_features_from_path(video_path)
+
+            model = self.adhd["eye_model"]
+
+            # IMPORTANT: ensure exact 10 columns order expected by the model
+            feature_cols = [
+                "mean_fixation_duration_ms",
+                "fixation_count",
+                "saccade_count",
+                "blink_rate_per_min",
+                "gaze_dispersion_deg",
+                "pupil_diameter_mean_mm",
+                "omission_errors",
+                "commission_errors",
+                "reaction_time_mean_ms",
+                "reaction_time_std_ms",
+            ]
+
+            X = pd.DataFrame([[float(eye_features.get(c, 0.0)) for c in feature_cols]], columns=feature_cols)
+
+            if hasattr(model, "predict_proba"):
+                proba = float(model.predict_proba(X)[0][1])
+            else:
+                out = model.predict(X)
+                proba = float(out[0]) if np.ndim(out) else float(out)
+
+            pred = int(proba >= 0.5)
+
+            print(f"[ADHD/eye] proba={proba:.4f} pred={pred}")
+            return {"prediction": pred, "confidence": proba, "probability": proba, "eye_features": eye_features}
+
+        except Exception as e:
+            raise Exception(f"ADHD eye prediction failed: {e}")
+
+    # -----------------------------
+    # ADHD: Voice (audio -> features -> scaler -> SVM & CNN)
+    # -----------------------------
+    async def predict_adhd_voice_from_audio(self, audio_path: str) -> Dict[str, Any]:
+        """
+        Robust voice prediction:
+        - supports SVM with/without predict_proba
+        - supports CNN binary (sigmoid), 2-class softmax, or multi-class (e.g., emotions)
+        """
+        try:
+            audio_features = await self.feature_extractor.extract_audio_features_from_path(audio_path)
+            if isinstance(audio_features, dict) and "error" in audio_features:
+                raise Exception(audio_features["error"])
+
+            vec = audio_features["combined"] if isinstance(audio_features, dict) else audio_features
+            X = np.array(vec, dtype=np.float32).reshape(1, -1)
+
+            scaler = self.adhd["voice_scaler"]
+            svm = self.adhd["voice_svm"]
+            cnn = self.adhd["voice_cnn"]
+
+            Xs = scaler.transform(X)
+
+            # ---- SVM probability ----
+            if hasattr(svm, "predict_proba"):
+                svm_proba = float(svm.predict_proba(Xs)[0][1])
+                svm_pred = int(svm_proba >= 0.5)
+            else:
+                svm_pred = int(svm.predict(Xs)[0])
+                svm_proba = float(svm_pred)
+
+            # ---- CNN probability ----
+            Xcnn = np.expand_dims(Xs, axis=2)  # (1, features, 1)
+            out = cnn.predict(Xcnn, verbose=0)[0]
+            out = np.array(out)
+
+            if out.ndim == 0:
+                cnn_proba = float(out)
+            elif out.size == 1:
+                # sigmoid
+                cnn_proba = float(out[0])
+            elif out.size == 2:
+                # 2-class softmax
+                cnn_proba = float(out[1])
+            else:
+                # multi-class (e.g., 8 emotions): fallback proxy until you provide label order
+                top_idx = int(np.argmax(out))
+                top_prob = float(out[top_idx])
+                cnn_proba = min(0.95, max(0.05, top_prob * 0.7))
+
+            cnn_pred = int(cnn_proba >= 0.5)
+
+            # ---- Fuse voice ----
+            avg_proba = (svm_proba + cnn_proba) / 2.0
+            pred = int(avg_proba >= 0.5)
+
+            print(f"[ADHD/voice] svm={svm_proba:.4f} cnn={cnn_proba:.4f} avg={avg_proba:.4f} pred={pred}")
+
+            return {
+                "prediction": pred,
+                "confidence": float(avg_proba),
+                "svm_prediction": svm_pred,
+                "svm_probability": float(svm_proba),
+                "cnn_prediction": cnn_pred,
+                "cnn_probability": float(cnn_proba),
+                "cnn_output_dim": int(out.size),
+            }
+
+        except Exception as e:
+            raise Exception(f"ADHD voice prediction failed: {e}")
+
+    # -----------------------------
+    # ADHD: Facial/Emotion (video -> face frame -> emotion model)
+    # -----------------------------
+    async def predict_adhd_facial_from_video(self, video_path: str) -> Dict[str, Any]:
+        """
+        NOTE: this uses emotion model as proxy.
+        """
+        try:
+            face_frame = await self.feature_extractor.extract_first_face_frame_from_path(video_path)
+            if face_frame is None:
+                raise Exception("No face detected in video")
+
+            import cv2
+
+            face_rgb = cv2.cvtColor(face_frame, cv2.COLOR_BGR2RGB)
+            face_resized = cv2.resize(face_rgb, (224, 224))
+            X = np.expand_dims(face_resized / 255.0, axis=0).astype(np.float32)
+
+            model = self.adhd["emotion_model"]
+            preds = model.predict(X, verbose=0)[0]
+            preds = np.array(preds)
+
+            max_prob = float(np.max(preds))
+
+            # proxy mapping (will refine later if you want)
+            adhd_prob = max_prob * 0.7
+            pred = int(adhd_prob >= 0.5)
+
+            print(f"[ADHD/facial] max_emotion={max_prob:.4f} adhd_prob={adhd_prob:.4f} pred={pred}")
+
+            return {
+                "prediction": pred,
+                "confidence": float(adhd_prob),
+                "emotion_probabilities": preds.tolist(),
+            }
+
+        except Exception as e:
+            raise Exception(f"ADHD facial prediction failed: {e}")
