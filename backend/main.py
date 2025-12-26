@@ -23,7 +23,20 @@ from services.model_router import ModelRouter
 from services.feature_extractor import FeatureExtractor
 from services.adhd_fusion import ADHDFusion
 from services.model_loader import ModelLoader
+from services.model_loader import ModelLoader
 from config.model_config import ModelConfig
+from pydantic import BaseModel, Field, HttpUrl
+
+# -------------------------
+# Request models (contracts)
+# -------------------------
+
+class ASDTextRequest(BaseModel):
+    answers: List[int] = Field(..., min_length=10, max_length=10)
+
+
+class ASDFaceUrlRequest(BaseModel):
+    image_url: HttpUrl
 
 
 app = FastAPI(title="Mental Health Screening API")
@@ -152,6 +165,51 @@ async def run_screening(
         raise HTTPException(status_code=400, detail=f"Invalid JSON in form fields: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Screening failed: {str(e)}")
+
+
+# -------------------------
+# ASD - REQUIRED PIPELINE ENDPOINTS
+# -------------------------
+
+@app.post("/asd/text/predict")
+async def asd_text_predict(payload: ASDTextRequest):
+    """
+    AQ-10 answers -> ASD Text model -> Autism / Non-Autism
+    """
+    try:
+        config = model_config.get_model_config("ASD", "text")
+        if not config:
+            raise HTTPException(status_code=500, detail="ASD text model config not found")
+
+        result = await model_router.predict_asd_text({"answers": payload.answers}, config)
+        return {"success": True, "prediction": result}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/asd/face/predict-url")
+async def asd_face_predict_url(payload: ASDFaceUrlRequest):
+    """
+    image_url -> face crop (224x224) -> ASD Face TF model (.h5) -> Autism/Non-Autism + confidence
+    """
+    try:
+        config = model_config.get_model_config("ASD", "face_url")
+        if not config:
+            raise HTTPException(status_code=500, detail="ASD face_url config not found")
+
+        # Note: 'predict_asd_face_from_image_url_tf' needs to be in ModelRouter
+        # If not present in ADHD app's ModelRouter, we might need to add it or use an equivalent.
+        # Assuming for now it is present or will be available.
+        result = model_router.predict_asd_face_from_image_url_tf(str(payload.image_url), config)
+        return {"success": True, "prediction": result}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # -------------------------

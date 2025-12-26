@@ -7,7 +7,7 @@
 ## Step 2: Navigate to Backend Directory
 
 ```powershell
-cd "E:\Graduation project\backend"
+cd backend
 ```
 
 ## Step 3: Activate Virtual Environment

@@ -30,6 +30,141 @@ class ModelRouter:
         except Exception as e:
             print(f"[ModelRouter] WARNING: ADHD bundle not loaded: {e}")
 
+    # =========================================================
+    # ASD TEXT (AQ-10)
+    # =========================================================
+    async def predict_asd_text(self, questionnaire_data: Any, config: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Predict ASD from AQ-10 answers.
+        - Accepts: {"answers":[...10...]} OR a raw list of 10 numbers
+        - Loads available models from config keys: adaboost, xgboost, randomforest
+        - Majority vote for prediction + average probability for confidence
+        Returns Flutter-friendly output: "Autism"/"Non-Autism"
+        """
+        # Normalize input
+        if isinstance(questionnaire_data, dict):
+            answers = questionnaire_data.get("answers")
+        else:
+            answers = questionnaire_data
+
+        if answers is None:
+            raise ValueError("AQ-10 answers are required (expected key: 'answers').")
+
+        if not isinstance(answers, (list, tuple)) or len(answers) != 10:
+            raise ValueError("AQ-10 answers must be a list of length 10.")
+
+        X = np.array(answers, dtype=np.float32).reshape(1, -1)
+
+        loaded_models: List[tuple[str, Any]] = []
+        for model_name in ["adaboost", "xgboost", "randomforest"]:
+            model_path = config.get(model_name)
+            if not model_path:
+                continue
+            try:
+                model = self.model_loader.load_model(model_path, "joblib")
+                loaded_models.append((model_name, model))
+            except Exception:
+                # ignore missing/broken models so deployment can still work with remaining ones
+                continue
+
+        if not loaded_models:
+            raise RuntimeError("No ASD text models could be loaded. Check model paths in ModelConfig.")
+
+        preds: List[int] = []
+        probs: List[float] = []
+
+        for name, model in loaded_models:
+            # prediction
+            pred = int(model.predict(X)[0])
+            preds.append(pred)
+
+            # probability (if available)
+            if hasattr(model, "predict_proba"):
+                proba = float(model.predict_proba(X)[0][1])
+            else:
+                # fallback: treat pred as probability-like
+                proba = float(pred)
+            probs.append(proba)
+
+        final_prediction_int = 1 if sum(preds) >= (len(preds) / 2.0) else 0
+        final_confidence = float(sum(probs) / len(probs))
+
+        return {
+            "prediction": "Autism" if final_prediction_int == 1 else "Non-Autism",
+            "confidence": round(final_confidence, 3),
+            "models_used": [n for n, _ in loaded_models],
+        }
+
+    # =========================================================
+    # ASD FACE from IMAGE URL
+    # =========================================================
+    def predict_asd_face_from_image_url_tf(self, image_url: str, config: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Predict ASD from a single image URL using TF/Keras model (.h5).
+        Expects config:
+          - model_path: path to .h5
+          - class_indices: path to class_indices.json
+          - confidence_threshold (optional, default 0.5)
+        """
+        # Optional TensorFlow/Keras Check
+        try:
+            from tensorflow import keras
+            TF_AVAILABLE = True
+        except ImportError:
+            TF_AVAILABLE = False
+            keras = None
+
+        if not TF_AVAILABLE:
+            raise RuntimeError("TensorFlow is not available, cannot run ASD TF face model.")
+
+        model_path = config.get("model_path")
+        class_indices_path = config.get("class_indices")
+
+        if not model_path or not class_indices_path:
+            raise ValueError("ASD face_url config must include model_path (.h5) and class_indices (.json).")
+
+        threshold = float(config.get("confidence_threshold", 0.5))
+
+        # 1) Get face crop (224x224 RGB) + bbox
+        fx = self.feature_extractor.extract_face_crop_224_from_url(image_url)
+        if fx.get("face_rgb") is None:
+            return {
+                "prediction": "Non-Autism",
+                "confidence": 0.0,
+                "face_detected": False,
+                "faces_count": int(fx.get("faces_count", 0)),
+                "bbox": fx.get("bbox"),
+                "error": fx.get("error", "No face detected"),
+            }
+
+        face_rgb = fx["face_rgb"]  # np.ndarray (224,224,3) RGB
+
+        # 2) Load TF model correctly (keras, not joblib)
+        model = self.model_loader.load_model(model_path, "keras")
+        class_indices = self.model_loader.load_json(class_indices_path)
+        class_names = {v: k for k, v in class_indices.items()}
+
+        # 3) Predict
+        x = np.expand_dims(face_rgb.astype("float32") / 255.0, axis=0)
+        preds = model.predict(x, verbose=0)[0]
+        pred_idx = int(np.argmax(preds))
+        pred_conf = float(preds[pred_idx])
+        predicted_class = class_names.get(pred_idx, "unknown")
+
+        # Convert to autism probability
+        autism_prob = pred_conf if predicted_class == "autistic" else (1.0 - pred_conf)
+        label = "Autism" if autism_prob >= threshold else "Non-Autism"
+
+        return {
+            "prediction": label,
+            "confidence": round(float(autism_prob), 3),
+            "face_detected": True,
+            "faces_count": int(fx.get("faces_count", 1)),
+            "bbox": fx.get("bbox"),
+            "threshold": threshold,
+            "class": predicted_class,
+        }
+
 
     # -----------------------------
     # Helpers: safe temp file save

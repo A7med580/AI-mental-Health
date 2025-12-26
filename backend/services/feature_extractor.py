@@ -14,6 +14,7 @@ import numpy as np
 import librosa
 import tempfile
 import subprocess
+import urllib.request
 from typing import Dict, List, Any, Optional
 from fastapi import UploadFile
 
@@ -124,6 +125,47 @@ class FeatureExtractor:
         if face_data.get("face_frames"):
             return face_data["face_frames"][0]
         return None
+
+    def extract_face_crop_224_from_url(self, image_url: str) -> Dict[str, Any]:
+        """
+        Download image from URL, detect face, crop to 224x224 RGB.
+        Returns dict with "face_rgb" (np array) and metadata.
+        """
+        try:
+            # 1. Download image
+            resp = urllib.request.urlopen(image_url)
+            image_bytes = np.asarray(bytearray(resp.read()), dtype="uint8")
+            image = cv2.imdecode(image_bytes, cv2.IMREAD_COLOR)
+
+            if image is None:
+                return {"error": "Could not decode image from URL"}
+
+            # 2. Detect face
+            face_cascade = cv2.CascadeClassifier(
+                cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+            )
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            faces = face_cascade.detectMultiScale(gray, 1.1, 4)
+
+            if len(faces) == 0:
+                return {"error": "No face detected in image", "faces_count": 0}
+
+            # 3. Crop first face
+            (x, y, w, h) = faces[0]
+            face_roi = image[y:y+h, x:x+w]
+            face_resized = cv2.resize(face_roi, (224, 224))
+            
+            # Convert BGR to RGB (TF models usually expect RGB)
+            face_rgb = cv2.cvtColor(face_resized, cv2.COLOR_BGR2RGB)
+
+            return {
+                "face_rgb": face_rgb,
+                "faces_count": len(faces),
+                "bbox": [int(x), int(y), int(w), int(h)]
+            }
+
+        except Exception as e:
+            return {"error": f"Error processing image url: {str(e)}"}
 
     # -----------------------------
     # Core extractors

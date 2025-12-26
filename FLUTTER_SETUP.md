@@ -9,7 +9,7 @@ Red underlines appear on `import 'package:flutter/material.dart';` and other Flu
 
 1. **Close the current project** (if open)
 2. **File → Open** (not "Open Recent")
-3. Navigate to: `e:\Graduation project\Mindfull_App-master\Mindfull_App-master`
+3. Navigate to: `frontend`
 4. Select the folder and click **Open**
 5. Android Studio should detect it as a Flutter project
 6. Wait for indexing to complete
@@ -32,7 +32,7 @@ Red underlines appear on `import 'package:flutter/material.dart';` and other Flu
 
 1. Install **Flutter** extension in VS Code
 2. Install **Dart** extension in VS Code
-3. Open the folder: `e:\Graduation project\Mindfull_App-master\Mindfull_App-master`
+3. Open the folder: `frontend`
 4. VS Code should auto-detect Flutter project
 5. Run: `flutter pub get` in terminal
 
@@ -41,7 +41,7 @@ Red underlines appear on `import 'package:flutter/material.dart';` and other Flu
 Run these commands in the Flutter project directory:
 
 ```bash
-cd "e:\Graduation project\Mindfull_App-master\Mindfull_App-master"
+cd frontend
 flutter clean
 flutter pub get
 flutter pub upgrade

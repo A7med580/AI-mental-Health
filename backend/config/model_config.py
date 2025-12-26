@@ -95,6 +95,13 @@ class ModelConfig:
                 "confidence_threshold": 0.75,
                 "input_type": "video_file",
             },
+            "face_url": {
+                "model_path": ASD_FACE_MODEL,
+                "class_indices": ASD_FACE_CLASSES,
+                "required_modalities": ["image_url"],
+                "confidence_threshold": 0.75,
+                "input_type": "image_url_tf",
+            },
             "text": {
                 "adaboost": ASD_TEXT_ADABOOST,
                 "xgboost": ASD_TEXT_XGBOOST,
