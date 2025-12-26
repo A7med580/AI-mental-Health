@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyDPi0x52uaqSILanykC5vFP9i5bFjH3kCI</string>
+	<key>GCM_SENDER_ID</key>
+	<string>1017960991532</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>zkh.zeyadkh.mindful</string>
+	<key>PROJECT_ID</key>
+	<string>mindfull-app-1d0ee</string>
+	<key>STORAGE_BUCKET</key>
+	<string>mindfull-app-1d0ee.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:1017960991532:ios:59be633ae159ca683a3a89</string>
+</dict>
+</plist>
