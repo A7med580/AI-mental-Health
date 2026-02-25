@@ -20,10 +20,11 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
   final ModelService _modelService = ModelService();
 
   int _currentQuestionIndex = 0;
-  final Map<int, bool> _answers = {}; // question_index -> answer (true = Yes, false = No)
+  final Map<int, bool> _answers = {};
   bool _isSubmitting = false;
 
   final List<String> _questions = const [
+    "Do you find it difficult to understand what others are feeling by looking at their faces?",
     "Do you often notice small sounds that other people do not notice?",
     "Do you usually focus more on the big picture rather than small details?",
     "Do you find it easy to do more than one thing at the same time?",
@@ -31,7 +32,6 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
     "Do you find it easy to understand hidden meanings or read between the lines when someone is talking to you?",
     "Can you easily tell when the person you are talking to is getting bored?",
     "When you read a story, do you find it easy to imagine what the characters look like?",
-    "Do you find it easy to understand what someone is thinking or feeling just by looking at their face?",
     "Do you find social situations easy to handle?",
     "Are you fascinated by dates, numbers, or patterns?",
   ];
@@ -62,6 +62,8 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
     return answers;
   }
 
+  // ─── Submission logic (UNCHANGED) ─────────────────────────────────────
+
   Future<void> _submitQuestionnaire() async {
     if (_answers.length != _questions.length) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -74,14 +76,11 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
 
     try {
       final answers = _buildAnswersList();
-
       final response = await _modelService.predictASDText(answers);
 
       if (!mounted) return;
       setState(() => _isSubmitting = false);
 
-      // Expected backend response:
-      // { "success": true, "prediction": { "prediction": "Autism"/"Non-Autism", "confidence": 0.xx, ... } }
       final predictionObj = (response['prediction'] is Map<String, dynamic>)
           ? (response['prediction'] as Map<String, dynamic>)
           : response;
@@ -91,7 +90,6 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
           ? (predictionObj['confidence'] as num).toDouble()
           : 0.0;
 
-      // Use backend threshold if present, otherwise 0.80 (your config)
       final double threshold = (predictionObj['threshold'] is num)
           ? (predictionObj['threshold'] as num).toDouble()
           : 0.80;
@@ -161,6 +159,7 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
       builder: (_) => AlertDialog(
         title: Text(title, style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
         content: SingleChildScrollView(child: Text(message, style: GoogleFonts.inter())),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK')),
           TextButton(
@@ -175,66 +174,149 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
     );
   }
 
+  // ─── UI ──────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
+    final progress = (_currentQuestionIndex + 1) / _questions.length;
+    final percent = (progress * 100).round();
+
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'Autism Screening',
-          style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
-        ),
-      ),
-      body: _isSubmitting
-          ? const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: _isSubmitting
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 48,
+                      height: 48,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3,
+                        valueColor: AlwaysStoppedAnimation(AppColors.primaryPurple),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'Processing your answers...',
+                      style: GoogleFonts.inter(fontSize: 16, color: AppColors.textSecondary),
+                    ),
+                  ],
+                ),
+              )
+            : Column(
                 children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Processing your answers...'),
+                  // ── Header ──
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    child: Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            if (_currentQuestionIndex > 0) {
+                              _pageController.previousPage(
+                                duration: const Duration(milliseconds: 250),
+                                curve: Curves.easeInOut,
+                              );
+                            } else {
+                              Navigator.pop(context);
+                            }
+                          },
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: AppColors.cardWhite,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey[300]!),
+                            ),
+                            child: const Icon(Icons.arrow_back, size: 20, color: AppColors.textPrimary),
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          'Step 1 of 4',
+                          style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // ── Title ──
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Autism Screening - Questionnaire',
+                          style: GoogleFonts.inter(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Step 1 of 4: Answer these questions honestly',
+                          style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // ── Progress bar ──
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Question ${_currentQuestionIndex + 1} of ${_questions.length}',
+                              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.textSecondary),
+                            ),
+                            Text(
+                              '$percent%',
+                              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primaryPurple),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: LinearProgressIndicator(
+                            value: progress,
+                            minHeight: 8,
+                            backgroundColor: Colors.grey[200],
+                            valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryPurple),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // ── Questions ──
+                  Expanded(
+                    child: PageView.builder(
+                      controller: _pageController,
+                      physics: const NeverScrollableScrollPhysics(),
+                      onPageChanged: (index) => setState(() => _currentQuestionIndex = index),
+                      itemCount: _questions.length,
+                      itemBuilder: (context, index) => _buildQuestionPage(index),
+                    ),
+                  ),
                 ],
               ),
-            )
-          : Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  color: Colors.grey[50],
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: LinearProgressIndicator(
-                          value: (_currentQuestionIndex + 1) / _questions.length,
-                          backgroundColor: Colors.grey[200],
-                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Text(
-                        '${_currentQuestionIndex + 1}/${_questions.length}',
-                        style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[600]),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: PageView.builder(
-                    controller: _pageController,
-                    physics: const NeverScrollableScrollPhysics(),
-                    onPageChanged: (index) => setState(() => _currentQuestionIndex = index),
-                    itemCount: _questions.length,
-                    itemBuilder: (context, index) => _buildQuestionPage(index),
-                  ),
-                ),
-              ],
-            ),
+      ),
     );
   }
 
@@ -242,51 +324,132 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
     final question = _questions[index];
     final currentAnswer = _answers[index];
 
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 40),
-          Text(
-            question,
-            style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w600, color: Colors.black87, height: 1.4),
-          ),
-          const SizedBox(height: 60),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildAnswerOption(true, "Yes", currentAnswer == true),
-                const SizedBox(height: 16),
-                _buildAnswerOption(false, "No", currentAnswer == false),
+          // Question card
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: AppColors.cardWhite,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.15)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
               ],
             ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryPurple.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'Question ${index + 1}',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primaryPurple,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                Text(
+                  question,
+                  style: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Yes/No cards — side-by-side
+          Row(
+            children: [
+              Expanded(
+                child: _buildAnswerCard(true, 'Yes', currentAnswer == true),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildAnswerCard(false, 'No', currentAnswer == false),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildAnswerOption(bool value, String label, bool isSelected) {
+  Widget _buildAnswerCard(bool value, String label, bool isSelected) {
     return GestureDetector(
       onTap: () => _answerQuestion(value),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 32),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: isSelected ? AppColors.primary : Colors.grey[300]!, width: 2),
-        ),
-        child: Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 16,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-            color: isSelected ? Colors.white : Colors.black87,
+          color: isSelected ? AppColors.primaryPurple.withValues(alpha: 0.06) : AppColors.cardWhite,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryPurple : Colors.grey[300]!,
+            width: isSelected ? 2 : 1.5,
           ),
-          textAlign: TextAlign.center,
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.primaryPurple.withValues(alpha: 0.12),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [],
+        ),
+        child: Column(
+          children: [
+            // Radio circle
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isSelected ? AppColors.primaryPurple : Colors.transparent,
+                border: Border.all(
+                  color: isSelected ? AppColors.primaryPurple : Colors.grey[400]!,
+                  width: 2,
+                ),
+              ),
+              child: isSelected
+                  ? const Icon(Icons.check, color: Colors.white, size: 20)
+                  : null,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 18,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: isSelected ? AppColors.primaryPurple : AppColors.textPrimary,
+              ),
+            ),
+          ],
         ),
       ),
     );

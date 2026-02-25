@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:mindful/app_theme.dart';
 import 'package:mindful/resource_screen.dart';
 import 'package:mindful/splash_screen.dart';
 import 'package:mindful/login_page.dart';
 import 'package:mindful/register_page.dart';
-import 'package:mindful/chat_screen.dart';
+import 'package:mindful/dashboard_screen.dart';
 import 'package:mindful/face_detection.dart';
 import 'package:mindful/results_screen.dart';
 import 'package:mindful/screens/notifications_screen.dart';
@@ -25,17 +26,17 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'MindCare AI',
       debugShowCheckedModeBanner: false,
-
+      theme: AppTheme.lightTheme,
 
       initialRoute: '/splash',
-
 
       routes: {
         '/splash': (context) => const SplashScreen(),
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
-        '/chat': (context) => const MindfulAIScreen(),
+        '/chat': (context) => const DashboardScreen(),
         '/emotion': (context) => const EmotionDetectionScreen(),
         '/resources': (context) => const ResourcesScreen(),
         '/notifications': (context) => const NotificationsScreen(),

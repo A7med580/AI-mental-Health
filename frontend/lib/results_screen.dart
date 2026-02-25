@@ -20,238 +20,233 @@ class ResultsScreen extends StatelessWidget {
     final modelType = screeningResult['model_type'] ?? '';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'Screening Results',
-          style: GoogleFonts.inter(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+      backgroundColor: AppColors.background,
+      body: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Disclaimer Banner
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.orange.shade50,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.orange.shade300),
-              ),
+            // ── Header ──
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: Colors.orange.shade700),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'This is a screening tool, not a medical diagnosis. Please consult a healthcare professional for proper evaluation.',
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        color: Colors.orange.shade900,
-                        fontWeight: FontWeight.w500,
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.cardWhite,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[300]!),
                       ),
+                      child: const Icon(Icons.arrow_back, size: 20, color: AppColors.textPrimary),
                     ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Screening Results',
+                    style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
 
-            // Main Result Card
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  // Result Icon
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: detectedCondition != null
-                          ? Colors.orange.shade100
-                          : Colors.green.shade100,
-                    ),
-                    child: Icon(
-                      detectedCondition != null
-                          ? Icons.flag_outlined
-                          : Icons.check_circle_outline,
-                      size: 40,
-                      color: detectedCondition != null
-                          ? Colors.orange.shade700
-                          : Colors.green.shade700,
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Result Title
-                  Text(
-                    detectedCondition != null
-                        ? 'Indicators Detected'
-                        : 'No Strong Indicators',
-                    style: GoogleFonts.inter(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // Condition Name (if detected)
-                  if (detectedCondition != null) ...[
+            // ── Content ──
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  children: [
+                    // Disclaimer Banner
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
+                      padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: Colors.orange.shade50,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.orange.shade300),
+                        color: const Color(0xFFFFF7ED),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFFDBA74)),
                       ),
-                      child: Text(
-                        detectedCondition,
-                        style: GoogleFonts.inter(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.orange.shade900,
+                      child: Row(
+                        children: [
+                          const Icon(Icons.info_outline, color: Color(0xFFC2410C), size: 20),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'This is a screening tool, not a medical diagnosis. Please consult a healthcare professional.',
+                              style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF9A3412), fontWeight: FontWeight.w500),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Main Result Card
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(28),
+                      decoration: BoxDecoration(
+                        color: AppColors.cardWhite,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.06),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          // Result Icon
+                          Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: detectedCondition != null
+                                  ? const Color(0xFFFFF7ED)
+                                  : const Color(0xFFF0FDF4),
+                            ),
+                            child: Icon(
+                              detectedCondition != null
+                                  ? Icons.flag_outlined
+                                  : Icons.check_circle_outline,
+                              size: 40,
+                              color: detectedCondition != null
+                                  ? const Color(0xFFC2410C)
+                                  : const Color(0xFF16A34A),
+                            ),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          Text(
+                            detectedCondition != null
+                                ? 'Indicators Detected'
+                                : 'No Strong Indicators',
+                            style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          if (detectedCondition != null) ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryPurple.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.3)),
+                              ),
+                              child: Text(
+                                detectedCondition,
+                                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.primaryPurple),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+
+                          if (confidence > 0) ...[
+                            // Confidence bar
+                            Column(
+                              children: [
+                                Text(
+                                  'Confidence: ${(confidence * 100).toStringAsFixed(1)}%',
+                                  style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                                ),
+                                const SizedBox(height: 8),
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: LinearProgressIndicator(
+                                    value: confidence is double ? confidence : 0.0,
+                                    minHeight: 8,
+                                    backgroundColor: Colors.grey[200],
+                                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryPurple),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                          ],
+
+                          if (modelType.isNotEmpty) ...[
+                            Text(
+                              'Model: $modelType',
+                              style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+
+                          Text(
+                            message,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary, height: 1.5),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Detailed Results
+                    if (allResults != null && allResults!.isNotEmpty) ...[
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Detailed Results',
+                          style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ...allResults!.map((result) => _buildResultCard(result)),
+                    ],
+
+                    const SizedBox(height: 24),
+
+                    // Buttons
+                    SizedBox(
+                      width: double.infinity,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: AppColors.primaryGradient,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(14),
+                            onTap: () => Navigator.popUntil(context, (route) => route.isFirst),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              child: Center(
+                                child: Text('Return to Home', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                  ],
 
-                  // Confidence Score
-                  if (confidence > 0) ...[
-                    Text(
-                      'Confidence: ${(confidence * 100).toStringAsFixed(1)}%',
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        color: Colors.grey.shade700,
+                    const SizedBox(height: 12),
+
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pushNamed(context, '/resources'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primaryPurple,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          side: const BorderSide(color: AppColors.primaryPurple, width: 2),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                        child: Text('View Resources', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
                       ),
                     ),
-                    const SizedBox(height: 8),
+
+                    const SizedBox(height: 32),
                   ],
-
-                  // Model Type
-                  if (modelType.isNotEmpty) ...[
-                    Text(
-                      'Model: $modelType',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-
-                  // Message
-                  Text(
-                    message,
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
-                      fontSize: 15,
-                      color: Colors.black87,
-                      height: 1.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Detailed Results (if available)
-            if (allResults != null && allResults!.isNotEmpty) ...[
-              Text(
-                'Detailed Results',
-                style: GoogleFonts.inter(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 12),
-              ...allResults!.map((result) => _buildResultCard(result)),
-            ],
-
-            const SizedBox(height: 32),
-
-            // Action Buttons
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.popUntil(context, (route) => route.isFirst);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: Text(
-                  'Return to Home',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () {
-                  // Navigate to resources screen
-                  Navigator.pushNamed(context, '/resources');
-                },
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  side: BorderSide(color: AppColors.primary, width: 2),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: Text(
-                  'View Resources',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
                 ),
               ),
             ),
@@ -272,10 +267,10 @@ class ResultsScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.cardWhite,
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: metThreshold ? Colors.orange.shade300 : Colors.grey.shade300,
+          color: metThreshold ? AppColors.primaryPurple.withValues(alpha: 0.4) : Colors.grey[300]!,
           width: metThreshold ? 2 : 1,
         ),
       ),
@@ -283,7 +278,7 @@ class ResultsScreen extends StatelessWidget {
         children: [
           Icon(
             metThreshold ? Icons.flag : Icons.remove_circle_outline,
-            color: metThreshold ? Colors.orange.shade700 : Colors.grey.shade600,
+            color: metThreshold ? AppColors.primaryPurple : AppColors.textSecondary,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -292,20 +287,12 @@ class ResultsScreen extends StatelessWidget {
               children: [
                 Text(
                   '$condition - $modelType',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
+                  style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Confidence: ${(confidence * 100).toStringAsFixed(1)}% '
-                  '(Threshold: ${(threshold * 100).toStringAsFixed(0)}%)',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
+                  'Confidence: ${(confidence * 100).toStringAsFixed(1)}% (Threshold: ${(threshold * 100).toStringAsFixed(0)}%)',
+                  style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
                 ),
               ],
             ),
@@ -315,4 +302,3 @@ class ResultsScreen extends StatelessWidget {
     );
   }
 }
-

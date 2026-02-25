@@ -27,7 +27,7 @@ class ModelConfig:
 
     # backend/config -> backend
     BACKEND_DIR = Path(__file__).resolve().parent.parent
-    DEFAULT_ADHD_DIR = BACKEND_DIR / "models" / "adhd"
+    DEFAULT_ADHD_DIR = BACKEND_DIR / "Models" / "adhd"
 
     # ADHD Models (ENV override supported)
     ADHD_MODELS_DIR = Path(os.getenv("ADHD_MODELS_DIR", str(DEFAULT_ADHD_DIR)))
@@ -41,13 +41,13 @@ class ModelConfig:
     ADHD_FACIAL_MODEL = os.getenv("ADHD_FACIAL_MODEL", str(ADHD_MODELS_DIR / "young_affectnet_best_emotion_model_ResNet50.keras"))
 
     # Anxiety / ASD (keep your existing dirs if you want, but support env too)
-    ANXIETY_MODEL = os.getenv("ANXIETY_MODEL", str(BACKEND_DIR / "models" / "anxiety" / "anxiety_detection_model.pkl"))
+    ANXIETY_MODEL = os.getenv("ANXIETY_MODEL", str(BACKEND_DIR / "Models" / "anxiety" / "anxiety_detection_model.pkl"))
 
-    ASD_FACE_MODEL = os.getenv("ASD_FACE_MODEL", str(BACKEND_DIR / "models" / "asd" / "face" / "asd_vgg19.h5"))
-    ASD_FACE_CLASSES = os.getenv("ASD_FACE_CLASSES", str(BACKEND_DIR / "models" / "asd" / "face" / "class_indices.json"))
-    ASD_TEXT_ADABOOST = os.getenv("ASD_TEXT_ADABOOST", str(BACKEND_DIR / "models" / "asd" / "text" / "adaboost_model.joblib"))
-    ASD_TEXT_XGBOOST = os.getenv("ASD_TEXT_XGBOOST", str(BACKEND_DIR / "models" / "asd" / "text" / "xgboost_model.joblib"))
-    ASD_TEXT_RANDOMFOREST = os.getenv("ASD_TEXT_RANDOMFOREST", str(BACKEND_DIR / "models" / "asd" / "text" / "random_forest_model.joblib"))
+    ASD_FACE_MODEL = os.getenv("ASD_FACE_MODEL", str(BACKEND_DIR / "Models" / "asd" / "face" / "asd_vgg19_fixed.h5"))
+    ASD_FACE_CLASSES = os.getenv("ASD_FACE_CLASSES", str(BACKEND_DIR / "Models" / "asd" / "face" / "class_indices.json"))
+    ASD_TEXT_ADABOOST = os.getenv("ASD_TEXT_ADABOOST", str(BACKEND_DIR / "Models" / "asd" / "text" / "adaboost_model.joblib"))
+    ASD_TEXT_XGBOOST = os.getenv("ASD_TEXT_XGBOOST", str(BACKEND_DIR / "Models" / "asd" / "text" / "xgboost_model.joblib"))
+    ASD_TEXT_RANDOMFOREST = os.getenv("ASD_TEXT_RANDOMFOREST", str(BACKEND_DIR / "Models" / "asd" / "text" / "random_forest_model.joblib"))
 
     MODELS = {
         "ADHD": {

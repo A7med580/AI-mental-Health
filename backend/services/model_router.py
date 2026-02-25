@@ -23,12 +23,13 @@ class ModelRouter:
         self.feature_extractor = FeatureExtractor()
         self.config = ModelConfig()
 
-        # Load ADHD bundle once (cached in ModelLoader)
+        # Load ADHD bundle lazily when needed to prevent TensorFlow mutex lock on macOS
         self.adhd = None
-        try:
+
+    def _get_adhd_bundle(self) -> Dict[str, Any]:
+        if self.adhd is None:
             self.adhd = self.model_loader.load_adhd_bundle()
-        except Exception as e:
-            print(f"[ModelRouter] WARNING: ADHD bundle not loaded: {e}")
+        return self.adhd
 
     # =========================================================
     # ASD TEXT (AQ-10)
@@ -117,6 +118,8 @@ class ModelRouter:
         if not TF_AVAILABLE:
             raise RuntimeError("TensorFlow is not available, cannot run ASD TF face model.")
 
+        print("Starting predict_asd_face...", flush=True)
+
         model_path = config.get("model_path")
         class_indices_path = config.get("class_indices")
 
@@ -125,8 +128,11 @@ class ModelRouter:
 
         threshold = float(config.get("confidence_threshold", 0.5))
 
+        print("Calling feature extractor...", flush=True)
         # 1) Get face crop (224x224 RGB) + bbox
         fx = self.feature_extractor.extract_face_crop_224_from_url(image_url)
+        print("Feature extractor returned.", flush=True)
+
         if fx.get("face_rgb") is None:
             return {
                 "prediction": "Non-Autism",
@@ -139,8 +145,10 @@ class ModelRouter:
 
         face_rgb = fx["face_rgb"]  # np.ndarray (224,224,3) RGB
 
+        print("Loading keras model...", flush=True)
         # 2) Load TF model correctly (keras, not joblib)
         model = self.model_loader.load_model(model_path, "keras")
+        print("Keras model loaded!", flush=True)
         class_indices = self.model_loader.load_json(class_indices_path)
         class_names = {v: k for k, v in class_indices.items()}
 
@@ -355,8 +363,9 @@ class ModelRouter:
         Build DataFrame using correct feature order from adhd_behavior_feature_names.pkl
         """
         try:
-            model = self.adhd["behavior_model"]
-            feature_names = self.adhd["behavior_feature_names"]
+            adhd_bundle = self._get_adhd_bundle()
+            model = adhd_bundle["behavior_model"]
+            feature_names = adhd_bundle["behavior_feature_names"]
 
             # feature_names may be list, np array, or dict wrapper
             if isinstance(feature_names, dict):
@@ -392,7 +401,8 @@ class ModelRouter:
         try:
             eye_features = await self.feature_extractor.extract_eye_features_from_path(video_path)
 
-            model = self.adhd["eye_model"]
+            adhd_bundle = self._get_adhd_bundle()
+            model = adhd_bundle["eye_model"]
 
             # IMPORTANT: ensure exact 10 columns order expected by the model
             feature_cols = [
@@ -441,9 +451,10 @@ class ModelRouter:
             vec = audio_features["combined"] if isinstance(audio_features, dict) else audio_features
             X = np.array(vec, dtype=np.float32).reshape(1, -1)
 
-            scaler = self.adhd["voice_scaler"]
-            svm = self.adhd["voice_svm"]
-            cnn = self.adhd["voice_cnn"]
+            adhd_bundle = self._get_adhd_bundle()
+            scaler = adhd_bundle["voice_scaler"]
+            svm = adhd_bundle["voice_svm"]
+            cnn = adhd_bundle["voice_cnn"]
 
             Xs = scaler.transform(X)
 
@@ -513,7 +524,8 @@ class ModelRouter:
             face_resized = cv2.resize(face_rgb, (224, 224))
             X = np.expand_dims(face_resized / 255.0, axis=0).astype(np.float32)
 
-            model = self.adhd["emotion_model"]
+            adhd_bundle = self._get_adhd_bundle()
+            model = adhd_bundle["emotion_model"]
             preds = model.predict(X, verbose=0)[0]
             preds = np.array(preds)
 

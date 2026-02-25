@@ -69,13 +69,15 @@ os.makedirs(RESULTS_DIR, exist_ok=True)
 async def startup_event():
     """
     Warmup: load ADHD bundle once so first request isn't slow and no silent fallbacks.
+    DISABLED: Causes TensorFlow mutex lock on macOS. Models will lazy-load on first request.
     """
-    try:
-        _ = model_loader.load_adhd_bundle()
-        print("[Startup] ADHD models loaded successfully.")
-    except Exception as e:
-        # Don't crash server if you want, but it's better to fail fast during development
-        print(f"[Startup] WARNING: Could not load ADHD models: {e}")
+    print("[Startup] Skipping ADHD model warm-load to avoid TensorFlow mutex lock.")
+    print("[Startup] Models will load on first inference request.")
+    # try:
+    #     _ = model_loader.load_adhd_bundle()
+    #     print("[Startup] ADHD models loaded successfully.")
+    # except Exception as e:
+    #     print(f"[Startup] WARNING: Could not load ADHD models: {e}")
 
 
 @app.get("/")

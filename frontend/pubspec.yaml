@@ -32,6 +32,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
@@ -45,3 +46,8 @@ flutter:
         - asset: assets/fonts/Prime-Light.otf
         - asset: assets/fonts/Prime-Regular.otf
           style: italic
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/app_icon.png"

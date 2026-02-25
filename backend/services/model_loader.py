@@ -7,14 +7,6 @@ import os
 import json
 import joblib
 from typing import Any, Dict
-
-try:
-    from tensorflow import keras
-    TF_AVAILABLE = True
-except Exception:
-    TF_AVAILABLE = False
-
-
 class ModelLoader:
     _instance = None
     _models: Dict[str, Any] = {}
@@ -34,11 +26,15 @@ class ModelLoader:
         if model_type in ("joblib", "pkl", "pickle"):
             model = joblib.load(model_path)
 
-        elif model_type in ("keras", "h5") and TF_AVAILABLE:
-            model = keras.models.load_model(model_path)
+        elif model_type in ("keras", "h5"):
+            try:
+                from tensorflow import keras
+                model = keras.models.load_model(model_path)
+            except ImportError:
+                raise ValueError("TensorFlow/Keras is not installed. Cannot load model.")
 
         else:
-            raise ValueError(f"Unsupported model type: {model_type} (TF_AVAILABLE={TF_AVAILABLE})")
+            raise ValueError(f"Unsupported model type: {model_type}")
 
         self._models[model_path] = model
         return model
@@ -76,7 +72,9 @@ class ModelLoader:
         voice_svm = self.load_model(cfg.ADHD_VOICE_SVM, "joblib")
         voice_scaler = self.load_model(cfg.ADHD_VOICE_SCALER, "joblib")
 
-        if not TF_AVAILABLE:
+        try:
+            import tensorflow
+        except ImportError:
             raise RuntimeError("TensorFlow/Keras not available, cannot load voice_cnn/emotion model")
 
         voice_cnn = self.load_model(cfg.ADHD_VOICE_CNN, "h5")
