@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:mindful/app_colors.dart';
 import 'package:mindful/login_page.dart';
-import 'package:mindful/widgets/logo_text.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -12,86 +9,128 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeIn;
+  late Animation<double> _scale;
 
   @override
   void initState() {
-    Future.delayed(
-        Duration(seconds: 3),
-          () => Navigator.push(context, MaterialPageRoute(builder: (c) => LoginPage() )),
-    );
     super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+
+    _fadeIn = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+
+    _scale = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
+    );
+
+    _controller.forward();
+
+    Future.delayed(
+      const Duration(seconds: 3),
+      () {
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const LoginPage()),
+          );
+        }
+      },
+    );
   }
 
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Scaffold(
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                SizedBox(height: 115,),
-                LogoText(),
-                SizedBox(height: 130,),
-                Image.asset("assets/images/vector2.png",width: 500,),
-                Text('Mindful Ai Companion',
-                    style: GoogleFonts.inter(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 24,
-                    )
-                ),
-                SizedBox(height: 15,),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Flexible(
-                        child: Text(
-                          'Your mental wellness companion, always here to listen. Empowering you with AI-driven support, anytime, anywhere.',
-                          textAlign: TextAlign.center,
-                          maxLines: 4,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(
-                            fontWeight: FontWeight.normal,
-                            fontSize: 18,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ),
-                    ],
+    return Scaffold(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF7C3AED),
+              Color(0xFF9333EA),
+              Color(0xFFDB2777),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: FadeTransition(
+            opacity: _fadeIn,
+            child: ScaleTransition(
+              scale: _scale,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Logo icon
+                  Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: const Icon(
+                      Icons.psychology,
+                      size: 56,
+                      color: Colors.white,
+                    ),
                   ),
-                )
-              ],
+                  const SizedBox(height: 24),
+                  // App name
+                  Text(
+                    'MindCare AI',
+                    style: GoogleFonts.inter(
+                      fontSize: 36,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // Tagline
+                  Text(
+                    'Your mental wellness companion,\nalways here to listen.',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      color: Colors.white.withValues(alpha: 0.85),
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 48),
+                  // Loading indicator
+                  SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Colors.white.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
-
-        Positioned(
-          top:0 ,
-          bottom: 550,
-          left: 60,
-            child: SvgPicture.asset("assets/images/line.svg")),
-        Positioned(
-            top:0 ,
-            bottom: 250,
-            left: 33.5,
-            child: SvgPicture.asset("assets/images/light.svg")),
-
-        Positioned(
-            top:0 ,
-            bottom: 650,
-            left: 115,
-            child: SvgPicture.asset("assets/images/line.svg")),
-        Positioned(
-            top:0 ,
-            bottom: 375,
-            left: 88,
-            child: SvgPicture.asset("assets/images/light.svg")),
-      ],
+      ),
     );
   }
 }

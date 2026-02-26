@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:mindful/app_colors.dart';
 import 'package:mindful/login_page.dart';
-import 'package:mindful/widgets/custom_text_field.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'app_colors.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -15,17 +14,17 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   final supabase = Supabase.instance.client;
 
-  // Variables
-  String firstname = "";
-  String lastname = "";
-  String phoneNumber = "";
-  String email = "";
-  String password = "";
-  String confirmPassword = "";
+  String firstname = '';
+  String lastname = '';
+  String phoneNumber = '';
+  String email = '';
+  String password = '';
+  String confirmPassword = '';
   String errorMessage = '';
   bool showError = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirm = true;
 
-  // Controllers
   final TextEditingController firstnameController = TextEditingController();
   final TextEditingController lastnameController = TextEditingController();
   final TextEditingController phoneNumberController = TextEditingController();
@@ -44,16 +43,16 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
+  // ─── Registration logic (UNCHANGED) ─────────────────────────────────
+
   Future<void> registerUser() async {
     try {
-      // Show loading
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (_) => const Center(child: CircularProgressIndicator()),
       );
 
-      // 1️⃣ Create user in Supabase Auth
       final AuthResponse response = await supabase.auth.signUp(
         email: email.trim(),
         password: password.trim(),
@@ -63,10 +62,9 @@ class _RegisterPageState extends State<RegisterPage> {
 
       if (user == null) {
         Navigator.pop(context);
-        throw Exception("User creation failed. No user returned.");
+        throw Exception('User creation failed. No user returned.');
       }
 
-      // 2️⃣ Insert extra user data inside users table
       await supabase.from('users').insert({
         'id': user.id,
         'first_name': firstname.trim(),
@@ -77,10 +75,8 @@ class _RegisterPageState extends State<RegisterPage> {
         'created_at': DateTime.now().toIso8601String(),
       });
 
-      // Close loading dialog
       if (mounted) Navigator.pop(context);
 
-      // Success
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -88,7 +84,6 @@ class _RegisterPageState extends State<RegisterPage> {
             backgroundColor: Colors.green,
           ),
         );
-
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const LoginPage()),
@@ -96,227 +91,161 @@ class _RegisterPageState extends State<RegisterPage> {
       }
     } on AuthException catch (e) {
       if (mounted) Navigator.pop(context);
-      setState(() {
-        errorMessage = e.message;
-        showError = true;
-      });
+      setState(() { errorMessage = e.message; showError = true; });
     } catch (e) {
       if (mounted) Navigator.pop(context);
-      setState(() {
-        errorMessage = "Error: $e";
-        showError = true;
-      });
+      setState(() { errorMessage = 'Error: $e'; showError = true; });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+      backgroundColor: AppColors.background,
+      body: SafeArea(
         child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 70),
+              const SizedBox(height: 40),
 
-              Text(
-                "Let's Get Started!",
-                style: GoogleFonts.inter(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 24,
+              // Logo
+              Center(
+                child: Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    gradient: AppColors.primaryGradient,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(Icons.psychology, color: Colors.white, size: 32),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              Center(
+                child: Text(
+                  "Let's Get Started!",
+                  style: GoogleFonts.inter(fontSize: 26, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                 ),
               ),
 
               const SizedBox(height: 8),
 
-              Text(
-                'Create an account on Mindfull \n           to get all features',
-                style: GoogleFonts.inter(
-                  fontWeight: FontWeight.normal,
-                  fontSize: 16,
+              Center(
+                child: Text(
+                  'Create your MindCare AI account',
+                  style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
                 ),
               ),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 28),
 
-              CustomTextField(
-                controller: firstnameController,
-                hint: "Firstname",
-                icon: Icons.person_outline_outlined,
-                onChanged: (value) {
-                  setState(() => firstname = value);
-                  if (showError) setState(() => showError = false);
-                },
+              // Name row
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildField('First Name', firstnameController, Icons.person_outline, (v) {
+                      firstname = v;
+                      if (showError) setState(() => showError = false);
+                    }),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildField('Last Name', lastnameController, Icons.person_outline, (v) {
+                      lastname = v;
+                      if (showError) setState(() => showError = false);
+                    }),
+                  ),
+                ],
               ),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 16),
 
-              CustomTextField(
-                controller: lastnameController,
-                hint: "Lastname",
-                icon: Icons.person_outline_outlined,
-                onChanged: (value) {
-                  setState(() => lastname = value);
-                  if (showError) setState(() => showError = false);
-                },
-              ),
+              _buildField('Phone Number', phoneNumberController, Icons.phone_outlined, (v) {
+                phoneNumber = v;
+                if (showError) setState(() => showError = false);
+              }),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 16),
 
-              CustomTextField(
-                controller: phoneNumberController,
-                hint: "Phone Number",
-                icon: Icons.phone_outlined,
-                onChanged: (value) {
-                  setState(() => phoneNumber = value);
-                  if (showError) setState(() => showError = false);
-                },
-              ),
+              _buildField('Email', emailController, Icons.email_outlined, (v) {
+                email = v;
+                if (showError) setState(() => showError = false);
+              }),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 16),
 
-              CustomTextField(
-                controller: emailController,
-                hint: "Email",
-                icon: Icons.email_outlined,
-                onChanged: (value) {
-                  setState(() => email = value);
-                  if (showError) setState(() => showError = false);
-                },
-              ),
+              _buildField('Password', passwordController, Icons.lock_outline, (v) {
+                password = v;
+                if (showError) setState(() => showError = false);
+              }, obscure: _obscurePassword, suffix: IconButton(
+                icon: Icon(_obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: AppColors.textSecondary, size: 20),
+                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+              )),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 16),
 
-              CustomTextField(
-                controller: passwordController,
-                hint: "Password",
-                icon: Icons.lock_outline,
-                obscureText: true,
-                onChanged: (value) {
-                  setState(() => password = value);
-                  if (showError) setState(() => showError = false);
-                },
-              ),
+              _buildField('Confirm Password', confirmPasswordController, Icons.lock_outline, (v) {
+                confirmPassword = v;
+                if (showError) setState(() => showError = false);
+              }, obscure: _obscureConfirm, suffix: IconButton(
+                icon: Icon(_obscureConfirm ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: AppColors.textSecondary, size: 20),
+                onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+              )),
 
-              const SizedBox(height: 30),
-
-              CustomTextField(
-                controller: confirmPasswordController,
-                hint: "Confirm Password",
-                icon: Icons.lock_outline,
-                obscureText: true,
-                onChanged: (value) {
-                  setState(() => confirmPassword = value);
-                  if (showError) setState(() => showError = false);
-                },
-              ),
-
-              const SizedBox(height: 20),
-
-              if (showError)
+              // Error
+              if (showError) ...[
+                const SizedBox(height: 16),
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red.shade300),
+                    color: AppColors.error.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.error_outline, color: Colors.red.shade700, size: 20),
+                      const Icon(Icons.error_outline, color: AppColors.error, size: 20),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: Text(
-                          errorMessage,
-                          style: GoogleFonts.inter(
-                            color: Colors.red.shade700,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
+                        child: Text(errorMessage, style: GoogleFonts.inter(color: AppColors.error, fontSize: 13, fontWeight: FontWeight.w500)),
                       ),
                     ],
                   ),
                 ),
+              ],
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
 
-              GestureDetector(
-                onTap: () async {
-                  // VALIDATION
-                  if (firstname.isEmpty) {
-                    setState(() {
-                      errorMessage = 'Please enter your first name';
-                      showError = true;
-                    });
-                    return;
-                  }
-
-                  if (lastname.isEmpty) {
-                    setState(() {
-                      errorMessage = 'Please enter your last name';
-                      showError = true;
-                    });
-                    return;
-                  }
-
-                  if (phoneNumber.isEmpty) {
-                    setState(() {
-                      errorMessage = 'Please enter your phone number';
-                      showError = true;
-                    });
-                    return;
-                  }
-
-                  if (email.isEmpty) {
-                    setState(() {
-                      errorMessage = 'Please enter your email';
-                      showError = true;
-                    });
-                    return;
-                  }
-
-                  if (password.isEmpty || password.length < 6) {
-                    setState(() {
-                      errorMessage = 'Password must be at least 6 characters';
-                      showError = true;
-                    });
-                    return;
-                  }
-
-                  if (confirmPassword.isEmpty || password != confirmPassword) {
-                    setState(() {
-                      errorMessage = 'Passwords do not match';
-                      showError = true;
-                    });
-                    return;
-                  }
-
-                  await registerUser();
-                },
-
+              // Create button
+              SizedBox(
+                width: double.infinity,
+                height: 54,
                 child: Container(
-                  width: 199,
-                  height: 53,
                   decoration: BoxDecoration(
-                    boxShadow: const [
-                      BoxShadow(color: Colors.grey, blurRadius: 10, spreadRadius: 2)
+                    gradient: AppColors.primaryGradient,
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primaryPurple.withValues(alpha: 0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
                     ],
-                    borderRadius: BorderRadius.circular(5),
-                    gradient: LinearGradient(
-                      colors: [AppColors.primary, AppColors.secondary],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
                   ),
-                  child: const Center(
-                    child: Text(
-                      'CREATE',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(14),
+                      onTap: _handleRegister,
+                      child: Center(
+                        child: Text(
+                          'Create Account',
+                          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
+                        ),
                       ),
                     ),
                   ),
@@ -325,30 +254,24 @@ class _RegisterPageState extends State<RegisterPage> {
 
               const SizedBox(height: 20),
 
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    "Already have an account ?",
-                    style: GoogleFonts.inter(fontSize: 14),
-                  ),
-                  const SizedBox(width: 5),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const LoginPage()),
-                      );
-                    },
-                    child: Text(
-                      'Sign In',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
+              // Sign in link
+              Center(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Already have an account? ',
+                      style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
+                    ),
+                    GestureDetector(
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginPage())),
+                      child: Text(
+                        'Sign In',
+                        style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primaryPurple),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
 
               const SizedBox(height: 30),
@@ -356,6 +279,65 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
         ),
       ),
+    );
+  }
+
+  void _handleRegister() async {
+    if (firstname.isEmpty) {
+      setState(() { errorMessage = 'Please enter your first name'; showError = true; });
+      return;
+    }
+    if (lastname.isEmpty) {
+      setState(() { errorMessage = 'Please enter your last name'; showError = true; });
+      return;
+    }
+    if (phoneNumber.isEmpty) {
+      setState(() { errorMessage = 'Please enter your phone number'; showError = true; });
+      return;
+    }
+    if (email.isEmpty) {
+      setState(() { errorMessage = 'Please enter your email'; showError = true; });
+      return;
+    }
+    if (password.isEmpty || password.length < 6) {
+      setState(() { errorMessage = 'Password must be at least 6 characters'; showError = true; });
+      return;
+    }
+    if (confirmPassword.isEmpty || password != confirmPassword) {
+      setState(() { errorMessage = 'Passwords do not match'; showError = true; });
+      return;
+    }
+    await registerUser();
+  }
+
+  Widget _buildField(String label, TextEditingController controller, IconData icon, ValueChanged<String> onChanged, {bool obscure = false, Widget? suffix}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+        const SizedBox(height: 6),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.cardWhite,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.grey[300]!),
+          ),
+          child: TextField(
+            controller: controller,
+            obscureText: obscure,
+            onChanged: onChanged,
+            style: GoogleFonts.inter(fontSize: 15, color: AppColors.textPrimary),
+            decoration: InputDecoration(
+              hintText: 'Enter your ${label.toLowerCase()}',
+              hintStyle: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
+              prefixIcon: Icon(icon, color: AppColors.textSecondary, size: 20),
+              suffixIcon: suffix,
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
