@@ -23,7 +23,6 @@ from services.model_router import ModelRouter
 from services.feature_extractor import FeatureExtractor
 from services.adhd_fusion import ADHDFusion
 from services.model_loader import ModelLoader
-from services.model_loader import ModelLoader
 from config.model_config import ModelConfig
 from pydantic import BaseModel, Field, HttpUrl
 
