@@ -24,252 +24,247 @@ class ADHDResultScreen extends StatelessWidget {
     final contributions = screeningResult['model_contributions'] ?? [];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.popUntil(context, (route) => route.isFirst),
-        ),
-        title: Text(
-          'Your ADHD Screening Result',
-          style: GoogleFonts.inter(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+      backgroundColor: AppColors.background,
+      body: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Critical Disclaimer Banner
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.orange.shade50,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.orange.shade300, width: 2),
-              ),
+            // ── Header ──
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               child: Row(
                 children: [
-                  Icon(Icons.warning_amber_rounded, color: Colors.orange.shade700, size: 28),
+                  GestureDetector(
+                    onTap: () => Navigator.popUntil(context, (route) => route.isFirst),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.cardWhite,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[300]!),
+                      ),
+                      child: const Icon(Icons.arrow_back, size: 20, color: AppColors.textPrimary),
+                    ),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'This is a screening tool, NOT a medical diagnosis. '
-                      'Please consult a qualified healthcare professional for proper evaluation.',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: Colors.orange.shade900,
-                        fontWeight: FontWeight.w600,
-                        height: 1.4,
-                      ),
+                      'Your ADHD Screening Result',
+                      style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                     ),
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
 
-            // Main Result Card
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  // Result Icon
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: thresholdMet
-                          ? Colors.orange.shade100
-                          : Colors.blue.shade100,
-                    ),
-                    child: Icon(
-                      thresholdMet ? Icons.info_outline : Icons.check_circle_outline,
-                      size: 40,
-                      color: thresholdMet
-                          ? Colors.orange.shade700
-                          : Colors.blue.shade700,
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Result Title - Show "ADHD" or "Not ADHD"
-                  Text(
-                    thresholdMet
-                        ? 'ADHD'
-                        : 'Not ADHD',
-                    style: GoogleFonts.inter(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: thresholdMet ? Colors.orange.shade900 : Colors.green.shade700,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Confidence Level Badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: _getConfidenceColor(confidenceLevel).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: _getConfidenceColor(confidenceLevel),
-                        width: 2,
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Disclaimer
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF7ED),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFFDBA74), width: 2),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.warning_amber_rounded, color: Color(0xFFC2410C), size: 24),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'This is a screening tool, NOT a medical diagnosis. Please consult a qualified healthcare professional.',
+                              style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF9A3412), fontWeight: FontWeight.w600, height: 1.4),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    child: Text(
-                      '$confidenceLevel Confidence',
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: _getConfidenceColor(confidenceLevel),
+
+                    const SizedBox(height: 24),
+
+                    // Main Result Card
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(28),
+                      decoration: BoxDecoration(
+                        color: AppColors.cardWhite,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.06),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: thresholdMet
+                                  ? const Color(0xFFFFF7ED)
+                                  : const Color(0xFFF0FDF4),
+                            ),
+                            child: Icon(
+                              thresholdMet ? Icons.info_outline : Icons.check_circle_outline,
+                              size: 40,
+                              color: thresholdMet
+                                  ? const Color(0xFFC2410C)
+                                  : const Color(0xFF16A34A),
+                            ),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          Text(
+                            thresholdMet ? 'ADHD' : 'Not ADHD',
+                            style: GoogleFonts.inter(
+                              fontSize: 30,
+                              fontWeight: FontWeight.bold,
+                              color: thresholdMet ? const Color(0xFFC2410C) : const Color(0xFF16A34A),
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Confidence badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: _getConfidenceColor(confidenceLevel).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: _getConfidenceColor(confidenceLevel), width: 2),
+                            ),
+                            child: Text(
+                              '$confidenceLevel Confidence',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: _getConfidenceColor(confidenceLevel),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          Text(
+                            'Confidence: ${(fusedConfidence * 100).toStringAsFixed(1)}%',
+                            style: GoogleFonts.inter(fontSize: 16, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          // Confidence bar
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: LinearProgressIndicator(
+                              value: fusedConfidence is double ? fusedConfidence : 0.0,
+                              minHeight: 8,
+                              backgroundColor: Colors.grey[200],
+                              valueColor: AlwaysStoppedAnimation<Color>(_getConfidenceColor(confidenceLevel)),
+                            ),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: AppColors.background,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              explanation,
+                              style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary, height: 1.5),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 24),
 
-                  // Confidence Score
-                  Text(
-                    'Confidence: ${(fusedConfidence * 100).toStringAsFixed(1)}%',
-                    style: GoogleFonts.inter(
-                      fontSize: 18,
-                      color: Colors.grey.shade700,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Explanation
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      explanation,
-                      style: GoogleFonts.inter(
-                        fontSize: 15,
-                        color: Colors.black87,
-                        height: 1.5,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Model Contributions
-            if (contributions.isNotEmpty) ...[
-              Text(
-                'Assessment Methods Used',
-                style: GoogleFonts.inter(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 12),
-              ...contributions.map((contribution) => _buildContributionCard(contribution)),
-            ],
-
-            const SizedBox(height: 32),
-
-            // Next Steps
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.blue.shade200),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.lightbulb_outline, color: Colors.blue.shade700),
-                      const SizedBox(width: 8),
+                    // Model Contributions
+                    if (contributions.isNotEmpty) ...[
                       Text(
-                        'Recommended Next Steps',
-                        style: GoogleFonts.inter(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue.shade900,
+                        'Assessment Methods Used',
+                        style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                      ),
+                      const SizedBox(height: 12),
+                      ...contributions.map((contribution) => _buildContributionCard(contribution)),
+                    ],
+
+                    const SizedBox(height: 24),
+
+                    // Next Steps
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryPurple.withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.2)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.lightbulb_outline, color: AppColors.primaryPurple),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Recommended Next Steps',
+                                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryPurple),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          _buildNextStepItem('Consult a healthcare professional', 'A qualified professional can provide proper evaluation and diagnosis.'),
+                          const SizedBox(height: 12),
+                          _buildNextStepItem('Keep a symptom journal', 'Track patterns in attention, focus, and daily activities.'),
+                          const SizedBox(height: 12),
+                          _buildNextStepItem('Explore coping strategies', 'Learn about time management, organization, and focus techniques.'),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    SizedBox(
+                      width: double.infinity,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: AppColors.primaryGradient,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(14),
+                            onTap: () => Navigator.popUntil(context, (route) => route.isFirst),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              child: Center(
+                                child: Text('Done', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  _buildNextStepItem(
-                    'Consult a healthcare professional',
-                    'A qualified professional can provide proper evaluation and diagnosis.',
-                  ),
-                  const SizedBox(height: 12),
-                  _buildNextStepItem(
-                    'Keep a symptom journal',
-                    'Track patterns in attention, focus, and daily activities.',
-                  ),
-                  const SizedBox(height: 12),
-                  _buildNextStepItem(
-                    'Explore coping strategies',
-                    'Learn about time management, organization, and focus techniques.',
-                  ),
-                ],
-              ),
-            ),
+                    ),
 
-            const SizedBox(height: 24),
-
-            // Action Buttons
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.popUntil(context, (route) => route.isFirst);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: Text(
-                  'Done',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+                    const SizedBox(height: 32),
+                  ],
                 ),
               ),
             ),
@@ -288,9 +283,9 @@ class ADHDResultScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
+        color: AppColors.cardWhite,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey[300]!),
       ),
       child: Row(
         children: [
@@ -300,19 +295,12 @@ class ADHDResultScreen extends StatelessWidget {
               children: [
                 Text(
                   _getModelTypeLabel(modelType),
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
+                  style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Confidence: ${(confidence * 100).toStringAsFixed(1)}%',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
                 ),
               ],
             ),
@@ -320,16 +308,12 @@ class ADHDResultScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.grey.shade100,
+              color: AppColors.primaryPurple.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
               '${(weight * 100).toStringAsFixed(0)}% weight',
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                color: Colors.grey.shade700,
-                fontWeight: FontWeight.w500,
-              ),
+              style: GoogleFonts.inter(fontSize: 12, color: AppColors.primaryPurple, fontWeight: FontWeight.w500),
             ),
           ),
         ],
@@ -342,11 +326,11 @@ class ADHDResultScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          margin: const EdgeInsets.only(top: 4),
+          margin: const EdgeInsets.only(top: 5),
           width: 6,
           height: 6,
-          decoration: BoxDecoration(
-            color: Colors.blue.shade700,
+          decoration: const BoxDecoration(
+            color: AppColors.primaryPurple,
             shape: BoxShape.circle,
           ),
         ),
@@ -355,23 +339,9 @@ class ADHDResultScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                style: GoogleFonts.inter(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.blue.shade900,
-                ),
-              ),
+              Text(title, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primaryPurple)),
               const SizedBox(height: 4),
-              Text(
-                description,
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  color: Colors.blue.shade800,
-                  height: 1.4,
-                ),
-              ),
+              Text(description, style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary, height: 1.4)),
             ],
           ),
         ),
@@ -386,7 +356,7 @@ class ADHDResultScreen extends StatelessWidget {
       case 'medium':
         return Colors.amber;
       case 'low':
-        return Colors.blue;
+        return AppColors.primaryPurple;
       default:
         return Colors.grey;
     }
@@ -407,4 +377,3 @@ class ADHDResultScreen extends StatelessWidget {
     }
   }
 }
-

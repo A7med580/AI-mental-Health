@@ -1,15 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:mindful/profile_screen.dart';
-import 'package:mindful/resource_screen.dart';
+import 'package:mindful/app_colors.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:mindful/services/model_service.dart';
 import 'package:mindful/results_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
-
-import 'chat_screen.dart';
 
 class EmotionDetectionScreen extends StatefulWidget {
   final bool isAutismScreening;
@@ -24,8 +21,6 @@ class EmotionDetectionScreen extends StatefulWidget {
 }
 
 class _EmotionDetectionScreenState extends State<EmotionDetectionScreen> {
-  int _selectedIndex = 1;
-
   XFile? _imageFile;
   final ImagePicker _picker = ImagePicker();
   final ModelService _modelService = ModelService();
@@ -33,6 +28,8 @@ class _EmotionDetectionScreenState extends State<EmotionDetectionScreen> {
   String? _imageUrl;
 
   final supabase = Supabase.instance.client;
+
+  // ─── ALL LOGIC BELOW IS UNCHANGED ───────────────────────────────────
 
   Future<void> _takePhoto() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.camera);
@@ -58,22 +55,14 @@ class _EmotionDetectionScreenState extends State<EmotionDetectionScreen> {
       final bucket = supabase.storage.from('emotion-images');
 
       final file = File(_imageFile!.path);
-
-      // New syntax: upload returns a void Future or throws on error
       await bucket.upload(fileName, file);
 
-      print("Upload successful!");
-
-      // Get public URL
       final publicUrl = bucket.getPublicUrl(fileName);
       _imageUrl = publicUrl;
-      print("Upload successful! URL: $publicUrl");
 
-      // If this is autism screening, send image URL to AI model
       if (widget.isAutismScreening) {
         await _processAutismFaceDetection(publicUrl);
       } else {
-        // Regular emotion detection flow
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Image uploaded! URL: $publicUrl')),
@@ -84,7 +73,6 @@ class _EmotionDetectionScreenState extends State<EmotionDetectionScreen> {
         });
       }
     } catch (e) {
-      print("Upload failed: $e");
       if (mounted) {
         setState(() {
           _isProcessing = false;
@@ -97,12 +85,10 @@ class _EmotionDetectionScreenState extends State<EmotionDetectionScreen> {
         );
       }
     }
-
   }
 
   Future<void> _processAutismFaceDetection(String imageUrl) async {
     try {
-      // Send image URL to ASD face model
       final response = await _modelService.predictASDFaceFromUrl(imageUrl);
 
       if (mounted) {
@@ -110,17 +96,14 @@ class _EmotionDetectionScreenState extends State<EmotionDetectionScreen> {
           _isProcessing = false;
         });
 
-        // Extract prediction result
         final predictionData = response['prediction'] ?? response;
         final predictionValue = predictionData['prediction'] ?? 0;
         final predictedClass = predictionData['class'] ?? '';
         final confidence = predictionData['confidence'] ?? 0.0;
 
-        // Check if autism is detected (prediction == 1 or class contains "autistic")
         final isAutismDetected = (predictionValue == 1 ||
-                                  predictedClass.toString().toLowerCase().contains('autistic'));
+            predictedClass.toString().toLowerCase().contains('autistic'));
 
-        // Navigate to results screen
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -156,6 +139,7 @@ class _EmotionDetectionScreenState extends State<EmotionDetectionScreen> {
               'Error processing face detection: $e',
               style: GoogleFonts.inter(),
             ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
@@ -168,252 +152,274 @@ class _EmotionDetectionScreenState extends State<EmotionDetectionScreen> {
     }
   }
 
+  // ─── UI (NEW FIGMA DESIGN) ──────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
-            // Header
-            Container(
-              color: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+            // ── Header ──
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               child: Row(
                 children: [
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        widget.isAutismScreening
-                            ? 'Face Detection for Autism Screening'
-                            : 'Emotion Detection',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.cardWhite,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[300]!),
                       ),
+                      child: const Icon(Icons.arrow_back, size: 20, color: AppColors.textPrimary),
                     ),
                   ),
-                  SizedBox(width: 48),
+                  const Spacer(),
+                  Text(
+                    widget.isAutismScreening ? 'Step 2 of 4' : 'Emotion Detection',
+                    style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
+                  ),
                 ],
               ),
             ),
 
-            // Main Content
-            Expanded(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
-                      Text(
-                        widget.isAutismScreening
-                            ? 'Please take a photo of your face for autism screening analysis.'
-                            : 'Point your camera at a face to detect emotions\nin real-time.',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.black87,
-                          height: 1.5,
-                        ),
-                      ),
-
-                      const SizedBox(height: 40),
-
-                      // Camera Preview Box
-                      Container(
-                        width: double.infinity,
-                        height: 340,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: const Color(0xFF64B5F6),
-                            width: 3,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.blue.withOpacity(0.1),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(13),
-                          child: _imageFile == null
-                              ? Image.asset(
-                            'assets/images/photo.jpg',
-                            fit: BoxFit.cover,
-                          )
-                              : Image.file(
-                            File(_imageFile!.path),
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 40),
-
-                      // Processing indicator
-                      if (_isProcessing)
-                        const Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: Column(
-                            children: [
-                              CircularProgressIndicator(),
-                              SizedBox(height: 16),
-                              Text('Processing image...'),
-                            ],
-                          ),
-                        )
-                      else
-                        // Start Detection Button
-                        ElevatedButton(
-                          onPressed: _takePhoto,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF42A5F5),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 48,
-                              vertical: 16,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                            elevation: 2,
-                          ),
-                          child: Text(
-                            widget.isAutismScreening
-                                ? 'Take Photo for Screening'
-                                : 'Start Detection',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                    ],
+            // ── Title ──
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.isAutismScreening
+                        ? 'Autism Screening - Photo Capture'
+                        : 'Emotion Detection',
+                    style: GoogleFonts.inter(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 4),
+                  Text(
+                    widget.isAutismScreening
+                        ? 'Step 2 of 4: Take a photo for facial analysis'
+                        : 'Point your camera to detect emotions',
+                    style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
+                  ),
+                ],
               ),
             ),
 
-            // Bottom Navigation
-            if (!widget.isAutismScreening)
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border(
-                    top: BorderSide(color: const Color(0xFFE0E7EE)),
+            const SizedBox(height: 16),
+
+            // ── Progress (autism only) ──
+            if (widget.isAutismScreening)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: const LinearProgressIndicator(
+                    value: 0.5,
+                    minHeight: 8,
+                    backgroundColor: Color(0xFFE5E7EB),
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.error),
                   ),
                 ),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+              ),
+
+            const SizedBox(height: 24),
+
+            // ── Main content ──
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
                   children: [
-                    _buildNavItem(
-                      icon: Icons.chat_bubble,
-                      label: 'Chat',
-                      index: 0,
-                      isSelected: _selectedIndex == 0,
+                    // Preview box
+                    if (_imageFile != null)
+                      Container(
+                        width: double.infinity,
+                        height: 280,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.3), width: 2),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: Image.file(File(_imageFile!.path), fit: BoxFit.cover),
+                        ),
+                      ),
+
+                    if (_imageFile != null) const SizedBox(height: 24),
+
+                    // Instructions card
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: AppColors.cardWhite,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.grey[200]!),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryPurple.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(Icons.camera_alt, color: AppColors.primaryPurple, size: 24),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Photo Capture Instructions',
+                                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          _buildInstruction('Position your face in the center of the frame'),
+                          const SizedBox(height: 12),
+                          _buildInstruction('Ensure good lighting on your face'),
+                          const SizedBox(height: 12),
+                          _buildInstruction('Look directly at the camera with a neutral expression'),
+                          const SizedBox(height: 12),
+                          _buildInstruction('Your photo will be analyzed for facial features and expressions'),
+
+                          const SizedBox(height: 24),
+
+                          // Button
+                          SizedBox(
+                            width: double.infinity,
+                            child: _isProcessing
+                                ? Center(
+                                    child: Column(
+                                      children: [
+                                        SizedBox(
+                                          width: 36,
+                                          height: 36,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 3,
+                                            valueColor: AlwaysStoppedAnimation(AppColors.primaryPurple),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Text('Processing image...', style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary)),
+                                      ],
+                                    ),
+                                  )
+                                : Container(
+                                    decoration: BoxDecoration(
+                                      gradient: AppColors.primaryGradient,
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    child: Material(
+                                      color: Colors.transparent,
+                                      child: InkWell(
+                                        borderRadius: BorderRadius.circular(14),
+                                        onTap: _takePhoto,
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(vertical: 14),
+                                          child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                'Enable Camera',
+                                                style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                          ),
+                        ],
+                      ),
                     ),
-                    _buildNavItem(
-                      icon: Icons.emoji_emotions_outlined,
-                      label: 'Emotion',
-                      index: 1,
-                      isSelected: _selectedIndex == 1,
-                    ),
-                    _buildNavItem(
-                      icon: Icons.menu_book_outlined,
-                      label: 'Resources',
-                      index: 2,
-                      isSelected: _selectedIndex == 2,
-                    ),
-                    _buildNavItem(
-                      icon: Icons.person_outline,
-                      label: 'Profile',
-                      index: 3,
-                      isSelected: _selectedIndex == 3,
-                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Info footer
+                    if (widget.isAutismScreening)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryPurple.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.15)),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.info_outline, size: 16, color: AppColors.primaryPurple),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Facial Analysis: Your photo will be analyzed for facial features and expressions commonly associated with autism spectrum characteristics. This is combined with your questionnaire responses for screening.',
+                                style: GoogleFonts.inter(fontSize: 12, color: AppColors.primaryPurple, fontWeight: FontWeight.w500, height: 1.4),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildNavItem({
-    required IconData icon,
-    required String label,
-    required int index,
-    bool isSelected = false,
-  }) {
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedIndex = index;
-        });
-
-        if (index == 0) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const MindfulAIScreen(),
-            ),
-          );
-        }
-        if (index == 2) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const ResourcesScreen(),
-            ),
-          );
-        }
-        if (index == 3) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const ProfileScreen(),
-            ),
-          );
-        }
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: isSelected ? const EdgeInsets.all(8) : null,
-            decoration: isSelected
-                ? BoxDecoration(
-              color: Colors.black87,
-              borderRadius: BorderRadius.circular(8),
-            )
-                : null,
-            child: Icon(
-              icon,
-              color: isSelected ? Colors.white : Colors.lightBlue,
-              size: 24,
-            ),
+  Widget _buildInstruction(String text) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 6,
+          height: 6,
+          margin: const EdgeInsets.only(top: 7),
+          decoration: const BoxDecoration(
+            color: AppColors.primaryPurple,
+            shape: BoxShape.circle,
           ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: isSelected ? Colors.black87 : const Color(0xFF90A4AE),
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-            ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            text,
+            style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary, height: 1.4),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

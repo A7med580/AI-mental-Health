@@ -20,7 +20,8 @@ class ProcessingScreen extends StatefulWidget {
   State<ProcessingScreen> createState() => _ProcessingScreenState();
 }
 
-class _ProcessingScreenState extends State<ProcessingScreen> {
+class _ProcessingScreenState extends State<ProcessingScreen>
+    with SingleTickerProviderStateMixin {
   bool _isProcessing = true;
   bool _hasError = false;
 
@@ -30,15 +31,34 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
 
   String? _jobId;
 
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnim;
+
   @override
   void initState() {
     super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+
+    _pulseAnim = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
     WidgetsBinding.instance.addPostFrameCallback((_) => _startJobFlow());
   }
 
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  // ─── ALL LOGIC BELOW IS UNCHANGED ───────────────────────────────────
+
   Future<void> _startJobFlow() async {
     try {
-      // ✅ Validate video
       if (widget.videoFile == null) {
         throw Exception('No video provided. Please record at least one video response.');
       }
@@ -52,7 +72,6 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
 
       _setStatus('Uploading video…');
 
-      // 1) Submit
       final jobId = await JobService.submitADHDJob(
         videoFile: widget.videoFile!,
         questionnaireData: widget.questionnaireData,
@@ -61,11 +80,10 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
       _jobId = jobId;
       _setStatus('Job submitted.\nWaiting for AI result…');
 
-      // 2) Poll
       final result = await JobService.pollJobUntilDone(
         jobId,
         pollInterval: const Duration(seconds: 2),
-        maxAttempts: 180, // 6 minutes
+        maxAttempts: 180,
         onStatus: (status, error) {
           if (!mounted) return;
           if (status == 'queued') {
@@ -100,7 +118,7 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
       );
     } on TimeoutException catch (e) {
       _fail(
-        "It’s taking too long. Backend may be stuck.",
+        "It's taking too long. Backend may be stuck.",
         "TimeoutException: $e",
       );
     } catch (e) {
@@ -139,124 +157,182 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
     Navigator.popUntil(context, (route) => route.isFirst);
   }
 
+  // ─── UI (NEW FIGMA DESIGN) ──────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async => !_isProcessing,
+    return PopScope(
+      canPop: !_isProcessing,
       child: Scaffold(
-        backgroundColor: Colors.grey[50],
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          automaticallyImplyLeading: !_isProcessing,
-          title: Text(
-            'Processing Screening',
-            style: GoogleFonts.inter(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
+        backgroundColor: AppColors.background,
+        body: SafeArea(
+          child: _isProcessing ? _buildProcessingView() : _buildErrorView(),
         ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: _isProcessing
-                ? Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                        strokeWidth: 4,
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        'Processing your screening…',
-                        style: GoogleFonts.inter(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
+      ),
+    );
+  }
+
+  Widget _buildProcessingView() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Animated icon
+            AnimatedBuilder(
+              animation: _pulseAnim,
+              builder: (context, child) {
+                return Transform.scale(
+                  scale: _pulseAnim.value,
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      gradient: AppColors.primaryGradient,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primaryPurple.withValues(alpha: 0.3),
+                          blurRadius: 24,
+                          spreadRadius: 4,
                         ),
-                        textAlign: TextAlign.center,
+                      ],
+                    ),
+                    child: const Icon(Icons.psychology, color: Colors.white, size: 44),
+                  ),
+                );
+              },
+            ),
+
+            const SizedBox(height: 32),
+
+            Text(
+              'Processing Your Screening',
+              style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+              textAlign: TextAlign.center,
+            ),
+
+            const SizedBox(height: 12),
+
+            Text(
+              _jobId == null ? _statusText : '$_statusText\n\nJob: $_jobId',
+              style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary, height: 1.5),
+              textAlign: TextAlign.center,
+            ),
+
+            const SizedBox(height: 32),
+
+            // Progress bar (indeterminate)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 40),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: LinearProgressIndicator(
+                  minHeight: 6,
+                  backgroundColor: Colors.grey[200],
+                  valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryPurple),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            Text(
+              'This may take a few minutes. Please do not close the app.',
+              style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorView() {
+    if (!_hasError) return const SizedBox();
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.error_outline, size: 40, color: AppColors.error),
+            ),
+
+            const SizedBox(height: 24),
+
+            Text(
+              _errorMessage,
+              style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+              textAlign: TextAlign.center,
+            ),
+
+            if (_technicalError != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  _technicalError!,
+                  style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+
+            const SizedBox(height: 32),
+
+            SizedBox(
+              width: double.infinity,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: _retry,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      child: Center(
+                        child: Text('Retry', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
                       ),
-                      const SizedBox(height: 12),
-                      Text(
-                        _jobId == null ? _statusText : '$_statusText\n\nJob: $_jobId',
-                        style: GoogleFonts.inter(fontSize: 13, color: Colors.grey[700]),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  )
-                : _hasError
-                    ? Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
-                          const SizedBox(height: 16),
-                          Text(
-                            _errorMessage,
-                            style: GoogleFonts.inter(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black87,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          if (_technicalError != null) ...[
-                            const SizedBox(height: 12),
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.grey[100],
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                _technicalError!,
-                                style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[700]),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ],
-                          const SizedBox(height: 24),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: _retry,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: Text(
-                                'Retry',
-                                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton(
-                              onPressed: _goBackToHome,
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: AppColors.primary,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                side: BorderSide(color: AppColors.primary, width: 2),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              ),
-                              child: Text(
-                                'Back to Home',
-                                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
-                              ),
-                            ),
-                          ),
-                        ],
-                      )
-                    : const SizedBox(),
-          ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: _goBackToHome,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primaryPurple,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  side: const BorderSide(color: AppColors.primaryPurple, width: 2),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                child: Text('Back to Home', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+              ),
+            ),
+          ],
         ),
       ),
     );
