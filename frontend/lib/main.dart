@@ -5,6 +5,8 @@ import 'package:mindful/splash_screen.dart';
 import 'package:mindful/login_page.dart';
 import 'package:mindful/register_page.dart';
 import 'package:mindful/dashboard_screen.dart';
+import 'package:mindful/mood_tracker_screen.dart';
+import 'package:mindful/meditation_screen.dart';
 import 'package:mindful/face_detection.dart';
 import 'package:mindful/results_screen.dart';
 import 'package:mindful/screens/notifications_screen.dart';
@@ -39,6 +41,8 @@ class MyApp extends StatelessWidget {
         '/chat': (context) => const DashboardScreen(),
         '/emotion': (context) => const EmotionDetectionScreen(),
         '/resources': (context) => const ResourcesScreen(),
+        '/mood-tracker': (context) => const MoodTrackerScreen(),
+        '/meditation': (context) => const MeditationScreen(),
         '/notifications': (context) => const NotificationsScreen(),
         '/results': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
