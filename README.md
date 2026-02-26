@@ -13,10 +13,11 @@
 ## 🚀 Key Features
 
 *   **⚡ Real-time ADHD Screening**: Multi-modal fusion of behavioral data, eye gaze heuristics, and voice prosody.
-*   **🧩 ASD Detection**: Advanced facial emotion recognition coupled with standardized AQ-10 diagnostics.
+*   **🧩 ASD Detection**: Advanced facial emotion recognition coupled with standardized diagnostic logic (AQ-10).
 *   **🎙️ Voice Stress Analysis**: MFCC-based emotion and impulsivity detection from audio recordings.
 *   **👁️ Gaze Tracking**: Heuristic-based eye movement analysis for behavioral biomarker extraction.
 *   **🔔 Smart Notifications**: Asynchronous background processing with in-app result alerts.
+*   **📱 Liquid Glass Design**: Premium mobile experience with smooth iOS-style transitions.
 
 ---
 
@@ -74,6 +75,28 @@ graph TD
     LF --> Result[Final ADHD Probability]
 ```
 
+### AI Fusion Strategy (ASD - Autism)
+
+```mermaid
+graph TD
+    subgraph "Input Modalities"
+        V[Video/Face Feed]
+        T[Textual Answers AQ-10]
+    end
+
+    V --> FD[Facial Detection OpenCV]
+    T --> NLP[Diagnostic Scoring Engine]
+
+    FD --> FM[Facial Emotion Model - CNN/Keras]
+    NLP --> BM[Behavioral Heuristics]
+
+    subgraph "Late Fusion Engine"
+        FM & BM --> LF[Weighted Probability Aggregation]
+    end
+
+    LF --> Result[Final ASD Probability]
+```
+
 ---
 
 ## 🛠️ Technology Stack
@@ -95,12 +118,14 @@ graph TD
 │   ├── Models/             # Serialized AI Models (.h5, .pkl)
 │   ├── services/           # AI Logic & Feature Extractors
 │   │   ├── model_router.py # Request routing
-│   │   └── adhd_fusion.py  # Multi-modal fusion logic
+│   │   ├── adhd_fusion.py  # Multi-modal fusion logic for ADHD
+│   │   └── autism_fusion.py# Logic for ASD Detection
 │   └── main.py             # Server Entry Point
 ├── frontend/               # Flutter Mobile Application
 │   ├── lib/
 │   │   ├── core/           # Config, Themes, and Constants
-│   │   ├── screens/        # UI Implementation
+│   │   ├── screens/        # UI Implementation (Glassmorphism)
+│   │   ├── widgets/        # Reusable UI Components
 │   │   └── services/       # API, Jobs, and Notification services
 │   └── pubspec.yaml        # Flutter Dependencies
 └── README.md
@@ -113,7 +138,7 @@ graph TD
 ### Backend Setup
 1. Navigate to `/backend`
 2. Install dependencies: `pip install -r requirements.txt`
-3. Start the server: `python main.py`
+3. Start the server: `python main.py` or `python main_phase2.py`
 
 ### Frontend Setup
 1. Navigate to `/frontend`
@@ -123,4 +148,4 @@ graph TD
 ---
 
 ## ⚖️ Disclaimer
-This project is a **Research Prototype** for academic purposes (PUA). It is **not** a certified medical diagnostic tool.
+This project is an **Academic Research Prototype**. It is **not** a certified medical diagnostic tool.
