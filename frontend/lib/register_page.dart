@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mindful/app_colors.dart';
 import 'package:mindful/login_page.dart';
+import 'package:mindful/widgets/page_transitions.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -86,7 +87,7 @@ class _RegisterPageState extends State<RegisterPage> {
         );
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const LoginPage()),
+          AppPageRoute(page: const LoginPage()),
         );
       }
     } on AuthException catch (e) {
@@ -264,7 +265,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
                     ),
                     GestureDetector(
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginPage())),
+                      onTap: () => Navigator.push(context, AppPageRoute(page: const LoginPage())),
                       child: Text(
                         'Sign In',
                         style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primaryPurple),

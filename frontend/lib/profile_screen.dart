@@ -4,6 +4,7 @@ import 'package:mindful/app_colors.dart';
 import 'package:mindful/dashboard_screen.dart';
 import 'package:mindful/face_detection.dart';
 import 'package:mindful/resource_screen.dart';
+import 'package:mindful/widgets/page_transitions.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -802,11 +803,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (index == _selectedIndex) return;
         setState(() => _selectedIndex = index);
         if (index == 0) {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const DashboardScreen()));
+          Navigator.pushReplacement(context, AppPageRoute(page: const DashboardScreen()));
         } else if (index == 1) {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const EmotionDetectionScreen()));
+          Navigator.pushReplacement(context, AppPageRoute(page: const EmotionDetectionScreen()));
         } else if (index == 2) {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const ResourcesScreen()));
+          Navigator.pushReplacement(context, AppPageRoute(page: const ResourcesScreen()));
         }
       },
       child: Column(

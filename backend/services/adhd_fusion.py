@@ -63,9 +63,8 @@ class ADHDFusion:
 
             w = base_w * gate
 
-            # direction-aware: confidence should represent probability toward ADHD=1
-            # if model predicted 0, treat it as (1 - conf) probability toward ADHD
-            p_adhd = conf if pred == 1 else (1.0 - conf)
+            # The model_router already returns conf as P(ADHD=1).
+            p_adhd = conf
 
             weighted_sum += p_adhd * w
             total_weight += w
@@ -73,11 +72,11 @@ class ADHDFusion:
             contributions.append({
                 "model_type": model_type,
                 "prediction": pred,
-                "raw_confidence": conf,
+                "confidence": conf,  # Frontend expects "confidence"
                 "p_adhd": float(p_adhd),
                 "base_weight": base_w,
                 "gate": gate,
-                "weight_used": w,
+                "weight": w,  # Temporarily store absolute weight, will normalize below
                 "contribution": float(p_adhd * w),
             })
 
@@ -86,7 +85,13 @@ class ADHDFusion:
                 modalities_used.append(mod)
 
         fused_conf = float(weighted_sum / total_weight) if total_weight > 0 else 0.0
+        fused_conf = min(fused_conf, 0.90)  # Cap maximum confidence at 90%
         fused_pred = 1 if fused_conf >= ADHDFusion.FINAL_THRESHOLD else 0
+
+        # Normalize weights so they sum to 100% on the frontend
+        if total_weight > 0:
+            for c in contributions:
+                c["weight"] = c["weight"] / total_weight
 
         if fused_conf >= 0.75:
             level = "High"

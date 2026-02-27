@@ -4,6 +4,7 @@ import 'package:mindful/profile_screen.dart';
 import 'package:mindful/resource_screen.dart';
 import 'package:mindful/results_screen.dart';
 import 'package:mindful/services/model_service.dart';
+import 'package:mindful/widgets/page_transitions.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:camera/camera.dart';
 import 'package:path_provider/path_provider.dart';
@@ -215,8 +216,8 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
   Future<void> _showResults(Map<String, dynamic> result) async {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => ResultsScreen(
+      AppPageRoute(
+        page: ResultsScreen(
           screeningResult: result,
           allResults: result['all_results'],
         ),

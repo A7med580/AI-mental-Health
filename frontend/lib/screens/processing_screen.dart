@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:mindful/app_colors.dart';
 import 'package:mindful/screens/adhd_result_screen.dart';
 import 'package:mindful/services/job_service.dart';
+import 'package:mindful/widgets/page_transitions.dart';
 
 class ProcessingScreen extends StatefulWidget {
   final File? videoFile;
@@ -108,8 +109,8 @@ class _ProcessingScreenState extends State<ProcessingScreen>
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (context) => ADHDResultScreen(
+        AppPageRoute(
+          page: ADHDResultScreen(
             screeningResult: fused,
             individualResults: individual,
             modalitiesUsed: modalitiesUsed,

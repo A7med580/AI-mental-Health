@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:mindful/app_colors.dart';
 import 'package:mindful/screens/adhd_chat_screen.dart';
 import 'package:mindful/screens/autism_questionnaire_screen.dart';
+import 'package:mindful/widgets/page_transitions.dart';
 
 /// Initial screening questionnaire to determine which condition to screen for
 /// This is a general, non-diagnostic questionnaire that estimates prior probabilities
@@ -150,7 +151,7 @@ class _InitialQuestionnaireScreenState extends State<InitialQuestionnaireScreen>
       print('Route Decision: Autism');
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const AutismQuestionnaireScreen()),
+        AppPageRoute(page: const AutismQuestionnaireScreen()),
       );
     } else {
       print('Route Decision: ADHD');
@@ -158,10 +159,9 @@ class _InitialQuestionnaireScreenState extends State<InitialQuestionnaireScreen>
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (context) => ADHDChatScreen(
-            initialProbability: normalizedProb,
-            questionnaireAnswers: _answers,
+        AppPageRoute(
+          page: ADHDChatScreen(
+            questionnaireAnswers: _answers.map((k, v) => MapEntry(k, v.toString())),
           ),
         ),
       );

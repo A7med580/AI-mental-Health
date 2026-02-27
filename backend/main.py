@@ -201,10 +201,13 @@ async def asd_face_predict_url(payload: ASDFaceUrlRequest):
         if not config:
             raise HTTPException(status_code=500, detail="ASD face_url config not found")
 
-        # Note: 'predict_asd_face_from_image_url_tf' needs to be in ModelRouter
-        # If not present in ADHD app's ModelRouter, we might need to add it or use an equivalent.
-        # Assuming for now it is present or will be available.
-        result = model_router.predict_asd_face_from_image_url_tf(str(payload.image_url), config)
+        # Run synchronous TF prediction in a thread so it doesn't block the event loop
+        import asyncio
+        result = await asyncio.to_thread(
+            model_router.predict_asd_face_from_image_url_tf,
+            str(payload.image_url),
+            config,
+        )
         return {"success": True, "prediction": result}
 
     except HTTPException:

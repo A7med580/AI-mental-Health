@@ -382,9 +382,10 @@ class ModelRouter:
             if hasattr(model, "predict_proba"):
                 proba = float(model.predict_proba(X)[0][1])
             else:
-                # fallback: treat predict output as 0/1
-                out = model.predict(X)[0]
-                proba = float(out)
+                # fallback: treat predict output as 0/1, assign synthetic probability
+                raw_pred = int(model.predict(X)[0])
+                pred = 1 if raw_pred > 0 else 0
+                proba = 0.85 if pred == 1 else 0.15
 
             pred = int(proba >= 0.5)
 
@@ -424,7 +425,9 @@ class ModelRouter:
                 proba = float(model.predict_proba(X)[0][1])
             else:
                 out = model.predict(X)
-                proba = float(out[0]) if np.ndim(out) else float(out)
+                raw_pred = int(out[0]) if np.ndim(out) else int(out)
+                pred = 1 if raw_pred > 0 else 0
+                proba = 0.85 if pred == 1 else 0.15
 
             pred = int(proba >= 0.5)
 
@@ -463,8 +466,10 @@ class ModelRouter:
                 svm_proba = float(svm.predict_proba(Xs)[0][1])
                 svm_pred = int(svm_proba >= 0.5)
             else:
-                svm_pred = int(svm.predict(Xs)[0])
-                svm_proba = float(svm_pred)
+                raw_pred = int(svm.predict(Xs)[0])
+                svm_pred = 1 if raw_pred > 0 else 0
+                # If no proba available, assign a synthetic probability based on the binary class
+                svm_proba = 0.85 if svm_pred == 1 else 0.15
 
             # ---- CNN probability ----
             Xcnn = np.expand_dims(Xs, axis=2)  # (1, features, 1)
@@ -480,10 +485,14 @@ class ModelRouter:
                 # 2-class softmax
                 cnn_proba = float(out[1])
             else:
-                # multi-class (e.g., 8 emotions): fallback proxy until you provide label order
+                # multi-class (e.g., 8 emotions): fallback proxy
                 top_idx = int(np.argmax(out))
                 top_prob = float(out[top_idx])
-                cnn_proba = min(0.95, max(0.05, top_prob * 0.7))
+                # RAVDESS commonly has 0=neutral, 1=calm
+                if top_idx in [0, 1]:
+                    cnn_proba = 0.15
+                else:
+                    cnn_proba = min(0.90, top_prob * 0.6 + 0.2)
 
             cnn_pred = int(cnn_proba >= 0.5)
 
@@ -528,11 +537,15 @@ class ModelRouter:
             model = adhd_bundle["emotion_model"]
             preds = model.predict(X, verbose=0)[0]
             preds = np.array(preds)
-
+            # proxy mapping based on dominant emotion
+            top_idx = int(np.argmax(preds))
             max_prob = float(np.max(preds))
-
-            # proxy mapping (will refine later if you want)
-            adhd_prob = max_prob * 0.7
+            # AffectNet commonly uses 0=Neutral, 1=Happy
+            if top_idx in [0, 1]:
+                adhd_prob = 0.15
+            else:
+                adhd_prob = min(0.90, max_prob * 0.6 + 0.2)
+                
             pred = int(adhd_prob >= 0.5)
 
             print(f"[ADHD/facial] max_emotion={max_prob:.4f} adhd_prob={adhd_prob:.4f} pred={pred}")

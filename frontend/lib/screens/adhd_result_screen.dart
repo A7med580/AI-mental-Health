@@ -146,7 +146,7 @@ class ADHDResultScreen extends StatelessWidget {
                               border: Border.all(color: _getConfidenceColor(confidenceLevel), width: 2),
                             ),
                             child: Text(
-                              '$confidenceLevel Confidence',
+                              '$confidenceLevel Likelihood',
                               style: GoogleFonts.inter(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
@@ -158,7 +158,7 @@ class ADHDResultScreen extends StatelessWidget {
                           const SizedBox(height: 12),
 
                           Text(
-                            'Confidence: ${(fusedConfidence * 100).toStringAsFixed(1)}%',
+                            'ADHD Likelihood: ${(fusedConfidence * 100).toStringAsFixed(1)}%',
                             style: GoogleFonts.inter(fontSize: 16, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
                           ),
 
@@ -299,7 +299,7 @@ class ADHDResultScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Confidence: ${(confidence * 100).toStringAsFixed(1)}%',
+                  'Likelihood: ${(confidence * 100).toStringAsFixed(1)}%',
                   style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
                 ),
               ],
