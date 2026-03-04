@@ -331,7 +331,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // Form fields
           _buildFormField(Icons.person_outline, 'Full Name', _nameController),
           const SizedBox(height: 14),
-          _buildFormField(Icons.email_outlined, 'Email', _emailController),
+          _buildFormField(Icons.email_outlined, 'Email', _emailController, keyboardType: TextInputType.emailAddress, textInputAction: TextInputAction.next, autocorrect: false),
           const SizedBox(height: 14),
           _buildFormField(Icons.phone_outlined, 'Phone', _phoneController),
           const SizedBox(height: 14),
@@ -428,7 +428,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildFormField(IconData icon, String label, TextEditingController? controller, {String? value}) {
+  Widget _buildFormField(IconData icon, String label, TextEditingController? controller, {String? value, TextInputType? keyboardType, TextInputAction? textInputAction, bool autocorrect = true}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -444,6 +444,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           TextField(
             controller: controller,
             enabled: _isEditing,
+            keyboardType: keyboardType,
+            textInputAction: textInputAction,
+            autocorrect: autocorrect,
             style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary),
             decoration: InputDecoration(
               filled: true,

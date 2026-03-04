@@ -175,7 +175,7 @@ class _RegisterPageState extends State<RegisterPage> {
               _buildField('Email', emailController, Icons.email_outlined, (v) {
                 email = v;
                 if (showError) setState(() => showError = false);
-              }),
+              }, keyboardType: TextInputType.emailAddress, textInputAction: TextInputAction.next, autocorrect: false),
 
               const SizedBox(height: 16),
 
@@ -311,7 +311,7 @@ class _RegisterPageState extends State<RegisterPage> {
     await registerUser();
   }
 
-  Widget _buildField(String label, TextEditingController controller, IconData icon, ValueChanged<String> onChanged, {bool obscure = false, Widget? suffix}) {
+  Widget _buildField(String label, TextEditingController controller, IconData icon, ValueChanged<String> onChanged, {bool obscure = false, Widget? suffix, TextInputType? keyboardType, TextInputAction? textInputAction, bool autocorrect = true}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -326,6 +326,9 @@ class _RegisterPageState extends State<RegisterPage> {
           child: TextField(
             controller: controller,
             obscureText: obscure,
+            keyboardType: keyboardType,
+            textInputAction: textInputAction,
+            autocorrect: autocorrect,
             onChanged: onChanged,
             style: GoogleFonts.inter(fontSize: 15, color: AppColors.textPrimary),
             decoration: InputDecoration(

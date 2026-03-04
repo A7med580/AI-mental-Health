@@ -101,6 +101,9 @@ class _LoginPageState extends State<LoginPage> {
                 controller: emailController,
                 hint: 'Enter your email',
                 icon: Icons.email_outlined,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+                autocorrect: false,
                 onChanged: (v) {
                   email = v;
                   if (showError) setState(() => showError = false);
@@ -368,6 +371,9 @@ class _LoginPageState extends State<LoginPage> {
     required IconData icon,
     bool obscure = false,
     Widget? suffix,
+    TextInputType? keyboardType,
+    TextInputAction? textInputAction,
+    bool autocorrect = true,
     required ValueChanged<String> onChanged,
   }) {
     return Container(
@@ -379,6 +385,9 @@ class _LoginPageState extends State<LoginPage> {
       child: TextField(
         controller: controller,
         obscureText: obscure,
+        keyboardType: keyboardType,
+        textInputAction: textInputAction,
+        autocorrect: autocorrect,
         onChanged: onChanged,
         style: GoogleFonts.inter(fontSize: 15, color: AppColors.textPrimary),
         decoration: InputDecoration(

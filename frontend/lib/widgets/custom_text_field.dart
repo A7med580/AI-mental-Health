@@ -2,7 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../app_colors.dart';
 
-class CustomTextField extends StatelessWidget {
+  final ValueChanged<String>? onChanged;
+  final TextEditingController controller;
+  final String hint;
+  final IconData icon;
+  final bool obscureText;
+  final TextInputType? keyboardType;
+  final TextInputAction? textInputAction;
+  final bool autocorrect;
+
   const CustomTextField({
     super.key,
     required this.onChanged,
@@ -10,13 +18,10 @@ class CustomTextField extends StatelessWidget {
     required this.hint,
     required this.icon,
     this.obscureText = false,
+    this.keyboardType,
+    this.textInputAction,
+    this.autocorrect = true,
   });
-
-  final ValueChanged<String>? onChanged;
-  final TextEditingController controller;
-  final String hint;
-  final IconData icon;
-  final bool obscureText;
 
   @override
   Widget build(BuildContext context) {
@@ -24,6 +29,9 @@ class CustomTextField extends StatelessWidget {
       controller: controller,
       onChanged: onChanged,
       obscureText: obscureText,
+      keyboardType: keyboardType,
+      textInputAction: textInputAction,
+      autocorrect: autocorrect,
       decoration: InputDecoration(
         hintText: hint,
         prefixIcon: Icon(icon),
