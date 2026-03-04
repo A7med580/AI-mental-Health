@@ -4,21 +4,20 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mindful/app_colors.dart';
 import 'package:mindful/services/video_storage_service.dart';
-
 import 'package:mindful/screens/video_preview_screen.dart';
 import 'package:mindful/screens/processing_screen.dart';
-import 'package:mindful/widgets/glass_container.dart';
-import 'package:mindful/widgets/page_transitions.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:camera/camera.dart';
 import 'package:path_provider/path_provider.dart';
 
 /// ADHD-specific chat interview screen
 class ADHDChatScreen extends StatefulWidget {
-  final Map<int, String> questionnaireAnswers;
+  final double initialProbability;
+  final Map<int, int> questionnaireAnswers;
 
   const ADHDChatScreen({
     Key? key,
+    required this.initialProbability,
     required this.questionnaireAnswers,
   }) : super(key: key);
 
@@ -26,7 +25,7 @@ class ADHDChatScreen extends StatefulWidget {
   State<ADHDChatScreen> createState() => _ADHDChatScreenState();
 }
 
-class _ADHDChatScreenState extends State<ADHDChatScreen> with TickerProviderStateMixin {
+class _ADHDChatScreenState extends State<ADHDChatScreen> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _textController = TextEditingController();
 
@@ -45,9 +44,6 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> with TickerProviderStat
 
   final Map<int, String> _questionAnswers = {};
   final Map<int, String?> _questionVideos = {};
-
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
 
   // DSM-5 aligned questions
   final List<ADHDQuestion> _adhdQuestions = [
@@ -96,14 +92,11 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> with TickerProviderStat
   @override
   void initState() {
     super.initState();
-    _pulseController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800))
-      ..repeat(reverse: true);
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.3).animate(CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut));
     _initializeChat();
     _precheckPermissions();
   }
 
-  // ─── Logic ──────────────────────────────────────────────────────────
+  // ─── ALL LOGIC BELOW IS UNCHANGED ───────────────────────────────────
 
   Future<void> _initializeChat() async {
     _addSystemMessage(
@@ -326,8 +319,8 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> with TickerProviderStat
 
       Navigator.push(
         context,
-        AppPageRoute(
-          page: VideoPreviewScreen(
+        MaterialPageRoute(
+          builder: (context) => VideoPreviewScreen(
             videoPath: savedPath,
             onRetake: () async {
               try {
@@ -380,8 +373,8 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> with TickerProviderStat
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
-          AppPageRoute(
-            page: ProcessingScreen(
+          MaterialPageRoute(
+            builder: (context) => ProcessingScreen(
               videoFile: null,
               questionnaireData: questionnaireData,
             ),
@@ -398,8 +391,8 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> with TickerProviderStat
 
       Navigator.pushReplacement(
         context,
-        AppPageRoute(
-          page: ProcessingScreen(
+        MaterialPageRoute(
+          builder: (context) => ProcessingScreen(
             videoFile: videoFile,
             questionnaireData: questionnaireData,
           ),
@@ -418,11 +411,10 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> with TickerProviderStat
     _scrollController.dispose();
     _textController.dispose();
     _cameraController?.dispose();
-    _pulseController.dispose();
     super.dispose();
   }
 
-  // ─── UI (Liquid Glass Design) ──────────────────────────────────────
+  // ─── UI (NEW FIGMA DESIGN) ──────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -438,330 +430,262 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> with TickerProviderStat
         _cameraController!.value.isInitialized;
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFF0EEFF),
-              Color(0xFFE8E0FF),
-              Color(0xFFF5F0FF),
-              Color(0xFFEDE5FF),
-            ],
-            stops: [0.0, 0.3, 0.6, 1.0],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // ── Header ──
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-                child: GlassContainer(
-                  borderRadius: 16,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  child: Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.3),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.arrow_back, size: 20, color: AppColors.textPrimary),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'AI Interview',
-                          style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          gradient: AppColors.primaryGradient,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          '${_currentQuestionIndex + 1}/${_adhdQuestions.length}',
-                          style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white),
-                        ),
-                      ),
-                    ],
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // ── Header ──
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.background,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.arrow_back, size: 20, color: AppColors.textPrimary),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'AI Interview',
+                      style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                    ),
+                  ),
+                  Text(
+                    '${_currentQuestionIndex + 1}/${_adhdQuestions.length}',
+                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+            ),
+
+            // ── Messages ──
+            Expanded(
+              child: ListView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                itemCount: _messages.length,
+                itemBuilder: (context, index) => _buildMessageBubble(_messages[index]),
+              ),
+            ),
+
+            // ── Camera preview ──
+            if (showVideoControls && !_isRecording)
+              Container(
+                height: 140,
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.3), width: 2),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: CameraPreview(_cameraController!),
                 ),
               ),
 
-              // ── Messages ──
-              Expanded(
-                child: ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-                  itemCount: _messages.length,
-                  itemBuilder: (context, index) => _buildMessageBubble(_messages[index]),
-                ),
+            // ── Multimodal info bar ──
+            Container(
+              margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppColors.primaryPurple.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.15)),
               ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, size: 16, color: AppColors.primaryPurple),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Multimodal Assessment: This screening combines text responses, video, and audio analysis for more comprehensive results.',
+                      style: GoogleFonts.inter(fontSize: 11, color: AppColors.primaryPurple, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
-              // ── Camera preview ──
-              if (showVideoControls)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: GlassContainer(
-                    borderRadius: 18,
-                    padding: const EdgeInsets.all(6),
-                    child: Column(
-                      children: [
-                        SizedBox(
-                          height: 200,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(14),
-                            child: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                CameraPreview(_cameraController!),
-                                // Recording indicator
-                                if (_isRecording)
-                                  Positioned(
-                                    top: 10,
-                                    left: 10,
-                                    child: AnimatedBuilder(
-                                      animation: _pulseAnimation,
-                                      builder: (_, __) => Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                        decoration: BoxDecoration(
-                                          color: Colors.red.withValues(alpha: 0.85),
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Transform.scale(
-                                              scale: _pulseAnimation.value,
-                                              child: Container(
-                                                width: 8,
-                                                height: 8,
-                                                decoration: const BoxDecoration(
-                                                  color: Colors.white,
-                                                  shape: BoxShape.circle,
-                                                ),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 6),
-                                            Text('REC', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white)),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        // Record / Stop button
-                        SizedBox(
+            // ── Input area ──
+            if (!_isProcessing && currentQuestion != null)
+              Container(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, -2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    // Permission button
+                    if (needsVideo && !_cameraPermissionGranted && !_cameraPermissionRequested)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: SizedBox(
                           width: double.infinity,
-                          child: _isRecording
-                              ? Container(
-                                  decoration: BoxDecoration(
-                                    color: AppColors.error,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Material(
-                                    color: Colors.transparent,
-                                    child: InkWell(
-                                      borderRadius: BorderRadius.circular(12),
-                                      onTap: _stopVideoRecording,
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(vertical: 12),
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            const Icon(Icons.stop, color: Colors.white, size: 18),
-                                            const SizedBox(width: 8),
-                                            Text('Stop Recording', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              : Container(
-                                  decoration: BoxDecoration(
-                                    gradient: AppColors.primaryGradient,
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: AppColors.primaryPurple.withValues(alpha: 0.25),
-                                        blurRadius: 10,
-                                        offset: const Offset(0, 4),
-                                      ),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: AppColors.primaryGradient,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(12),
+                                onTap: _requestCameraAndMicPermission,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(Icons.lock_open, color: Colors.white, size: 18),
+                                      const SizedBox(width: 8),
+                                      Text('Allow Camera & Microphone', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
                                     ],
                                   ),
-                                  child: Material(
-                                    color: Colors.transparent,
-                                    child: InkWell(
-                                      borderRadius: BorderRadius.circular(12),
-                                      onTap: _startVideoRecording,
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(vertical: 12),
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            const Icon(Icons.videocam, color: Colors.white, size: 18),
-                                            const SizedBox(width: 8),
-                                            Text('Record Video Response', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                    // Video buttons
+                    if (showVideoControls && !_isRecording)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: AppColors.primaryGradient,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(12),
+                                onTap: _startVideoRecording,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(Icons.videocam, color: Colors.white, size: 18),
+                                      const SizedBox(width: 8),
+                                      Text('Record Video Response', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+                                    ],
                                   ),
                                 ),
+                              ),
+                            ),
+                          ),
                         ),
-                      ],
-                    ),
-                  ),
-                ),
+                      ),
 
-              // ── Input area ──
-              if (!_isProcessing && currentQuestion != null)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-                  child: GlassContainer(
-                    borderRadius: 18,
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
+                    if (_isRecording)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: _stopVideoRecording,
+                            icon: const Icon(Icons.stop, size: 18),
+                            label: Text('Stop Recording', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.error,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                    // Text input
+                    Row(
                       children: [
-                        // Permission button
-                        if (needsVideo && !_cameraPermissionGranted && !_cameraPermissionRequested)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: SizedBox(
-                              width: double.infinity,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  gradient: AppColors.primaryGradient,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    borderRadius: BorderRadius.circular(12),
-                                    onTap: _requestCameraAndMicPermission,
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 12),
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          const Icon(Icons.lock_open, color: Colors.white, size: 18),
-                                          const SizedBox(width: 8),
-                                          Text('Allow Camera & Microphone', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.background,
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(color: Colors.grey[300]!),
                             ),
-                          ),
-
-                        // Multimodal info
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.psychology, size: 14, color: AppColors.primaryPurple),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(
-                                  'Multimodal: text + video + audio analysis',
-                                  style: GoogleFonts.inter(fontSize: 10, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
-                                ),
+                            child: TextField(
+                              controller: _textController,
+                              style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary),
+                              decoration: InputDecoration(
+                                hintText: 'Type your response...',
+                                hintStyle: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                               ),
-                            ],
+                              onSubmitted: _submitTextAnswer,
+                            ),
                           ),
                         ),
-
-                        // Text input
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.5),
-                                  borderRadius: BorderRadius.circular(24),
-                                  border: Border.all(color: Colors.white.withValues(alpha: 0.6)),
-                                ),
-                                child: TextField(
-                                  controller: _textController,
-                                  style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary),
-                                  decoration: InputDecoration(
-                                    hintText: 'Type your response...',
-                                    hintStyle: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
-                                    border: InputBorder.none,
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                  ),
-                                  onSubmitted: _submitTextAnswer,
-                                ),
-                              ),
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () => _submitTextAnswer(_textController.text),
+                          child: Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              gradient: AppColors.primaryGradient,
+                              shape: BoxShape.circle,
                             ),
-                            const SizedBox(width: 8),
-                            GestureDetector(
-                              onTap: () => _submitTextAnswer(_textController.text),
-                              child: Container(
-                                width: 44,
-                                height: 44,
-                                decoration: BoxDecoration(
-                                  gradient: AppColors.primaryGradient,
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppColors.primaryPurple.withValues(alpha: 0.3),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: const Icon(Icons.send, color: Colors.white, size: 20),
-                              ),
-                            ),
-                          ],
+                            child: const Icon(Icons.send, color: Colors.white, size: 20),
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                )
-              else if (_isProcessing)
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: GlassContainer(
-                    borderRadius: 16,
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(
-                          width: 36,
-                          height: 36,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 3,
-                            valueColor: AlwaysStoppedAnimation(AppColors.primaryPurple),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text('Preparing screening...', style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary)),
-                      ],
-                    ),
-                  ),
+                  ],
                 ),
-            ],
-          ),
+              )
+            else if (_isProcessing)
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 36,
+                      height: 36,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3,
+                        valueColor: AlwaysStoppedAnimation(AppColors.primaryPurple),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text('Preparing screening...', style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary)),
+                  ],
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -774,28 +698,23 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> with TickerProviderStat
       alignment: isSystem ? Alignment.centerLeft : Alignment.centerRight,
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
         decoration: BoxDecoration(
-          color: isSystem
-              ? Colors.white.withValues(alpha: 0.55)
-              : AppColors.primaryPurple.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(16).copyWith(
+          color: isSystem ? Colors.grey[200] : AppColors.primaryPurple.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(16),
+            topRight: const Radius.circular(16),
             bottomLeft: isSystem ? const Radius.circular(4) : const Radius.circular(16),
             bottomRight: isSystem ? const Radius.circular(16) : const Radius.circular(4),
-          ),
-          border: Border.all(
-            color: isSystem
-                ? Colors.white.withValues(alpha: 0.6)
-                : AppColors.primaryPurple.withValues(alpha: 0.2),
           ),
         ),
         child: Text(
           message.text,
           style: GoogleFonts.inter(
             fontSize: 14,
-            color: isSystem ? AppColors.textPrimary : AppColors.textPrimary,
-            height: 1.4,
+            color: AppColors.textPrimary,
+            height: 1.5,
           ),
         ),
       ),
@@ -807,9 +726,12 @@ class ChatMessage {
   final String text;
   final bool isSystem;
   final DateTime timestamp;
-  final String? videoPath;
 
-  ChatMessage({required this.text, required this.isSystem, required this.timestamp, this.videoPath});
+  ChatMessage({
+    required this.text,
+    required this.isSystem,
+    required this.timestamp,
+  });
 }
 
 class ADHDQuestion {
@@ -817,5 +739,9 @@ class ADHDQuestion {
   final String category;
   final bool requiresVideo;
 
-  ADHDQuestion({required this.text, required this.category, required this.requiresVideo});
+  ADHDQuestion({
+    required this.text,
+    required this.category,
+    this.requiresVideo = false,
+  });
 }

@@ -1,125 +1,151 @@
-# AI Mental Health Companion (Research Prototype)
+# 🧠 Mindful: AI Mental Health Companion
 
-**Current Version:** 1.0 (Phase 1 - Research & Model Validation)  
-**Institution:** Pharos University in Alexandria (PUA)
+[![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white)](https://flutter.dev)
+[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com)
+[![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)](https://www.python.org)
+[![TensorFlow](https://img.shields.io/badge/TensorFlow-%23FF6F00.svg?style=for-the-badge&logo=TensorFlow&logoColor=white)](https://www.tensorflow.org)
+[![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
 
-## 📌 Project Overview
-
-The **AI Mental Health Companion** is a multimodal AI system designed to perform pre-screening for mental health conditions using objective biomarkers. Unlike traditional questionnaire-only apps, this system integrates **Computer Vision**, **Voice Stress Analysis**, and **Natural Language Processing (NLP)** to provide a holistic assessment of a user's mental state.
-
-**Key Capabilities (Phase 1):**
-*   **ADHD Screening:** Multimodal fusion of behavioral data, eye gaze heuristics, voice prosody, and facial micro-expressions.
-*   **Autism (ASD) Screening:** Facial emotion recognition combined with AQ-10 standardized testing.
-*   **Real-time Feature Extraction:** On-device and server-side extraction of MFCCs (audio), gaze latency (video), and sentiment (text).
+**Mindful** is a cutting-edge, multimodal AI-driven system designed for early screening of mental health conditions like **ADHD** and **Autism (ASD)**. By leveraging Computer Vision, Voice Stress Analysis, and NLP, Mindful provides objective biomarkers to supplement traditional clinical assessments.
 
 ---
 
-## 🏗️ Technical Architecture
+## 🚀 Key Features
 
-The system operates on a client-server architecture:
-
-### **1. The Brain (Backend)**
-*   **Framework:** Python FastAPI (High-performance Async API)
-*   **AI Engine:** 
-    *   **TensorFlow/Keras:** For facial emotion recognition (CNNs).
-    *   **Scikit-learn:** For SVMs and Random Forest classifiers (Voice/Behavior).
-    *   **Librosa & OpenCV:** For raw feature extraction from media files.
-*   **Orchestrator:** `ModelRouter` service that dynamically routes inputs to the correct model pipeline based on available modalities.
-
-### **2. The Interface (Frontend)**
-*   **Framework:** Flutter (Cross-platform Mobile App)
-*   **State Management:** Riverpod (minimal implementation)
-*   **Connectivity:** REST API communication with the backend.
-*   **Key Modules:**
-    *   Camera & Mic integration for live assessments.
-    *   Chat interface for symptom journaling.
-    *   Result visualization dashboards.
+*   **⚡ Real-time ADHD Screening**: Multi-modal fusion of behavioral data, eye gaze heuristics, and voice prosody.
+*   **🧩 ASD Detection**: Advanced facial emotion recognition coupled with standardized diagnostic logic (AQ-10).
+*   **🎙️ Voice Stress Analysis**: MFCC-based emotion and impulsivity detection from audio recordings.
+*   **👁️ Gaze Tracking**: Heuristic-based eye movement analysis for behavioral biomarker extraction.
+*   **🔔 Smart Notifications**: Asynchronous background processing with in-app result alerts.
+*   **📱 Liquid Glass Design**: Premium mobile experience with smooth iOS-style transitions.
 
 ---
 
-## 🚀 Getting Started
+## 🏗️ System Architecture
 
-### Prerequisites
-*   **Python 3.9+**
-*   **Flutter SDK** (3.x+)
-*   **ffmpeg** (Required for audio processing on backend)
+Mindful follows a modern client-server architecture designed for heavy AI processing without compromising mobile user experience.
 
-### 1. Backend Setup
-The backend hosts the AI models and processing logic.
+### High-Level Data Flow
 
-```bash
-# 1. Navigate to backend
-cd backend
+```mermaid
+sequenceDiagram
+    participant User
+    participant App as Flutter Mobile App
+    participant API as FastAPI Backend
+    participant Models as AI Fusion Engine
+    participant DB as Supabase
 
-# 2. Create virtual environment
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# 3. Install dependencies
-pip install -r requirements.txt
-# Note: Ensure you have 'ffmpeg' installed on your system path!
-
-# 4. Start the server
-python main.py
-```
-*Server will start at: `http://0.0.0.0:8000`*
-
-### 2. Frontend Setup
-The mobile application for user interaction.
-
-```bash
-# 1. Navigate to frontend
-cd frontend
-
-# 2. Configure Network
-# Open lib/core/config/api_config.dart and update PHYSICAL_DEVICE_IP
-# with your computer's LAN IP (e.g., http://192.168.1.5:8000)
-
-# 3. Install dependencies
-flutter pub get
-
-# 4. Run the app
-flutter run
+    User->>App: Record Interview/Media
+    App->>DB: Store Metadata & Auth
+    App->>API: Submit Job (UUID)
+    API-->>App: Job Queued Ack
+    Note over API,Models: Async Processing Starts
+    API->>Models: Extract Features (MFCC, Gaze, Face)
+    Models-->>API: Fused Probabilities
+    API->>DB: Save Final Result
+    App->>API: Poll Status / Notification
+    API-->>App: Screening Ready
+    App->>User: Display Result Dashboard
 ```
 
+### AI Fusion Strategy (ADHD)
+
+```mermaid
+graph TD
+    subgraph "Input Modalities"
+        V[Video Feed]
+        A[Audio Stream]
+        T[Textual Answers]
+    end
+
+    V --> FD[Face Detection]
+    V --> GT[Gaze Tracking]
+    A --> VSA[Voice Stress Analysis]
+    T --> NLP[Sentiment/Behavioral NLP]
+
+    FD --> FM[Facial Model - CNN]
+    GT --> EM[Eye Model - RF]
+    VSA --> VM[Voice Model - SVM/CNN]
+    NLP --> BM[Behavioral Model - CatBoost]
+
+    subgraph "Late Fusion Engine"
+        FM & EM & VM & BM --> LF[Weighted Probability Averaging]
+    end
+
+    LF --> Result[Final ADHD Probability]
+```
+
+### AI Fusion Strategy (ASD - Autism)
+
+```mermaid
+graph TD
+    subgraph "Input Modalities"
+        V[Video/Face Feed]
+        T[Textual Answers AQ-10]
+    end
+
+    V --> FD[Facial Detection OpenCV]
+    T --> NLP[Diagnostic Scoring Engine]
+
+    FD --> FM[Facial Emotion Model - CNN/Keras]
+    NLP --> BM[Behavioral Heuristics]
+
+    subgraph "Late Fusion Engine"
+        FM & BM --> LF[Weighted Probability Aggregation]
+    end
+
+    LF --> Result[Final ASD Probability]
+```
+
 ---
 
-## 🧠 AI Model Pipeline
+## 🛠️ Technology Stack
 
-### ADHD Module
-This module uses a **Late Fusion** strategy across four models:
-1.  **Behavioral Model:** Analyzes interactions and questionnaire responses (CatBoost).
-2.  **Eye Model:** Heuristic analysis of gaze dispersion and blink rates from video (RandomForest).
-3.  **Voice Model:** Spectral analysis (MFCC + Chroma) for impulsivity markers (SVM + CNN).
-4.  **Facial Model:** Emotion volatility tracking (CNN).
-
-### ASD Module
-1.  **Text Model:** Analyzes answers to the AQ-10 questionnaire.
-2.  **Facial Model:** Detects flatness of affect and specific emotional markers from images.
+| Layer | Technologies |
+| :--- | :--- |
+| **Frontend** | Flutter, Riverpod, Supabase Auth, Camera/Video Player |
+| **Backend** | FastAPI (Async), Uvicorn, BackgroundTasks |
+| **AI/ML** | TensorFlow/Keras, Scikit-learn, MediaPipe, Librosa, OpenCV |
+| **Storage** | Supabase (User Data), Local Persistent OS Storage (Media) |
 
 ---
 
 ## 📂 Project Structure
 
-```
-├── backend/
-│   ├── models/             # Serialized .pkl and .h5 model files
-│   ├── services/
-│   │   ├── feature_extractor.py  # OpenCV/Librosa logic
-│   │   ├── model_router.py       # Decision & Routing logic
-│   │   └── adhd_fusion.py        # Weighted probability averaging
-│   ├── config/             # Model paths and thresholds
-│   └── main.py             # FastAPI entry point
-│
-└── frontend/
-    ├── lib/
-    │   ├── screens/        # UI Pages (Chat, Results, etc.)
-    │   ├── core/           # Config and Constants
-    │   └── main.dart       # App Entry point
-    └── pubspec.yaml        # Flutter dependencies
+```text
+.
+├── backend/                # FastAPI Python Server
+│   ├── Models/             # Serialized AI Models (.h5, .pkl)
+│   ├── services/           # AI Logic & Feature Extractors
+│   │   ├── model_router.py # Request routing
+│   │   ├── adhd_fusion.py  # Multi-modal fusion logic for ADHD
+│   │   └── autism_fusion.py# Logic for ASD Detection
+│   └── main.py             # Server Entry Point
+├── frontend/               # Flutter Mobile Application
+│   ├── lib/
+│   │   ├── core/           # Config, Themes, and Constants
+│   │   ├── screens/        # UI Implementation (Glassmorphism)
+│   │   ├── widgets/        # Reusable UI Components
+│   │   └── services/       # API, Jobs, and Notification services
+│   └── pubspec.yaml        # Flutter Dependencies
+└── README.md
 ```
 
 ---
 
-## ⚠️ Disclaimer
-**Research Prototype Only.** This software is for academic testing and demonstration purposes. It is **NOT** a certified medical diagnostic tool. Results should not be interpreted as a clinical diagnosis.
+## 🏁 Getting Started
+
+### Backend Setup
+1. Navigate to `/backend`
+2. Install dependencies: `pip install -r requirements.txt`
+3. Start the server: `python main.py` or `python main_phase2.py`
+
+### Frontend Setup
+1. Navigate to `/frontend`
+2. Update `lib/core/config/api_config.dart` with your local IP.
+3. Run the app: `flutter run`
+
+---
+
+## ⚖️ Disclaimer
+This project is an **Academic Research Prototype**. It is **not** a certified medical diagnostic tool.

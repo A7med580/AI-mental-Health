@@ -27,47 +27,43 @@ class ContentItem {
     this.category = 'General',
   });
 
-  /// Clinical articles – Titles, lengths, and URLs based on WHO/NICE criteria
+  /// Placeholder articles – titles & descriptions ready; URLs to be injected later
   static const List<ContentItem> sampleArticles = [
     ContentItem(
       id: 'art_1',
       title: 'Understanding Anxiety',
       description: 'Learn about the causes, symptoms, and management strategies for anxiety disorders.',
-      duration: '5 min',
+      duration: '5 min read',
       type: ContentType.article,
-      articleUrl: 'https://www.nimh.nih.gov/health/topics/anxiety-disorders',
       category: 'Anxiety',
     ),
     ContentItem(
       id: 'art_2',
       title: 'Stress Management Techniques',
       description: 'Practical strategies for managing daily stress and building resilience.',
-      duration: '8 min',
+      duration: '8 min read',
       type: ContentType.article,
-      articleUrl: 'https://www.who.int/news-room/questions-and-answers/item/stress',
       category: 'Stress',
     ),
     ContentItem(
       id: 'art_3',
       title: 'The Science of Sleep',
       description: 'How sleep affects your mental health and tips for better rest.',
-      duration: '6 min',
+      duration: '6 min read',
       type: ContentType.article,
-      articleUrl: 'https://www.sleepfoundation.org/',
       category: 'Sleep',
     ),
     ContentItem(
       id: 'art_4',
       title: 'Building Healthy Habits',
       description: 'A step-by-step guide to establishing routines that support mental wellness.',
-      duration: '7 min',
+      duration: '7 min read',
       type: ContentType.article,
-      articleUrl: 'https://www.div12.org/treatment/behavioral-activation-for-depression/',
       category: 'Wellness',
     ),
   ];
 
-  /// Clinical videos – Titles, lengths, and URLs based on WHO/NICE criteria
+  /// Placeholder videos – titles & descriptions ready; URLs to be injected later
   static const List<ContentItem> sampleVideos = [
     ContentItem(
       id: 'vid_1',
@@ -75,7 +71,6 @@ class ContentItem {
       description: 'A beginner-friendly guide to mindfulness meditation and present-moment awareness.',
       duration: '12 min',
       type: ContentType.video,
-      videoUrl: 'https://www.mindful.org/',
       category: 'Mindfulness',
     ),
     ContentItem(
@@ -84,7 +79,6 @@ class ContentItem {
       description: 'Understanding Cognitive Behavioral Therapy and how it can help manage thoughts.',
       duration: '15 min',
       type: ContentType.video,
-      videoUrl: 'https://beckinstitute.org/',
       category: 'CBT',
     ),
     ContentItem(
@@ -93,7 +87,6 @@ class ContentItem {
       description: 'Guided breathing exercises you can do anywhere to reduce anxiety instantly.',
       duration: '8 min',
       type: ContentType.video,
-      videoUrl: 'https://www.drweil.com/',
       category: 'Breathing',
     ),
     ContentItem(
@@ -102,7 +95,6 @@ class ContentItem {
       description: 'Learn about ADHD symptoms, diagnosis, and evidence-based treatment options.',
       duration: '18 min',
       type: ContentType.video,
-      videoUrl: 'https://chadd.org/',
       category: 'ADHD',
     ),
   ];

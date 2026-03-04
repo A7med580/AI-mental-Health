@@ -63,50 +63,22 @@ class ModelLoader:
 
         cfg = ModelConfig()
 
-        # Load models individually and gracefully handle failures
-        behavior_model = None
-        behavior_feature_names = None
-        eye_model = None
-        voice_svm = None
-        voice_scaler = None
-        voice_cnn = None
-        emotion_model = None
+        behavior_model = self.load_model(cfg.ADHD_BEHAVIOR_MODEL, "joblib")
+        # feature names is .pkl, so load as joblib not json
+        behavior_feature_names = self.load_model(cfg.ADHD_BEHAVIOR_FEATURES, "joblib")
 
-        try:
-            behavior_model = self.load_model(cfg.ADHD_BEHAVIOR_MODEL, "joblib")
-            behavior_feature_names = self.load_model(cfg.ADHD_BEHAVIOR_FEATURES, "joblib")
-        except Exception as e:
-            print(f"[ModelLoader] Failed to load behavior models: {e}")
+        eye_model = self.load_model(cfg.ADHD_EYE_MODEL, "joblib")
 
-        try:
-            eye_model = self.load_model(cfg.ADHD_EYE_MODEL, "joblib")
-        except Exception as e:
-            print(f"[ModelLoader] Failed to load eye model: {e}")
-
-        try:
-            voice_svm = self.load_model(cfg.ADHD_VOICE_SVM, "joblib")
-            voice_scaler = self.load_model(cfg.ADHD_VOICE_SCALER, "joblib")
-        except Exception as e:
-            print(f"[ModelLoader] Failed to load voice SVM/scaler: {e}")
+        voice_svm = self.load_model(cfg.ADHD_VOICE_SVM, "joblib")
+        voice_scaler = self.load_model(cfg.ADHD_VOICE_SCALER, "joblib")
 
         try:
             import tensorflow
-            try:
-                # Compile=False prevents optimizer errors from Keras 3 models
-                from tensorflow import keras
-                voice_cnn = keras.models.load_model(cfg.ADHD_VOICE_CNN, compile=False)
-                self._models[cfg.ADHD_VOICE_CNN] = voice_cnn
-            except Exception as e:
-                print(f"[ModelLoader] Failed to load voice_cnn: {e}")
-
-            try:
-                emotion_model = keras.models.load_model(cfg.ADHD_FACIAL_MODEL, compile=False)
-                self._models[cfg.ADHD_FACIAL_MODEL] = emotion_model
-            except Exception as e:
-                print(f"[ModelLoader] Failed to load emotion_model: {e}")
-
         except ImportError:
-            print("[ModelLoader] TensorFlow/Keras not available, skipping deep learning models")
+            raise RuntimeError("TensorFlow/Keras not available, cannot load voice_cnn/emotion model")
+
+        voice_cnn = self.load_model(cfg.ADHD_VOICE_CNN, "h5")
+        emotion_model = self.load_model(cfg.ADHD_FACIAL_MODEL, "keras")
 
         bundle = {
             "behavior_model": behavior_model,
