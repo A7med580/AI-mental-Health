@@ -1,8 +1,35 @@
-# Ignore local virtual environments that are not yet tracked
+# Environments
+.env
 backend/.venv/
 .venv/
-.env
+venv/
+
+# Python caching
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+
+# Flutter build artifacts
+frontend/build/
+frontend/.dart_tool/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/.packages
+frontend/.pub-cache/
+frontend/.pub/
+
+# Backend Output
+backend/results/
+
+# Serialized Model Files (Large files)
+*.h5
+*.keras
+*.keras.bak
+*.keras.bak_dtype
+*.pkl
+
+# OS specific
 .DS_Store
 **/.DS_Store
+Thumbs.db
