@@ -14,10 +14,12 @@
 
 *   **⚡ Real-time ADHD Screening**: Multi-modal fusion of behavioral data, eye gaze heuristics, and voice prosody.
 *   **🧩 ASD Detection**: Advanced facial emotion recognition coupled with standardized diagnostic logic (AQ-10).
+*   **🤖 MindCare AI Companion**: High-empathy supportive chatbot powered by **Gemini 2.0 Flash** for general mental health support and grounding.
+*   **🧘 Wellness & Meditation Hub**: In-app audio streaming of clinically-validated meditations (MBSR/MBCT protocols) with external continuity for Spotify and YouTube.
+*   **📊 Interactive Mood Monitoring**: Daily mood logging with Glassmorphism-styled metrics, trend analysis, and detailed weekly overviews.
 *   **🎙️ Voice Stress Analysis**: MFCC-based emotion and impulsivity detection from audio recordings.
 *   **👁️ Gaze Tracking**: Heuristic-based eye movement analysis for behavioral biomarker extraction.
-*   **🔔 Smart Notifications**: Asynchronous background processing with in-app result alerts.
-*   **📱 Liquid Glass Design**: Premium mobile experience with smooth iOS-style transitions.
+*   **📱 Liquid Glass Design**: Premium mobile experience with smooth transitions and uniform design tokens.
 
 ---
 
@@ -103,10 +105,10 @@ graph TD
 
 | Layer | Technologies |
 | :--- | :--- |
-| **Frontend** | Flutter, Riverpod, Supabase Auth, Camera/Video Player |
+| **Frontend** | Flutter, Riverpod, Supabase Auth, Camera, just_audio, flutter_animate |
 | **Backend** | FastAPI (Async), Uvicorn, BackgroundTasks |
-| **AI/ML** | TensorFlow/Keras, Scikit-learn, MediaPipe, Librosa, OpenCV |
-| **Storage** | Supabase (User Data), Local Persistent OS Storage (Media) |
+| **AI / NLP** | Google Gemini 2.0 Flash (Companion), TensorFlow, Scikit-learn, MediaPipe, Librosa, OpenCV |
+| **Storage** | Supabase (User Data & Results), Cloud Storage (Media Artifacts) |
 
 ---
 
