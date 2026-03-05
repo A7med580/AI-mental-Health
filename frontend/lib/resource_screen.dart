@@ -129,40 +129,57 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
   Widget _buildVideosList() => Column(children: ContentItem.sampleVideos.map((item) => _buildContentCard(item, isVideo: true)).toList());
 
   Widget _buildContentCard(ContentItem item, {bool isVideo = false}) {
-    return GlassContainer(
-      margin: const EdgeInsets.only(bottom: 12),
-      borderRadius: 18,
-      opacity: 0.68,
-      blur: 10,
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Container(
-            width: 56, height: 56,
-            decoration: BoxDecoration(
-              color: isVideo ? Colors.blue.shade50.withValues(alpha: 0.8) : AppColors.primaryPurple.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(14),
+    return GestureDetector(
+      onTap: () {
+        final url = isVideo ? item.videoUrl : item.articleUrl;
+        if (url != null && url.isNotEmpty) {
+          _launchUrl(url);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${item.title} link coming soon!', style: GoogleFonts.inter()),
+              backgroundColor: AppColors.primaryPurple,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: Icon(isVideo ? Icons.play_circle_filled : Icons.article, color: isVideo ? Colors.blue : AppColors.primaryPurple, size: 28),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(item.title, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                const SizedBox(height: 4),
-                Text(item.description, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary, height: 1.3), maxLines: 2, overflow: TextOverflow.ellipsis),
-              ],
+          );
+        }
+      },
+      child: GlassContainer(
+        margin: const EdgeInsets.only(bottom: 12),
+        borderRadius: 18,
+        opacity: 0.68,
+        blur: 10,
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              width: 56, height: 56,
+              decoration: BoxDecoration(
+                color: isVideo ? Colors.blue.shade50.withValues(alpha: 0.8) : AppColors.primaryPurple.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(isVideo ? Icons.play_circle_filled : Icons.article, color: isVideo ? Colors.blue : AppColors.primaryPurple, size: 28),
             ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(color: AppColors.primaryPurple.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
-            child: Text(item.duration, style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.primaryPurple)),
-          ),
-        ],
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(item.title, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                  const SizedBox(height: 4),
+                  Text(item.description, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary, height: 1.3), maxLines: 2, overflow: TextOverflow.ellipsis),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(color: AppColors.primaryPurple.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
+              child: Text(item.duration, style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.primaryPurple)),
+            ),
+          ],
+        ),
       ),
     );
   }

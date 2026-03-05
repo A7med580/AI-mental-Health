@@ -11,6 +11,7 @@ import 'package:mindful/dashboard_screen.dart';
 import 'package:mindful/chat_screen.dart';
 import 'package:mindful/mood_tracker_screen.dart';
 import 'package:mindful/resource_screen.dart';
+import 'package:mindful/screens/player_screen.dart';
 
 class MeditationScreen extends StatefulWidget {
   const MeditationScreen({Key? key}) : super(key: key);
@@ -36,13 +37,86 @@ class _MeditationScreenState extends State<MeditationScreen> with TickerProvider
   ];
 
   static const _meditations = [
-    {'title': 'Deep Breathing', 'desc': 'Calm your nervous system with guided deep breathing exercises', 'duration': '5 min', 'icon': Icons.air, 'color': 0xFF6B46C1},
-    {'title': 'Body Scan', 'desc': 'Release tension by bringing awareness to each part of your body', 'duration': '10 min', 'icon': Icons.accessibility_new, 'color': 0xFF2563EB},
-    {'title': 'Loving Kindness', 'desc': 'Cultivate compassion for yourself and others', 'duration': '8 min', 'icon': Icons.favorite, 'color': 0xFFE11D48},
-    {'title': 'Sleep Meditation', 'desc': 'Gentle guided imagery to help you drift into restful sleep', 'duration': '15 min', 'icon': Icons.nights_stay, 'color': 0xFF7C3AED},
-    {'title': 'Morning Energy', 'desc': 'Energizing visualization to start your day with clarity', 'duration': '7 min', 'icon': Icons.wb_sunny, 'color': 0xFFF59E0B},
-    {'title': 'Anxiety Relief', 'desc': 'Grounding techniques to calm an anxious mind quickly', 'duration': '12 min', 'icon': Icons.spa, 'color': 0xFF059669},
+    {
+      'title': 'Deep Breathing',
+      'desc': 'Calm your nervous system with guided deep breathing exercises',
+      'duration': '12 min',
+      'icon': Icons.air,
+      'color': 0xFF6B46C1,
+      // UCLA MARC – Breath, Sound & Body — hosted on freemindfulness.org (CC BY-NC-SA)
+      'audioUrl': 'https://drive.google.com/uc?export=download&id=1Ip7JEkmvZetfK6SJgAtjm2rUC0RRH9Nz',
+      'youtubeUrl': 'https://www.youtube.com/watch?v=nmFUDkj1Aq0',
+      'spotifyUrl': 'spotify:search:UCLA%20MARC%20breathing%20meditation',
+      'focus': 'Anxiety & Stress Reduction',
+      'reference': 'UCLA Mindful Awareness Research Center (MARC) — Breath, Sound & Body. Based on Jon Kabat-Zinn MBSR Protocol (1990). Licensed CC BY-NC-SA via freemindfulness.org.',
+    },
+    {
+      'title': 'Body Scan',
+      'desc': 'Release tension by bringing awareness to each part of your body',
+      'duration': '15 min',
+      'icon': Icons.accessibility_new,
+      'color': 0xFF2563EB,
+      // Vidyamala Burch / Breathworks — hosted on freemindfulness.org (CC BY-NC-SA)
+      'audioUrl': 'https://drive.google.com/uc?export=download&id=1H0oMBIwIDAg3X3elQwI_i2CIFAbcgPBJ',
+      'youtubeUrl': 'https://www.youtube.com/watch?v=u4gZgnMUSH8',
+      'spotifyUrl': 'spotify:search:body%20scan%20meditation%20MBSR',
+      'focus': 'Body Awareness & Relaxation',
+      'reference': 'Vidyamala Burch & Breathworks — Body Scan Meditation. Based on MBSR (Mindfulness-Based Stress Reduction) by Kabat-Zinn, UMass Medical School. Licensed CC BY-NC-SA.',
+    },
+    {
+      'title': 'Loving Kindness',
+      'desc': 'Cultivate compassion for yourself and others',
+      'duration': '12 min',
+      'icon': Icons.favorite,
+      'color': 0xFFE11D48,
+      // UCLA MARC – Breath, Sounds, Body, Thoughts & Emotions — freemindfulness.org (CC BY-NC-SA)
+      'audioUrl': 'https://drive.google.com/uc?export=download&id=1MQwdGV2lo0-hpca5FU5zILx14mWhVCxH',
+      'youtubeUrl': 'https://www.youtube.com/watch?v=sz7cpV7ERsM',
+      'spotifyUrl': 'spotify:search:loving%20kindness%20metta%20meditation',
+      'focus': 'Compassion & Emotional Wellbeing',
+      'reference': 'UCLA Mindful Awareness Research Center (MARC) — Breath, Sounds, Body, Thoughts & Emotions. Licensed CC BY-NC-SA via freemindfulness.org.',
+    },
+    {
+      'title': 'Sleep Meditation',
+      'desc': 'Gentle guided imagery to help you drift into restful sleep',
+      'duration': '15 min',
+      'icon': Icons.nights_stay,
+      'color': 0xFF7C3AED,
+      // Vidyamala Burch / Breathworks — freemindfulness.org (CC BY-NC-SA)
+      'audioUrl': 'https://drive.google.com/uc?export=download&id=1H0oMBIwIDAg3X3elQwI_i2CIFAbcgPBJ',
+      'youtubeUrl': 'https://www.youtube.com/watch?v=1vx8iUvfyCY',
+      'spotifyUrl': 'spotify:search:body%20scan%20sleep%20meditation%20guided',
+      'focus': 'Sleep Quality & Insomnia Relief',
+      'reference': 'Vidyamala Burch & Breathworks — Body Scan for Sleep. Aligned with AASM (American Academy of Sleep Medicine) cognitive-behavioral sleep guidelines. Licensed CC BY-NC-SA.',
+    },
+    {
+      'title': 'Morning Energy',
+      'desc': 'Energizing mindfulness practice to start your day with clarity',
+      'duration': '12 min',
+      'icon': Icons.wb_sunny,
+      'color': 0xFFF59E0B,
+      // UCLA MARC – Breath, Sound & Body — freemindfulness.org (CC BY-NC-SA)
+      'audioUrl': 'https://drive.google.com/uc?export=download&id=1Ip7JEkmvZetfK6SJgAtjm2rUC0RRH9Nz',
+      'youtubeUrl': 'https://www.youtube.com/watch?v=O-6f5wQXSu8',
+      'spotifyUrl': 'spotify:search:morning%20mindfulness%20energy%20meditation',
+      'focus': 'Energy & Mental Clarity',
+      'reference': 'UCLA Mindful Awareness Research Center (MARC) — Body, Sound & Breath Awareness. Evidence-based practice aligned with APA stress management guidelines. CC BY-NC-SA.',
+    },
+    {
+      'title': 'Anxiety Relief',
+      'desc': 'Grounding techniques to calm an anxious mind quickly',
+      'duration': '21 min',
+      'icon': Icons.spa,
+      'color': 0xFF059669,
+      // UCSD Center for Mindfulness – Seated meditation — freemindfulness.org (CC BY-NC-SA)
+      'audioUrl': 'https://drive.google.com/uc?export=download&id=1PpeSPQW5-FI_zYV7I0HrpdBG7ko1kId2',
+      'youtubeUrl': 'https://www.youtube.com/watch?v=QS2yDmWk0vs',
+      'spotifyUrl': 'spotify:search:anxiety%20relief%20mindfulness%20MBCT',
+      'focus': 'Anxiety & Difficult Emotions',
+      'reference': 'UCSD Center for Mindfulness — Seated Meditation. Based on Mindfulness-Based Cognitive Therapy (MBCT) by Segal, Williams & Teasdale (2002), endorsed by NICE UK. CC BY-NC-SA.',
+    },
   ];
+
 
   @override
   void initState() {
@@ -221,7 +295,22 @@ class _MeditationScreenState extends State<MeditationScreen> with TickerProvider
         final color = Color(m['color'] as int);
         return GestureDetector(
           onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${m['title']} session coming soon!', style: GoogleFonts.inter()), backgroundColor: color, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))));
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PlayerScreen(
+                  title: m['title'] as String,
+                  duration: m['duration'] as String,
+                  focus: m['focus'] as String,
+                  source: m['reference'] as String,
+                  color: color,
+                  icon: m['icon'] as IconData,
+                  audioUrl: m['audioUrl'] as String,
+                  youtubeUrl: m['youtubeUrl'] as String,
+                  spotifyUrl: m['spotifyUrl'] as String,
+                ),
+              ),
+            );
           },
           child: GlassContainer(
             borderRadius: 20,

@@ -36,6 +36,7 @@ class ContentItem {
       duration: '5 min read',
       type: ContentType.article,
       category: 'Anxiety',
+      articleUrl: 'https://www.nimh.nih.gov/health/topics/anxiety-disorders',
     ),
     ContentItem(
       id: 'art_2',
@@ -44,6 +45,7 @@ class ContentItem {
       duration: '8 min read',
       type: ContentType.article,
       category: 'Stress',
+      articleUrl: 'https://www.apa.org/topics/stress/tips',
     ),
     ContentItem(
       id: 'art_3',
@@ -52,6 +54,7 @@ class ContentItem {
       duration: '6 min read',
       type: ContentType.article,
       category: 'Sleep',
+      articleUrl: 'https://www.sleepfoundation.org/mental-health',
     ),
     ContentItem(
       id: 'art_4',
@@ -60,6 +63,7 @@ class ContentItem {
       duration: '7 min read',
       type: ContentType.article,
       category: 'Wellness',
+      articleUrl: 'https://www.health.harvard.edu/healthbeat/how-to-break-a-bad-habit',
     ),
   ];
 
@@ -72,6 +76,7 @@ class ContentItem {
       duration: '12 min',
       type: ContentType.video,
       category: 'Mindfulness',
+      videoUrl: 'https://www.youtube.com/watch?v=ZToicYcHIOU',
     ),
     ContentItem(
       id: 'vid_2',
@@ -80,6 +85,7 @@ class ContentItem {
       duration: '15 min',
       type: ContentType.video,
       category: 'CBT',
+      videoUrl: 'https://www.youtube.com/watch?v=9c_Bv_FBE-c',
     ),
     ContentItem(
       id: 'vid_3',
@@ -88,6 +94,7 @@ class ContentItem {
       duration: '8 min',
       type: ContentType.video,
       category: 'Breathing',
+      videoUrl: 'https://www.youtube.com/watch?v=acUZdGd_3Oo',
     ),
     ContentItem(
       id: 'vid_4',
@@ -96,6 +103,7 @@ class ContentItem {
       duration: '18 min',
       type: ContentType.video,
       category: 'ADHD',
+      videoUrl: 'https://www.youtube.com/watch?v=jhcn1_qsYmg',
     ),
   ];
 }

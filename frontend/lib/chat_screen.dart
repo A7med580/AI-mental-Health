@@ -10,6 +10,8 @@ import 'package:mindful/mood_tracker_screen.dart';
 import 'package:mindful/resource_screen.dart';
 import 'package:mindful/meditation_screen.dart';
 import 'package:mindful/services/chat_session_service.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:mindful/services/gemini_service.dart';
 
 class MindfulAIScreen extends StatefulWidget {
   const MindfulAIScreen({Key? key}) : super(key: key);
@@ -18,19 +20,15 @@ class MindfulAIScreen extends StatefulWidget {
   State<MindfulAIScreen> createState() => _MindfulAIScreenState();
 }
 
-class _MindfulAIScreenState extends State<MindfulAIScreen>
-    with SingleTickerProviderStateMixin {
+class _MindfulAIScreenState extends State<MindfulAIScreen> {
   final TextEditingController _messageController = TextEditingController();
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
+  final ScrollController _scrollController = ScrollController();
+  final FocusNode _focusNode = FocusNode();
 
+  bool _isWaitingForResponse = false;
   final List<_ChatBubble> _messages = [
     _ChatBubble(
-      text: "Hello! I'm your AI Mental Health Companion. I'm here to listen, support, and help you explore your thoughts and feelings.",
-      isBot: true,
-    ),
-    _ChatBubble(
-      text: "I'm currently being trained to provide the best support possible. Full conversational AI is coming soon!",
+      text: "Hello! I'm MindCare AI, your Mental Health Companion. I'm here to listen to whatever is on your mind today.",
       isBot: true,
     ),
   ];
@@ -39,15 +37,55 @@ class _MindfulAIScreenState extends State<MindfulAIScreen>
   void initState() {
     super.initState();
     ChatSessionService.logSession();
-    _pulseController = AnimationController(vsync: this, duration: const Duration(seconds: 2))..repeat(reverse: true);
-    _pulseAnimation = Tween<double>(begin: 0.85, end: 1.0).animate(CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut));
+    // Reset conversation on open so it's a fresh chat every time
+    GeminiService().resetConversation();
   }
 
   @override
   void dispose() {
     _messageController.dispose();
-    _pulseController.dispose();
+    _scrollController.dispose();
+    _focusNode.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleSubmitted(String text) async {
+    if (text.trim().isEmpty || _isWaitingForResponse) return;
+
+    _messageController.clear();
+    setState(() {
+      _messages.add(_ChatBubble(text: text, isBot: false));
+      _isWaitingForResponse = true;
+    });
+    _scrollToBottom();
+    FocusScope.of(context).unfocus();
+
+    try {
+      final response = await GeminiService().sendMessage(text);
+      setState(() {
+        _isWaitingForResponse = false;
+        _messages.add(_ChatBubble(text: response, isBot: true));
+      });
+      _scrollToBottom();
+    } catch (e) {
+      setState(() {
+        _isWaitingForResponse = false;
+        _messages.add(_ChatBubble(text: 'Oops. I had trouble connecting. Please try again.', isBot: true, isError: true));
+      });
+      _scrollToBottom();
+    }
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
   }
 
   @override
@@ -61,17 +99,16 @@ class _MindfulAIScreenState extends State<MindfulAIScreen>
             children: [
               _buildHeader(),
               Expanded(
-                child: ListView(
+                child: ListView.builder(
+                  controller: _scrollController,
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                  children: [
-                    _buildComingSoonHero(),
-                    const SizedBox(height: 20),
-                    ..._messages.map(_buildMessageBubble),
-                    const SizedBox(height: 12),
-                    _buildFeaturePreview(),
-                  ],
+                  itemCount: _messages.length,
+                  itemBuilder: (context, index) {
+                    return _buildMessageBubble(_messages[index]);
+                  },
                 ),
               ),
+              if (_isWaitingForResponse) _buildTypingIndicator(),
               _buildDisclaimer(),
               _buildInputArea(),
               _buildBottomNav(),
@@ -101,13 +138,13 @@ class _MindfulAIScreenState extends State<MindfulAIScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('AI Mental Health Companion', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                Text('MindCare AI Companion', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                 const SizedBox(height: 2),
                 Row(
                   children: [
-                    Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.amber, shape: BoxShape.circle)),
+                    Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
                     const SizedBox(width: 6),
-                    Text('Coming Soon', style: GoogleFonts.inter(fontSize: 12, color: Colors.amber[700], fontWeight: FontWeight.w500)),
+                    Text('Online', style: GoogleFonts.inter(fontSize: 12, color: Colors.green[700], fontWeight: FontWeight.w500)),
                   ],
                 ),
               ],
@@ -118,51 +155,21 @@ class _MindfulAIScreenState extends State<MindfulAIScreen>
     );
   }
 
-  Widget _buildComingSoonHero() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: AppColors.primaryPurple.withValues(alpha: 0.25), blurRadius: 20, offset: const Offset(0, 6))],
-      ),
-      child: Column(
-        children: [
-          AnimatedBuilder(
-            animation: _pulseAnimation,
-            builder: (context, child) {
-              return Transform.scale(
-                scale: _pulseAnimation.value,
-                child: Container(
-                  width: 72, height: 72,
-                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
-                  child: const Icon(Icons.smart_toy_outlined, color: Colors.white, size: 36),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 16),
-          Text('AI Chatbot Coming Soon', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
-          const SizedBox(height: 8),
-          Text('We\'re building an intelligent companion that understands your mental health needs. Stay tuned!',
-              textAlign: TextAlign.center, style: GoogleFonts.inter(fontSize: 13, color: Colors.white.withValues(alpha: 0.9), height: 1.5)),
-        ],
-      ),
-    );
-  }
-
   Widget _buildMessageBubble(_ChatBubble msg) {
     return Align(
       alignment: msg.isBot ? Alignment.centerLeft : Alignment.centerRight,
       child: GlassContainer(
-        margin: const EdgeInsets.only(bottom: 10),
+        margin: const EdgeInsets.only(bottom: 16),
         borderRadius: 18,
-        opacity: msg.isBot ? 0.75 : 0.5,
-        blur: 12,
+        opacity: msg.isBot ? (msg.isError ? 0.3 : 0.75) : 0.9,
+        blur: 15,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        border: msg.isBot ? null : Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.2)),
+        backgroundColor: msg.isBot 
+            ? (msg.isError ? Colors.red.withOpacity(0.1) : null) 
+            : AppColors.primaryPurple,
+        border: msg.isBot ? Border.all(color: AppColors.glassBorder) : null,
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
+          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -172,13 +179,20 @@ class _MindfulAIScreenState extends State<MindfulAIScreen>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.psychology, size: 14, color: AppColors.primaryPurple),
+                      Icon(Icons.psychology, size: 14, color: msg.isError ? Colors.red : AppColors.primaryPurple),
                       const SizedBox(width: 4),
-                      Text('MindCare AI', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primaryPurple)),
+                      Text('MindCare AI', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: msg.isError ? Colors.red : AppColors.primaryPurple)),
                     ],
                   ),
                 ),
-              Text(msg.text, style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary, height: 1.5)),
+              Text(
+                msg.text, 
+                style: GoogleFonts.inter(
+                  fontSize: 14, 
+                  color: msg.isBot ? (msg.isError ? Colors.red[800] : AppColors.textPrimary) : Colors.white, 
+                  height: 1.5
+                ),
+              ),
             ],
           ),
         ),
@@ -186,49 +200,55 @@ class _MindfulAIScreenState extends State<MindfulAIScreen>
     );
   }
 
-  Widget _buildFeaturePreview() {
-    final features = [
-      {'icon': Icons.chat_bubble_outline, 'title': 'Natural Conversations', 'desc': 'Talk freely about how you\'re feeling', 'color': 0xFF6B46C1},
-      {'icon': Icons.shield_outlined, 'title': 'Safe & Private', 'desc': 'End-to-end encrypted and never shared', 'color': 0xFF059669},
-      {'icon': Icons.psychology_outlined, 'title': 'Evidence-Based', 'desc': 'Guided by CBT and mindfulness principles', 'color': 0xFF2563EB},
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('What to Expect', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-        const SizedBox(height: 12),
-        ...features.map((f) {
-          final color = Color(f['color'] as int);
-          return GlassContainer(
-            margin: const EdgeInsets.only(bottom: 10),
-            borderRadius: 16,
-            opacity: 0.65,
-            blur: 10,
-            padding: const EdgeInsets.all(14),
+  Widget _buildTypingIndicator() {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16.0, bottom: 16.0),
+      child: Row(
+        children: [
+          GlassContainer(
+            borderRadius: 18,
+            opacity: 0.75,
+            blur: 15,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            border: Border.all(color: AppColors.glassBorder),
             child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 40, height: 40,
-                  decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)),
-                  child: Icon(f['icon'] as IconData, color: color, size: 20),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(f['title'] as String, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                      const SizedBox(height: 2),
-                      Text(f['desc'] as String, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
-                    ],
-                  ),
-                ),
+                _dot(0),
+                _dot(1),
+                _dot(2),
               ],
             ),
-          );
-        }),
-      ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _dot(int index) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 2),
+      width: 6,
+      height: 6,
+      decoration: const BoxDecoration(
+        color: AppColors.primaryPurple,
+        shape: BoxShape.circle,
+      ),
+    )
+    .animate(onPlay: (controller) => controller.repeat())
+    .scale(
+      duration: 600.ms,
+      delay: (index * 200).ms,
+      begin: const Offset(0.5, 0.5),
+      end: const Offset(1.5, 1.5),
+      curve: Curves.easeInOutSine,
+    )
+    .then()
+    .scale(
+      duration: 600.ms,
+      begin: const Offset(1.5, 1.5),
+      end: const Offset(0.5, 0.5),
+      curve: Curves.easeInOutSine,
     );
   }
 
@@ -242,7 +262,7 @@ class _MindfulAIScreenState extends State<MindfulAIScreen>
       border: Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.15)),
       child: Row(
         children: [
-          Icon(Icons.info_outline, size: 14, color: AppColors.primaryPurple),
+          const Icon(Icons.info_outline, size: 14, color: AppColors.primaryPurple),
           const SizedBox(width: 8),
           Expanded(
             child: Text('This AI companion provides support but is not a replacement for professional therapy.',
@@ -267,21 +287,34 @@ class _MindfulAIScreenState extends State<MindfulAIScreen>
               decoration: BoxDecoration(color: AppColors.background.withValues(alpha: 0.7), borderRadius: BorderRadius.circular(24), border: Border.all(color: Colors.grey[300]!)),
               child: TextField(
                 controller: _messageController,
-                enabled: false,
+                focusNode: _focusNode,
+                enabled: !_isWaitingForResponse,
+                textInputAction: TextInputAction.send,
+                onSubmitted: _handleSubmitted,
+                maxLines: null,
                 style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary),
                 decoration: InputDecoration(
-                  hintText: 'Chat coming soon...',
+                  hintText: 'Type your message...',
                   hintStyle: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  prefixIcon: Padding(padding: const EdgeInsets.only(left: 12, right: 4), child: Icon(Icons.lock_outline, size: 18, color: AppColors.textSecondary)),
-                  prefixIconConstraints: const BoxConstraints(minWidth: 36),
                 ),
               ),
             ),
           ),
           const SizedBox(width: 8),
-          Container(width: 44, height: 44, decoration: BoxDecoration(color: Colors.grey[300], shape: BoxShape.circle), child: const Icon(Icons.send, color: Colors.white, size: 20)),
+          Material(
+            color: _isWaitingForResponse ? Colors.grey[400] : AppColors.primaryPurple,
+            borderRadius: BorderRadius.circular(24),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(24),
+              onTap: _isWaitingForResponse ? null : () => _handleSubmitted(_messageController.text),
+              child: const Padding(
+                padding: EdgeInsets.all(12.0),
+                child: Icon(Icons.send_rounded, color: Colors.white, size: 20),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -332,5 +365,6 @@ class _MindfulAIScreenState extends State<MindfulAIScreen>
 class _ChatBubble {
   final String text;
   final bool isBot;
-  const _ChatBubble({required this.text, required this.isBot});
+  final bool isError;
+  const _ChatBubble({required this.text, required this.isBot, this.isError = false});
 }

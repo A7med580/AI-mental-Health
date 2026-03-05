@@ -255,7 +255,8 @@ class _InitialQuestionnaireScreenState
           context,
           AppPageRoute(
             page: ADHDChatScreen(
-              questionnaireAnswers: answersAsStrings,
+              questionnaireAnswers: _answers,
+              initialProbability: 0.5,
             ),
           ),
         );

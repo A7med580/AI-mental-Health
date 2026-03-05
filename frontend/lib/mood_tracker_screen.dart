@@ -132,7 +132,11 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
             const SizedBox(height: 8),
             Text(title, style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500)),
             const SizedBox(height: 4),
-            Text(value, style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(value, style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
+            ),
             const SizedBox(height: 2),
             Text(sub, style: GoogleFonts.inter(fontSize: 10, color: AppColors.textSecondary)),
           ],
@@ -162,7 +166,12 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 5, mainAxisSpacing: 10, crossAxisSpacing: 10, childAspectRatio: 1),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 5, 
+              mainAxisSpacing: 10, 
+              crossAxisSpacing: 10, 
+              childAspectRatio: 0.75,
+            ),
             itemCount: 10,
             itemBuilder: (context, index) {
               final score = index + 1;
@@ -256,7 +265,20 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
           Row(children: [
             Text('Weekly Overview', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
             const Spacer(),
-            Text('View Details →', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.primaryPurple)),
+            GestureDetector(
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: Text('Weekly Details', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                    content: Text('Detailed view coming soon!', style: GoogleFonts.inter()),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+                  ),
+                );
+              },
+              child: Text('View Details →', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.primaryPurple)),
+            ),
           ]),
           const SizedBox(height: 20),
           SizedBox(
