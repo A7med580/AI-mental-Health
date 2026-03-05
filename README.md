@@ -54,15 +54,50 @@ sequenceDiagram
     App->>User: Display Result Dashboard
 ```
 
-### AI Fusion Strategy Overview
+### AI Fusion Engine — Internal Architecture
 
-The backend uses a late-fusion ensemble approach:
-1. **Video/Face Modality**: Facial Detection (OpenCV) -> Emotion Model (CNN/ResNet-50)
-2. **Eye/Gaze Modality**: Tracking (MediaPipe) -> Behavior Model (Random Forest)
-3. **Voice/Audio Modality**: Feature Extraction (Librosa/MFCC) -> Voice Model (SVM/CNN)
-4. **Text/Language Modality**: Questionnaire Responses -> NLP Behavior Model (CatBoost) / Diagnostic Scoring
+```mermaid
+graph TD
+    subgraph Input Modalities
+        Face[Video/Face Feed]
+        Voice[Audio Recording]
+        Gaze[Eye Movement]
+        Text[Questionnaire / Text]
+    end
 
-These inputs are fused asynchronously via weighted probability averaging to yield final diagnostic probabilities for all four conditions.
+    subgraph Feature Extraction & Modeling
+        Face --> ResNet["ResNet50 (Facial Emotion)"]
+        Voice --> MFCC["MFCC / CNN (Voice Stress)"]
+        Gaze --> MP["MediaPipe / RF (Eye Gaze)"]
+        Text --> CatBoost["CatBoost (Behavioral NLP)"]
+    end
+    
+    ResNet --> FV1[Feature Vector]
+    MFCC --> FV2[Feature Vector]
+    MP --> FV3[Feature Vector]
+    CatBoost --> FV4[Feature Vector]
+    
+    subgraph Late Fusion
+        FV1 & FV2 & FV3 & FV4 --> WPA[Weighted Probability Aggregator]
+    end
+    
+    WPA --> Result["Final Screening Result<br/>(ADHD / ASD / Depression / Social Anxiety)"]
+```
+
+### App Screen Flow
+
+```mermaid
+graph TD
+    A[Onboarding] --> B["Auth (Login/Register)"]
+    B --> C[Home Dashboard]
+    
+    C --> D[Screening Chat]
+    C --> E[Mood Tracker]
+    C --> F[MindCare AI]
+    C --> G[Wellness Hub]
+    
+    D --> H[Results Dashboard]
+```
 
 ---
 
