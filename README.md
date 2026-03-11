@@ -17,13 +17,12 @@ By leveraging Computer Vision, Voice Stress Analysis, and NLP, Mindful provides 
 
 ## 🚀 Key Features
 
-*   **⚡ Real-time Multimodal Screening**: Fusion of behavioral data, eye gaze heuristics, and voice prosody for accurate detection of **ADHD**, **ASD**, **Depression**, and **Social Anxiety**.
-*   **🤖 MindCare AI Companion**: High-empathy supportive chatbot powered by **Gemini 2.0 Flash** for general mental health support, emotional navigation, and grounding.
-*   **🧘 Wellness & Meditation Hub**: In-app audio streaming of clinically-validated meditations (MBSR/MBCT protocols) with external continuity for Spotify and YouTube.
+*   **⚡ Real-time Multimodal Screening**: Fusion of behavioral data, eye gaze heuristics, and voice prosody for accurate detection of **ADHD**, **ASD**, **Depression**, and **Social Anxiety**. Leverages a comprehensive DAIC-WOZ trained pipeline for video-based and audio depression interviews.
+*   **🤖 MindCare AI Companion**: High-empathy supportive chatbot powered by **Gemini 2.0 Flash** for general mental health support, emotional navigation, and triage. Features condition-specific system prompts and persistent session history.
+*   **🧘 Wellness Hub & Clinical Resources**: In-app audio streaming of clinically-validated meditations (MBSR/MBCT) compliant with WHO/NICE guidelines, complete with fluid `audio_waveforms` playback and rich resource libraries.
 *   **📊 Interactive Mood Monitoring**: Daily mood logging with Glassmorphism-styled metrics, trend analysis, and detailed weekly overviews.
-*   **🎙️ Voice Stress Analysis**: MFCC-based emotion and impulsivity detection from audio recordings.
-*   **👁️ Gaze & Facial Tracking**: Heuristic-based eye movement analysis for behavioral biomarker extraction and facial emotion recognition (AQ-10 integration).
-*   **📱 Liquid Glass Design**: Premium mobile experience with smooth iOS-style transitions leveraging modern Flutter components.
+*   **🎙️ Voice & Gaze Analysis**: MFCC-based emotion/impulsivity detection from audio and heuristic-based eye movement tracking for behavioral biomarker extraction.
+*   **📱 Premium Liquid Design**: Elegant mobile experience with intuitive screen flows, custom glass containers, and seamless transitions using Flutter.
 
 ---
 
