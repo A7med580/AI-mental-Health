@@ -1,0 +1,65 @@
+# Mindful Project Git Ignore
+
+# Environments & venv
+.env
+**/venv/
+**/.venv/
+env/
+.env/
+node_modules/
+
+# Python caching
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Flutter & Dart
+**/build/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.packages
+**/.pub-cache/
+**/.pub/
+frontend/ios/Pods/
+frontend/ios/.symlinks/
+frontend/ios/Flutter/Generated.xcconfig
+frontend/ios/Flutter/flutter_export_environment.sh
+frontend/ios/Flutter/ephemeral/
+frontend/android/local.properties
+frontend/android/app/debug/
+frontend/android/app/release/
+
+# Large Model Files & Data
+**/Models/
+**/datasets/
+**/data/
+**/processed/
+**/uploads/
+**/results/
+*.h5
+*.keras
+*.pkl
+*.pt
+*.joblib
+*.safetensors
+*.bin
+*.model
+*.onnx
+*.weights
+*.ptl
+*.tflite
+
+# OS specific
+.DS_Store
+**/.DS_Store
+Thumbs.db
+._*
+**/._*
+
+# Ide specific
+.vscode/
+.idea/
+*.swp
+*.swo

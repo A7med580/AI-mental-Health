@@ -1,0 +1,58 @@
+name: mindful
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.7.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.3.2
+  flutter_svg: ^2.2.1
+  ionicons: ^0.2.2
+  supabase_flutter: ^2.10.3
+  supabase: ^2.10.0
+  image_picker: ^1.2.1
+  sign_in_with_apple: ^7.0.1
+  http: ^1.2.0
+  camera: ^0.10.5+5
+  video_player: ^2.8.1
+  path_provider: ^2.1.1
+  permission_handler: ^11.1.0
+  shared_preferences: ^2.2.2
+  url_launcher: ^6.2.1
+  path: ^1.9.0
+  audio_waveforms: ^2.0.2
+  flutter_animate: ^4.5.2
+  just_audio: ^0.9.40
+  youtube_explode_dart: ^2.3.3
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+
+  fonts:
+    - family: Prime
+      fonts:
+        - asset: assets/fonts/Prime-Light.otf
+        - asset: assets/fonts/Prime-Regular.otf
+          style: italic
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/app_icon.png"
