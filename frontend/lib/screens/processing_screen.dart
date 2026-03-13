@@ -4,6 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mindful/app_colors.dart';
 import 'package:mindful/screens/adhd_result_screen.dart';
+<<<<<<< HEAD
+=======
+import 'package:mindful/screens/depression_result_screen.dart';
+>>>>>>> ff182c9fdac30379da638d9ac6fea7dfb94ed4ad
 import 'package:mindful/services/job_service.dart';
 import 'package:mindful/widgets/page_transitions.dart';
 
@@ -26,7 +30,11 @@ class _ProcessingScreenState extends State<ProcessingScreen>
   bool _isProcessing = true;
   bool _hasError = false;
 
+<<<<<<< HEAD
   String _statusText = 'Uploading video…';
+=======
+  String _statusText = 'Analyzing your responses…';
+>>>>>>> ff182c9fdac30379da638d9ac6fea7dfb94ed4ad
   String _errorMessage = '';
   String? _technicalError;
 
@@ -58,6 +66,7 @@ class _ProcessingScreenState extends State<ProcessingScreen>
 
   // ─── ALL LOGIC BELOW IS UNCHANGED ───────────────────────────────────
 
+<<<<<<< HEAD
   Future<void> _startJobFlow() async {
     try {
       if (widget.videoFile == null) {
@@ -77,6 +86,46 @@ class _ProcessingScreenState extends State<ProcessingScreen>
         videoFile: widget.videoFile!,
         questionnaireData: widget.questionnaireData,
       );
+=======
+  /// Detect condition from questionnaire data
+  String get _condition {
+    final cond = widget.questionnaireData['condition']?.toString().toLowerCase() ?? '';
+    return cond == 'depression' ? 'depression' : 'adhd';
+  }
+
+  bool get _isDepression => _condition == 'depression';
+
+  Future<void> _startJobFlow() async {
+    try {
+      // For depression, video is optional (text-only screening is valid)
+      if (!_isDepression) {
+        if (widget.videoFile == null) {
+          throw Exception('No video provided. Please record at least one video response.');
+        }
+        if (!await widget.videoFile!.exists()) {
+          throw Exception('Video file not found');
+        }
+        final size = await widget.videoFile!.length();
+        if (size < 2000) {
+          throw Exception('Video file too small/empty');
+        }
+      }
+
+      _setStatus(_isDepression ? 'Analyzing your responses…' : 'Uploading video…');
+
+      String jobId;
+      if (_isDepression) {
+        jobId = await JobService.submitDepressionJob(
+          videoFile: widget.videoFile,
+          questionnaireData: widget.questionnaireData,
+        );
+      } else {
+        jobId = await JobService.submitADHDJob(
+          videoFile: widget.videoFile!,
+          questionnaireData: widget.questionnaireData,
+        );
+      }
+>>>>>>> ff182c9fdac30379da638d9ac6fea7dfb94ed4ad
 
       _jobId = jobId;
       _setStatus('Job submitted.\nWaiting for AI result…');
@@ -90,7 +139,13 @@ class _ProcessingScreenState extends State<ProcessingScreen>
           if (status == 'queued') {
             _setStatus('Queued…\n(waiting to start)');
           } else if (status == 'processing') {
+<<<<<<< HEAD
             _setStatus('Processing…\nAI is working now');
+=======
+            _setStatus(_isDepression
+                ? 'Analyzing…\nAI is processing your responses'
+                : 'Processing…\nAI is working now');
+>>>>>>> ff182c9fdac30379da638d9ac6fea7dfb94ed4ad
           } else if (status == 'failed') {
             _setStatus('Failed…');
           }
@@ -107,6 +162,7 @@ class _ProcessingScreenState extends State<ProcessingScreen>
       final modalitiesUsedRaw = (result['modalities_used'] ?? []) as List<dynamic>;
       final modalitiesUsed = modalitiesUsedRaw.map((e) => e.toString()).toList();
 
+<<<<<<< HEAD
       Navigator.pushReplacement(
         context,
         AppPageRoute(
@@ -117,6 +173,31 @@ class _ProcessingScreenState extends State<ProcessingScreen>
           ),
         ),
       );
+=======
+      if (_isDepression) {
+        Navigator.pushReplacement(
+          context,
+          AppPageRoute(
+            page: DepressionResultScreen(
+              screeningResult: fused,
+              individualResults: individual,
+              modalitiesUsed: modalitiesUsed,
+            ),
+          ),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          AppPageRoute(
+            page: ADHDResultScreen(
+              screeningResult: fused,
+              individualResults: individual,
+              modalitiesUsed: modalitiesUsed,
+            ),
+          ),
+        );
+      }
+>>>>>>> ff182c9fdac30379da638d9ac6fea7dfb94ed4ad
     } on TimeoutException catch (e) {
       _fail(
         "It's taking too long. Backend may be stuck.",
@@ -149,7 +230,11 @@ class _ProcessingScreenState extends State<ProcessingScreen>
       _errorMessage = '';
       _technicalError = null;
       _jobId = null;
+<<<<<<< HEAD
       _statusText = 'Uploading video…';
+=======
+      _statusText = 'Analyzing your responses…';
+>>>>>>> ff182c9fdac30379da638d9ac6fea7dfb94ed4ad
     });
     _startJobFlow();
   }

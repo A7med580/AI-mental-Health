@@ -49,6 +49,18 @@ class ModelConfig:
     ASD_TEXT_XGBOOST = os.getenv("ASD_TEXT_XGBOOST", str(BACKEND_DIR / "Models" / "asd" / "text" / "xgboost_model.joblib"))
     ASD_TEXT_RANDOMFOREST = os.getenv("ASD_TEXT_RANDOMFOREST", str(BACKEND_DIR / "Models" / "asd" / "text" / "random_forest_model.joblib"))
 
+<<<<<<< HEAD
+=======
+    # Depression Models (DAIC-WOZ)
+    DEPRESSION_MODELS_DIR = Path(os.getenv("DEPRESSION_MODELS_DIR", str(BACKEND_DIR / "Models" / "depression")))
+    DEP_AUDIO_MODEL = os.getenv("DEP_AUDIO_MODEL", str(DEPRESSION_MODELS_DIR / "audio_model.joblib"))
+    DEP_AUDIO_SCALER = os.getenv("DEP_AUDIO_SCALER", str(DEPRESSION_MODELS_DIR / "audio_scaler.joblib"))
+    DEP_VISUAL_MODEL = os.getenv("DEP_VISUAL_MODEL", str(DEPRESSION_MODELS_DIR / "visual_model.pt"))
+    DEP_VISUAL_META = os.getenv("DEP_VISUAL_META", str(DEPRESSION_MODELS_DIR / "visual_model_meta.pt"))
+    DEP_TEXT_MODEL_DIR = os.getenv("DEP_TEXT_MODEL_DIR", str(DEPRESSION_MODELS_DIR / "text_model_dir"))
+    DEP_FUSION_MODEL = os.getenv("DEP_FUSION_MODEL", str(DEPRESSION_MODELS_DIR / "fusion_model.joblib"))
+
+>>>>>>> ff182c9fdac30379da638d9ac6fea7dfb94ed4ad
     MODELS = {
         "ADHD": {
             "behavior": {
@@ -111,6 +123,19 @@ class ModelConfig:
                 "input_type": "aq10_scores",
             },
         },
+<<<<<<< HEAD
+=======
+        "depression": {
+            "fusion": {
+                "fusion_model": DEP_FUSION_MODEL,
+                "audio_model": DEP_AUDIO_MODEL,
+                "audio_scaler": DEP_AUDIO_SCALER,
+                "visual_model": DEP_VISUAL_MODEL,
+                "visual_meta": DEP_VISUAL_META,
+                "text_dir": DEP_TEXT_MODEL_DIR,
+            }
+        },
+>>>>>>> ff182c9fdac30379da638d9ac6fea7dfb94ed4ad
     }
 
     @staticmethod

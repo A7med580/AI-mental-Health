@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../app_colors.dart';
 
+<<<<<<< HEAD
 class CustomTextField extends StatelessWidget {
+=======
+>>>>>>> ff182c9fdac30379da638d9ac6fea7dfb94ed4ad
   final ValueChanged<String>? onChanged;
   final TextEditingController controller;
   final String hint;

@@ -17,12 +17,22 @@ By leveraging Computer Vision, Voice Stress Analysis, and NLP, Mindful provides 
 
 ## 🚀 Key Features
 
+<<<<<<< HEAD
 *   **⚡ Real-time Multimodal Screening**: Fusion of behavioral data, eye gaze heuristics, and voice prosody for accurate detection of **ADHD**, **ASD**, **Depression**, and **Social Anxiety**. Leverages a comprehensive DAIC-WOZ trained pipeline for video-based and audio depression interviews.
 *   **🤖 MindCare AI Companion**: High-empathy supportive chatbot powered by **Gemini 2.0 Flash** for general mental health support, emotional navigation, and triage. Features condition-specific system prompts and persistent session history.
 *   **🧘 Wellness Hub & Clinical Resources**: In-app audio streaming of clinically-validated meditations (MBSR/MBCT) compliant with WHO/NICE guidelines, complete with fluid `audio_waveforms` playback and rich resource libraries.
 *   **📊 Interactive Mood Monitoring**: Daily mood logging with Glassmorphism-styled metrics, trend analysis, and detailed weekly overviews.
 *   **🎙️ Voice & Gaze Analysis**: MFCC-based emotion/impulsivity detection from audio and heuristic-based eye movement tracking for behavioral biomarker extraction.
 *   **📱 Premium Liquid Design**: Elegant mobile experience with intuitive screen flows, custom glass containers, and seamless transitions using Flutter.
+=======
+*   **⚡ Real-time Multimodal Screening**: Fusion of behavioral data, eye gaze heuristics, and voice prosody for accurate detection of **ADHD**, **ASD**, **Depression**, and **Social Anxiety**.
+*   **🤖 MindCare AI Companion**: High-empathy supportive chatbot powered by **Gemini 2.0 Flash** for general mental health support, emotional navigation, and grounding.
+*   **🧘 Wellness & Meditation Hub**: In-app audio streaming of clinically-validated meditations (MBSR/MBCT protocols) with external continuity for Spotify and YouTube.
+*   **📊 Interactive Mood Monitoring**: Daily mood logging with Glassmorphism-styled metrics, trend analysis, and detailed weekly overviews.
+*   **🎙️ Voice Stress Analysis**: MFCC-based emotion and impulsivity detection from audio recordings.
+*   **👁️ Gaze & Facial Tracking**: Heuristic-based eye movement analysis for behavioral biomarker extraction and facial emotion recognition (AQ-10 integration).
+*   **📱 Liquid Glass Design**: Premium mobile experience with smooth iOS-style transitions leveraging modern Flutter components.
+>>>>>>> ff182c9fdac30379da638d9ac6fea7dfb94ed4ad
 
 ---
 
@@ -55,6 +65,11 @@ sequenceDiagram
 
 ### AI Fusion Engine — Internal Architecture
 
+<<<<<<< HEAD
+=======
+Mindful employs a multimodal late-fusion strategy to combine signals from different behavioral domains.
+
+>>>>>>> ff182c9fdac30379da638d9ac6fea7dfb94ed4ad
 ```mermaid
 graph TD
     subgraph Input Modalities
@@ -64,6 +79,7 @@ graph TD
         Text[Questionnaire / Text]
     end
 
+<<<<<<< HEAD
     subgraph Feature Extraction & Modeling
         Face --> ResNet["ResNet50 (Facial Emotion)"]
         Voice --> MFCC["MFCC / CNN (Voice Stress)"]
@@ -83,6 +99,32 @@ graph TD
     WPA --> Result["Final Screening Result<br/>(ADHD / ASD / Depression / Social Anxiety)"]
 ```
 
+=======
+    subgraph ADHD & ASD Feature Modeling
+        Face --> ResNet["ResNet50 (Facial Emotion)"]
+        Voice --> CNN["CNN (Voice Stress)"]
+        Gaze --> EyeGaze["MediaPipe (Eye Gaze)"]
+        Text --> CatBoost["CatBoost (Behavioral NLP)"]
+    end
+
+    subgraph Depression (DAIC-WOZ) Modeling
+        Text --> DistilBERT["DistilBERT (NLP)"]
+        Voice --> LIGHTGBM["LightGBM (COVAREP Acoustics)"]
+        Face --> BILSTM["BiLSTM + Attention (Action Units)"]
+    end
+    
+    ResNet & CNN & EyeGaze & CatBoost --> ADHD_FUSION[Weighted Prob Aggregator]
+    DistilBERT & LIGHTGBM & BILSTM --> DEP_FUSION[Logistic Regression Meta-Learner]
+    
+    ADHD_FUSION --> Result1["ADHD / ASD Result"]
+    DEP_FUSION --> Result2["Depression Screening Result"]
+```
+
+### 💽 Development Environment (macOS Fix)
+> [!IMPORTANT]
+> Since standard external drives (ExFAT) do not support the symlinks required by Flutter/Dart, this project is optimized to run inside an **APFS Sparse Disk Image** located at `/Volumes/Mindful_Dev`. If building from source, ensure the project is mounted to a symlink-compatible filesystem.
+
+>>>>>>> ff182c9fdac30379da638d9ac6fea7dfb94ed4ad
 ### App Screen Flow
 
 ```mermaid
