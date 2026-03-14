@@ -38,6 +38,7 @@ class _DepressionQuestionnaireScreenState
 
   bool _isRecording = false;
   bool _isProcessing = false;
+  DateTime? _recordingStartTime;
 
   bool _cameraPermissionGranted = false;
   bool _microphonePermissionGranted = false;
@@ -287,28 +288,30 @@ class _DepressionQuestionnaireScreenState
 
     if (_isRecording) return;
 
+    setState(() {
+      _isRecording = true;
+      _recordingStartTime = DateTime.now();
+    });
+
     try {
-      final Directory appDocDir = await getApplicationDocumentsDirectory();
-      final String _ =
-          '${appDocDir.path}/depression_q${_currentQuestionIndex}_${DateTime.now().millisecondsSinceEpoch}.mp4';
-
       await controller.startVideoRecording();
-
-      setState(() {
-        _isRecording = true;
-      });
 
       // Auto stop after 60 seconds
       Future.delayed(const Duration(seconds: 60), () {
-        if (_isRecording) {
+        if (mounted && _isRecording) {
           _stopVideoRecording();
         }
       });
     } catch (e) {
-      setState(() => _isRecording = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error starting recording: $e')),
-      );
+      if (mounted) {
+        setState(() {
+          _isRecording = false;
+          _recordingStartTime = null;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error starting recording: $e')),
+        );
+      }
     }
   }
 
@@ -316,12 +319,26 @@ class _DepressionQuestionnaireScreenState
     if (!_isRecording) return;
 
     final controller = _cameraController;
-    if (controller == null) return;
+    if (controller == null || !controller.value.isRecordingVideo) return;
 
     try {
+      // Ensure minimum recording duration of 1.5 seconds to avoid AVAssetWriter errors
+      if (_recordingStartTime != null) {
+        final elapsed = DateTime.now().difference(_recordingStartTime!);
+        if (elapsed.inMilliseconds < 1500) {
+          await Future.delayed(
+              Duration(milliseconds: 1500 - elapsed.inMilliseconds));
+        }
+      }
+
       final XFile tempVideoFile = await controller.stopVideoRecording();
 
-      setState(() => _isRecording = false);
+      if (mounted) {
+        setState(() {
+          _isRecording = false;
+          _recordingStartTime = null;
+        });
+      }
 
       final savedPath = await VideoStorageService.saveVideo(
         File(tempVideoFile.path),
@@ -337,40 +354,48 @@ class _DepressionQuestionnaireScreenState
         throw Exception('Video file is too small / empty');
       }
 
-      setState(() {
-        _questionVideos[_currentQuestionIndex] = savedPath;
-      });
+      if (mounted) {
+        setState(() {
+          _questionVideos[_currentQuestionIndex] = savedPath;
+        });
 
-      if (!mounted) return;
+        _addUserMessage("✓ Video recorded");
 
-      _addUserMessage("✓ Video recorded");
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => VideoPreviewScreen(
-            videoPath: savedPath,
-            onRetake: () async {
-              try {
-                await VideoStorageService.deleteVideo(savedPath);
-              } catch (_) {}
-              setState(
-                  () => _questionVideos[_currentQuestionIndex] = null);
-              Navigator.pop(context);
-            },
-            onContinue: () {
-              Navigator.pop(context);
-              setState(() => _currentQuestionIndex++);
-              _askNextQuestion();
-            },
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VideoPreviewScreen(
+              videoPath: savedPath,
+              onRetake: () async {
+                try {
+                  await VideoStorageService.deleteVideo(savedPath);
+                } catch (_) {}
+                if (mounted) {
+                  setState(() => _questionVideos[_currentQuestionIndex] = null);
+                  Navigator.pop(context);
+                }
+              },
+              onContinue: () {
+                if (mounted) {
+                  Navigator.pop(context);
+                  setState(() => _currentQuestionIndex++);
+                  _askNextQuestion();
+                }
+              },
+            ),
           ),
-        ),
-      );
+        );
+      }
     } catch (e) {
-      setState(() => _isRecording = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error saving video: $e')),
-      );
+      if (mounted) {
+        setState(() {
+          _isRecording = false;
+          _recordingStartTime = null;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error saving video: $e')),
+        );
+      }
     }
   }
 

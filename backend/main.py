@@ -61,6 +61,8 @@ UPLOAD_DIR = "uploads"
 RESULTS_DIR = "results"
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(os.path.join(UPLOAD_DIR, "adhd"), exist_ok=True)
+os.makedirs(os.path.join(UPLOAD_DIR, "depression"), exist_ok=True)
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
 
@@ -592,28 +594,18 @@ async def process_depression_job(job_id: str, video_path: Optional[str], questio
     try:
         _update_job(job_id, status="processing")
         
-        # We use the execute_depression_screening method added to model_router
+        # The updated execute_depression_screening already returns the full formatted dict
         results = await model_router.execute_depression_screening(
             video_path=video_path,
             questionnaire_data=questionnaire_data
         )
 
-        fused_result = {
-            "fused_prediction": results["fused_prediction"],
-            "fused_confidence": results["fused_confidence"],
-            "message": "Depression detected" if results["fused_prediction"] == 1 else "No significant depression detected"
-        }
-
         # write result JSON
         result_path = os.path.join(RESULTS_DIR, f"{job_id}.json")
         with open(result_path, "w") as f:
-            json.dump({
-                "success": True,
-                "condition": "Depression",
-                "fused_result": fused_result,
-                "individual_results": results["individual_results"],
-                "modalities_used": results["modalities_used"],
-            }, f)
+            json.dump(results, f)
+
+        _update_job(job_id, status="completed", result_path=result_path)
 
         _update_job(job_id, status="completed", result_path=result_path)
 
@@ -622,12 +614,9 @@ async def process_depression_job(job_id: str, video_path: Optional[str], questio
         print(f"[process_depression_job] FAILED job={job_id}: {e}")
 
     finally:
-        # cleanup video temp if there was one
-        if video_path and os.path.exists(video_path):
-            try:
-                os.remove(video_path)
-            except Exception:
-                pass
+        # cleanup audio temp ONLY (extracted from video)
+        # We don't delete the video_path because user wants to keep it in uploads/depression
+        pass
 
 
 @app.post("/jobs/adhd")
@@ -640,10 +629,10 @@ async def submit_adhd_job(
         job_id = str(uuid.uuid4())
         questionnaire_dict = json.loads(questionnaire_data) if questionnaire_data else {}
 
-        # Save video file to uploads
+        # Save video file to uploads/adhd
         safe_name = video_file.filename or "video.mp4"
         video_filename = f"{job_id}_{safe_name}"
-        video_path = os.path.join(UPLOAD_DIR, video_filename)
+        video_path = os.path.join(UPLOAD_DIR, "adhd", video_filename)
 
         await video_file.seek(0)
         with open(video_path, "wb") as f:
@@ -689,7 +678,7 @@ async def submit_depression_job(
         if video_file:
             safe_name = video_file.filename or "video.mp4"
             video_filename = f"{job_id}_{safe_name}"
-            video_path = os.path.join(UPLOAD_DIR, video_filename)
+            video_path = os.path.join(UPLOAD_DIR, "depression", video_filename)
 
             await video_file.seek(0)
             with open(video_path, "wb") as f:
