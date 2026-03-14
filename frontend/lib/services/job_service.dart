@@ -55,8 +55,6 @@ class JobService {
     }
   }
 
-<<<<<<< HEAD
-=======
   static Future<String> submitDepressionJob({
     File? videoFile,
     required Map<String, dynamic> questionnaireData,
@@ -105,7 +103,6 @@ class JobService {
     }
   }
 
->>>>>>> ff182c9fdac30379da638d9ac6fea7dfb94ed4ad
   static Future<Map<String, dynamic>> getJobStatus(String jobId) async {
     try {
       final uri = Uri.parse(ApiConfig.getUrl('jobs/$jobId'));

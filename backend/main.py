@@ -587,52 +587,52 @@ def process_adhd_job(job_id: str, video_path: str, questionnaire_dict: Dict[str,
                 pass
 
 
-<<<<<<< HEAD
-=======
-async def process_depression_job(job_id: str, video_path: Optional[str], questionnaire_data: Dict[str, Any]):
-    """Background task for DAIC-WOZ Multimodal Depression Screening"""
-    try:
-        _update_job(job_id, status="processing")
-        
-        # We use the execute_depression_screening method added to model_router
-        results = await model_router.execute_depression_screening(
-            video_path=video_path,
-            questionnaire_data=questionnaire_data
-        )
-
-        fused_result = {
-            "fused_prediction": results["fused_prediction"],
-            "fused_confidence": results["fused_confidence"],
-            "message": "Depression detected" if results["fused_prediction"] == 1 else "No significant depression detected"
-        }
-
-        # write result JSON
-        result_path = os.path.join(RESULTS_DIR, f"{job_id}.json")
-        with open(result_path, "w") as f:
-            json.dump({
-                "success": True,
-                "condition": "Depression",
-                "fused_result": fused_result,
-                "individual_results": results["individual_results"],
-                "modalities_used": results["modalities_used"],
-            }, f)
-
-        _update_job(job_id, status="completed", result_path=result_path)
-
-    except Exception as e:
-        _update_job(job_id, status="failed", error=str(e))
-        print(f"[process_depression_job] FAILED job={job_id}: {e}")
-
-    finally:
-        # cleanup video temp if there was one
-        if video_path and os.path.exists(video_path):
-            try:
-                os.remove(video_path)
-            except Exception:
-                pass
-
-
->>>>>>> ff182c9fdac30379da638d9ac6fea7dfb94ed4ad
+# <<<<<<< HEAD
+# =======
+# async def process_depression_job(job_id: str, video_path: Optional[str], questionnaire_data: Dict[str, Any]):
+#     """Background task for DAIC-WOZ Multimodal Depression Screening"""
+#     try:
+#         _update_job(job_id, status="processing")
+#
+#         # We use the execute_depression_screening method added to model_router
+#         results = await model_router.execute_depression_screening(
+#             video_path=video_path,
+#             questionnaire_data=questionnaire_data
+#         )
+#
+#         fused_result = {
+#             "fused_prediction": results["fused_prediction"],
+#             "fused_confidence": results["fused_confidence"],
+#             "message": "Depression detected" if results["fused_prediction"] == 1 else "No significant depression detected"
+#         }
+#
+#         # write result JSON
+#         result_path = os.path.join(RESULTS_DIR, f"{job_id}.json")
+#         with open(result_path, "w") as f:
+#             json.dump({
+#                 "success": True,
+#                 "condition": "Depression",
+#                 "fused_result": fused_result,
+#                 "individual_results": results["individual_results"],
+#                 "modalities_used": results["modalities_used"],
+#             }, f)
+#
+#         _update_job(job_id, status="completed", result_path=result_path)
+#
+#     except Exception as e:
+#         _update_job(job_id, status="failed", error=str(e))
+#         print(f"[process_depression_job] FAILED job={job_id}: {e}")
+#
+#     finally:
+#         # cleanup video temp if there was one
+#         if video_path and os.path.exists(video_path):
+#             try:
+#                 os.remove(video_path)
+#             except Exception:
+#                 pass
+#
+#
+# >>>>>>> ff182c9fdac30379da638d9ac6fea7dfb94ed4ad
 @app.post("/jobs/adhd")
 async def submit_adhd_job(
     background_tasks: BackgroundTasks,
@@ -677,56 +677,56 @@ async def submit_adhd_job(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to submit job: {str(e)}")
 
-
-<<<<<<< HEAD
-=======
-@app.post("/jobs/depression")
-async def submit_depression_job(
-    background_tasks: BackgroundTasks,
-    video_file: Optional[UploadFile] = File(None),
-    questionnaire_data: Optional[str] = Form(None),
-):
-    try:
-        job_id = str(uuid.uuid4())
-        questionnaire_dict = json.loads(questionnaire_data) if questionnaire_data else {}
-
-        video_path = None
-        if video_file:
-            safe_name = video_file.filename or "video.mp4"
-            video_filename = f"{job_id}_{safe_name}"
-            video_path = os.path.join(UPLOAD_DIR, video_filename)
-
-            await video_file.seek(0)
-            with open(video_path, "wb") as f:
-                shutil.copyfileobj(video_file.file, f)
-            await video_file.seek(0)
-
-        job_store[job_id] = {
-            "job_id": job_id,
-            "status": "queued",
-            "created_at": datetime.now().isoformat(),
-            "updated_at": datetime.now().isoformat(),
-            "video_path": video_path,
-            "result_path": None,
-            "error": None,
-        }
-
-        # Attach depression job processor
-        background_tasks.add_task(process_depression_job, job_id, video_path, questionnaire_dict)
-
-        return {
-            "job_id": job_id,
-            "status": "queued",
-            "message": "Depression screening job submitted successfully.",
-        }
-
-    except json.JSONDecodeError as e:
-        raise HTTPException(status_code=400, detail=f"Invalid questionnaire JSON: {str(e)}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to submit job: {str(e)}")
-
-
->>>>>>> ff182c9fdac30379da638d9ac6fea7dfb94ed4ad
+#
+# <<<<<<< HEAD
+# =======
+# @app.post("/jobs/depression")
+# async def submit_depression_job(
+#     background_tasks: BackgroundTasks,
+#     video_file: Optional[UploadFile] = File(None),
+#     questionnaire_data: Optional[str] = Form(None),
+# ):
+#     try:
+#         job_id = str(uuid.uuid4())
+#         questionnaire_dict = json.loads(questionnaire_data) if questionnaire_data else {}
+#
+#         video_path = None
+#         if video_file:
+#             safe_name = video_file.filename or "video.mp4"
+#             video_filename = f"{job_id}_{safe_name}"
+#             video_path = os.path.join(UPLOAD_DIR, video_filename)
+#
+#             await video_file.seek(0)
+#             with open(video_path, "wb") as f:
+#                 shutil.copyfileobj(video_file.file, f)
+#             await video_file.seek(0)
+#
+#         job_store[job_id] = {
+#             "job_id": job_id,
+#             "status": "queued",
+#             "created_at": datetime.now().isoformat(),
+#             "updated_at": datetime.now().isoformat(),
+#             "video_path": video_path,
+#             "result_path": None,
+#             "error": None,
+#         }
+#
+#         # Attach depression job processor
+#         background_tasks.add_task(process_depression_job, job_id, video_path, questionnaire_dict)
+#
+#         return {
+#             "job_id": job_id,
+#             "status": "queued",
+#             "message": "Depression screening job submitted successfully.",
+#         }
+#
+#     except json.JSONDecodeError as e:
+#         raise HTTPException(status_code=400, detail=f"Invalid questionnaire JSON: {str(e)}")
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Failed to submit job: {str(e)}")
+#
+#
+# >>>>>>> ff182c9fdac30379da638d9ac6fea7dfb94ed4ad
 @app.get("/jobs/{job_id}")
 async def get_job_status(job_id: str):
     if job_id not in job_store:

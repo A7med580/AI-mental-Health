@@ -5,45 +5,46 @@ Handles loading and caching of ML models + ADHD bundle
 
 import os
 import json
+
 import joblib
 from typing import Any, Dict
-<<<<<<< HEAD
-=======
-
-# ---------------------------------------------------------
-# PyTorch Depression Visual Model Definition
-# Needs to exist in memory before torch.load() can unpickle
-# ---------------------------------------------------------
-import torch
-import torch.nn as nn
-
-class DepressionBiLSTM(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers, dropout=0.5):
-        super(DepressionBiLSTM, self).__init__()
-        self.lstm = nn.LSTM(
-            input_size=input_size,
-            hidden_size=hidden_size,
-            num_layers=num_layers,
-            batch_first=True,
-            bidirectional=True,
-            dropout=dropout if num_layers > 1 else 0.0
-        )
-        self.attention = nn.Linear(hidden_size * 2, 1)
-        self.classifier = nn.Sequential(
-            nn.Dropout(dropout),
-            nn.Linear(hidden_size * 2, 32),
-            nn.ReLU(),
-            nn.Linear(32, 1)
-        )
-
-    def forward(self, x):
-        lstm_out, _ = self.lstm(x)  # (batch, seq, 2*hidden)
-        attn_weights = torch.softmax(self.attention(lstm_out), dim=1)
-        context = torch.sum(attn_weights * lstm_out, dim=1)
-        return self.classifier(context).squeeze(-1)
-
-
->>>>>>> ff182c9fdac30379da638d9ac6fea7dfb94ed4ad
+# # <<<<<<< HEAD
+# # =======
+#
+# # ---------------------------------------------------------
+# # PyTorch Depression Visual Model Definition
+# # Needs to exist in memory before torch.load() can unpickle
+# # ---------------------------------------------------------
+# import torch
+# import torch.nn as nn
+#
+# class DepressionBiLSTM(nn.Module):
+#     def __init__(self, input_size, hidden_size, num_layers, dropout=0.5):
+#         super(DepressionBiLSTM, self).__init__()
+#         self.lstm = nn.LSTM(
+#             input_size=input_size,
+#             hidden_size=hidden_size,
+#             num_layers=num_layers,
+#             batch_first=True,
+#             bidirectional=True,
+#             dropout=dropout if num_layers > 1 else 0.0
+#         )
+#         self.attention = nn.Linear(hidden_size * 2, 1)
+#         self.classifier = nn.Sequential(
+#             nn.Dropout(dropout),
+#             nn.Linear(hidden_size * 2, 32),
+#             nn.ReLU(),
+#             nn.Linear(32, 1)
+#         )
+#
+#     def forward(self, x):
+#         lstm_out, _ = self.lstm(x)  # (batch, seq, 2*hidden)
+#         attn_weights = torch.softmax(self.attention(lstm_out), dim=1)
+#         context = torch.sum(attn_weights * lstm_out, dim=1)
+#         return self.classifier(context).squeeze(-1)
+#
+#
+# >>>>>>> ff182c9fdac30379da638d9ac6fea7dfb94ed4ad
 class ModelLoader:
     _instance = None
     _models: Dict[str, Any] = {}
@@ -129,74 +130,74 @@ class ModelLoader:
 
         self._models[key] = bundle
         return bundle
-<<<<<<< HEAD
-=======
-
-    # ✅ NEW: Depression (DAIC-WOZ) bundle loader
-    def load_depression_bundle(self) -> Dict[str, Any]:
-        """
-        Loads all multimodal Depression models (Text, Audio, Visual, Fusion)
-        """
-        from config.model_config import ModelConfig
-
-        key = "__DEPRESSION_BUNDLE__"
-        if key in self._models:
-            return self._models[key]
-
-        cfg = ModelConfig()
-        dep_cfg = cfg.get_model_config("depression", "fusion")
-        if not dep_cfg:
-            raise ValueError("Depression models configuration not found in ModelConfig")
-
-        print("[ModelLoader] Loading Depression Bundle...", flush=True)
-
-        # 1. Fusion Model & Audio (LightGBM)
-        fusion_model = self.load_model(dep_cfg["fusion_model"], "joblib")
-        audio_model = self.load_model(dep_cfg["audio_model"], "joblib")
-        audio_scaler = self.load_model(dep_cfg["audio_scaler"], "joblib")
-
-        # 2. Visual Model (PyTorch BiLSTM)
-        visual_model_path = dep_cfg["visual_model"]
-        visual_meta_path = dep_cfg["visual_meta"]
-        
-        device = torch.device('mps' if torch.backends.mps.is_available() else ('cuda' if torch.cuda.is_available() else 'cpu'))
-        # Meta contains {input_size, hidden_size, num_layers, dropout}
-        visual_meta = torch.load(visual_meta_path, map_location=device, weights_only=True)
-        visual_model = DepressionBiLSTM(
-            input_size=visual_meta["n_aus"],
-            hidden_size=visual_meta["hidden_dim"],
-            num_layers=visual_meta["num_layers"],
-            dropout=visual_meta["dropout"]
-        )
-        visual_model.load_state_dict(torch.load(visual_model_path, map_location=device, weights_only=True))
-        visual_model.to(device)
-        visual_model.eval()
-
-        # 3. Text Model (HuggingFace Transformers DistilBERT)
-        try:
-            from transformers import AutoTokenizer, AutoModelForSequenceClassification
-        except ImportError:
-            raise RuntimeError("transformers package not available for text depression model.")
-
-        text_dir = dep_cfg["text_dir"]
-        text_tokenizer = AutoTokenizer.from_pretrained(text_dir)
-        text_model = AutoModelForSequenceClassification.from_pretrained(text_dir)
-        text_model.to(device)
-        text_model.eval()
-
-        bundle = {
-            "fusion_model": fusion_model,
-            "audio_model": audio_model,
-            "audio_scaler": audio_scaler,
-            "visual_model": visual_model,
-            "text_tokenizer": text_tokenizer,
-            "text_model": text_model,
-            "device": device,
-            "n_aus": visual_meta["n_aus"],
-            "seq_len": visual_meta["seq_len"]
-        }
-
-        self._models[key] = bundle
-        print("[ModelLoader] Depression Bundle loaded successfully.", flush=True)
-        return bundle
->>>>>>> ff182c9fdac30379da638d9ac6fea7dfb94ed4ad
+# <<<<<<< HEAD
+# =======
+#
+#     # ✅ NEW: Depression (DAIC-WOZ) bundle loader
+#     def load_depression_bundle(self) -> Dict[str, Any]:
+#         """
+#         Loads all multimodal Depression models (Text, Audio, Visual, Fusion)
+#         """
+#         from config.model_config import ModelConfig
+#
+#         key = "__DEPRESSION_BUNDLE__"
+#         if key in self._models:
+#             return self._models[key]
+#
+#         cfg = ModelConfig()
+#         dep_cfg = cfg.get_model_config("depression", "fusion")
+#         if not dep_cfg:
+#             raise ValueError("Depression models configuration not found in ModelConfig")
+#
+#         print("[ModelLoader] Loading Depression Bundle...", flush=True)
+#
+#         # 1. Fusion Model & Audio (LightGBM)
+#         fusion_model = self.load_model(dep_cfg["fusion_model"], "joblib")
+#         audio_model = self.load_model(dep_cfg["audio_model"], "joblib")
+#         audio_scaler = self.load_model(dep_cfg["audio_scaler"], "joblib")
+#
+#         # 2. Visual Model (PyTorch BiLSTM)
+#         visual_model_path = dep_cfg["visual_model"]
+#         visual_meta_path = dep_cfg["visual_meta"]
+#
+#         device = torch.device('mps' if torch.backends.mps.is_available() else ('cuda' if torch.cuda.is_available() else 'cpu'))
+#         # Meta contains {input_size, hidden_size, num_layers, dropout}
+#         visual_meta = torch.load(visual_meta_path, map_location=device, weights_only=True)
+#         visual_model = DepressionBiLSTM(
+#             input_size=visual_meta["n_aus"],
+#             hidden_size=visual_meta["hidden_dim"],
+#             num_layers=visual_meta["num_layers"],
+#             dropout=visual_meta["dropout"]
+#         )
+#         visual_model.load_state_dict(torch.load(visual_model_path, map_location=device, weights_only=True))
+#         visual_model.to(device)
+#         visual_model.eval()
+#
+#         # 3. Text Model (HuggingFace Transformers DistilBERT)
+#         try:
+#             from transformers import AutoTokenizer, AutoModelForSequenceClassification
+#         except ImportError:
+#             raise RuntimeError("transformers package not available for text depression model.")
+#
+#         text_dir = dep_cfg["text_dir"]
+#         text_tokenizer = AutoTokenizer.from_pretrained(text_dir)
+#         text_model = AutoModelForSequenceClassification.from_pretrained(text_dir)
+#         text_model.to(device)
+#         text_model.eval()
+#
+#         bundle = {
+#             "fusion_model": fusion_model,
+#             "audio_model": audio_model,
+#             "audio_scaler": audio_scaler,
+#             "visual_model": visual_model,
+#             "text_tokenizer": text_tokenizer,
+#             "text_model": text_model,
+#             "device": device,
+#             "n_aus": visual_meta["n_aus"],
+#             "seq_len": visual_meta["seq_len"]
+#         }
+#
+#         self._models[key] = bundle
+#         print("[ModelLoader] Depression Bundle loaded successfully.", flush=True)
+#         return bundle
+# >>>>>>> ff182c9fdac30379da638d9ac6fea7dfb94ed4ad

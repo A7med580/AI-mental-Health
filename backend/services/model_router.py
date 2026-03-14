@@ -558,178 +558,178 @@ class ModelRouter:
 
         except Exception as e:
             raise Exception(f"ADHD facial prediction failed: {e}")
-<<<<<<< HEAD
-=======
-
-    # =========================================================
-    # DEPRESSION (DAIC-WOZ DAIC-WOZ)
-    # =========================================================
-    async def execute_depression_screening(
-        self,
-        video_path: Optional[str],
-        questionnaire_data: Optional[Dict[str, Any]],
-    ) -> Dict[str, Any]:
-        """
-        Executes the multimodal DAIC-WOZ depression screening.
-        Uses Text (DistilBERT), Audio (LightGBM on COVAREP), and Visual (BiLSTM on AUs).
-        Fuses predictions with the Logistic Regression meta-learner.
-        """
-        import torch
-
-        bundle = self.model_loader.load_depression_bundle()
-        fusion_model = bundle["fusion_model"]
-        audio_model = bundle["audio_model"]
-        audio_scaler = bundle["audio_scaler"]
-        visual_model = bundle["visual_model"]
-        text_tokenizer = bundle["text_tokenizer"]
-        text_model = bundle["text_model"]
-        device = bundle["device"]
-
-        results = {
-            "individual_results": [],
-            "modalities_used": [],
-            "fused_prediction": 0,
-            "fused_confidence": 0.0
-        }
-
-        audio_prob = None
-        visual_prob = None
-        text_prob = None
-
-        # 1. TEXT MODALITY
-        if questionnaire_data:
-            # Combine all text answers from the questionnaire
-            text_answers = []
-            for k, v in questionnaire_data.items():
-                if isinstance(k, str) and k.endswith("_text") and isinstance(v, str):
-                    text_answers.append(v)
-            
-            combined_text = " ".join(text_answers).strip()
-            
-            if combined_text:
-                try:
-                    inputs = text_tokenizer(combined_text, return_tensors="pt", truncation=True, max_length=512, padding="max_length")
-                    inputs = {k: v.to(device) for k, v in inputs.items()}
-                    
-                    with torch.no_grad():
-                        outputs = text_model(**inputs)
-                        logits = outputs.logits
-                        prob = torch.softmax(logits, dim=-1)[0][1].item()  # Probability of class 1 (Depression)
-                    
-                    text_prob = float(prob)
-                    results["individual_results"].append({
-                        "model_type": "text",
-                        "confidence": text_prob,
-                        "prediction": int(text_prob >= 0.5)
-                    })
-                    results["modalities_used"].append("text")
-                except Exception as e:
-                    print(f"[Depression/Text] Error: {e}")
-
-        # 2. AUDIO & VISUAL MODALITIES (Require Video File)
-        if video_path and os.path.exists(video_path):
-            audio_path = video_path.replace(".mp4", "_audio.wav")
-            
-            # AUDIO
-            try:
-                # Extract WAV from MP4
-                import subprocess
-                subprocess.run([
-                    "ffmpeg", "-y", "-i", video_path, 
-                    "-vn", "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1", 
-                    audio_path
-                ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
-                
-                # Extract COVAREP (Mocked to use openSMILE or fallback if COVAREP strict binary missing)
-                # Since COVAREP is MATLAB based and we are in production, we use the feature_extractor's combined audio features
-                # The LightGBM model was trained on 438 features. We need to match this via our feature_extractor
-                
-                # We will attempt to get exactly 438 features or fallback to zeros if mismatch (to let fusion handle it)
-                audio_features = await self.feature_extractor.extract_audio_features_from_path(audio_path)
-                
-                vec = []
-                if isinstance(audio_features, dict) and "combined" in audio_features:
-                    raw_vec = audio_features["combined"]
-                else:
-                    raw_vec = audio_features
-
-                if len(raw_vec) == 438:
-                    vec = raw_vec
-                else:
-                    # Pad or truncate to exactly 438 (temporary mitigation if extractor changed since training)
-                    vec = np.zeros(438)
-                    n = min(len(raw_vec), 438)
-                    vec[:n] = raw_vec[:n]
-                
-                X_audio = np.array(vec, dtype=np.float32).reshape(1, -1)
-                X_audio_scaled = audio_scaler.transform(X_audio)
-                
-                audio_prob = float(audio_model.predict_proba(X_audio_scaled)[0][1])
-                results["individual_results"].append({
-                    "model_type": "audio",
-                    "confidence": audio_prob,
-                    "prediction": int(audio_prob >= 0.5)
-                })
-                results["modalities_used"].append("audio")
-            except Exception as e:
-                print(f"[Depression/Audio] Error: {e}")
-            finally:
-                if os.path.exists(audio_path):
-                    try:
-                        os.remove(audio_path)
-                    except:
-                        pass
-            
-            # VISUAL
-            try:
-                # Extract Action Units sequence via OpenCV fallback in feature extractor
-                # Real OpenFace/CLNF is heavy, so we use the AUs extracted over frames
-                au_seq = await self.feature_extractor.extract_facial_aus_sequence(video_path, max_frames=300)
-                
-                # Pad/Sequence to match expected model input
-                n_aus = bundle["n_aus"]
-                seq_len = bundle["seq_len"]
-                seq = np.zeros((seq_len, n_aus), dtype=np.float32)
-                for i, frame_aus in enumerate(au_seq):
-                    if i >= seq_len: break
-                    for j in range(min(len(frame_aus), n_aus)):
-                        seq[i, j] = frame_aus[j]
-                        
-                X_vis = torch.tensor(seq).unsqueeze(0).to(device)  # (1, seq_len, n_aus)
-                
-                with torch.no_grad():
-                    logits = visual_model(X_vis)
-                    prob = torch.sigmoid(logits).item()
-                
-                visual_prob = float(prob)
-                results["individual_results"].append({
-                    "model_type": "visual",
-                    "confidence": visual_prob,
-                    "prediction": int(visual_prob >= 0.5)
-                })
-                results["modalities_used"].append("visual")
-            except Exception as e:
-                print(f"[Depression/Visual] Error: {e}")
-
-        # 3. FUSION
-        # If any modality failed, use the mean of the available probabilities as a fallback substitute
-        available_probs = [p for p in [audio_prob, visual_prob, text_prob] if p is not None]
-        
-        if not available_probs:
-            raise Exception("All modalities failed to extract features. Cannot run depression screening.")
-            
-        mean_prob = sum(available_probs) / len(available_probs)
-        
-        a_p = audio_prob if audio_prob is not None else mean_prob
-        v_p = visual_prob if visual_prob is not None else mean_prob
-        t_p = text_prob if text_prob is not None else mean_prob
-        
-        X_fusion = np.array([[a_p, v_p, t_p]], dtype=np.float32)
-        fused_prob = float(fusion_model.predict_proba(X_fusion)[0][1])
-        fused_pred = int(fused_prob >= 0.5)
-        
-        results["fused_prediction"] = fused_pred
-        results["fused_confidence"] = fused_prob
-        
-        return results
->>>>>>> ff182c9fdac30379da638d9ac6fea7dfb94ed4ad
+# <<<<<<< HEAD
+# =======
+#
+#     # =========================================================
+#     # DEPRESSION (DAIC-WOZ DAIC-WOZ)
+#     # =========================================================
+#     async def execute_depression_screening(
+#         self,
+#         video_path: Optional[str],
+#         questionnaire_data: Optional[Dict[str, Any]],
+#     ) -> Dict[str, Any]:
+#         """
+#         Executes the multimodal DAIC-WOZ depression screening.
+#         Uses Text (DistilBERT), Audio (LightGBM on COVAREP), and Visual (BiLSTM on AUs).
+#         Fuses predictions with the Logistic Regression meta-learner.
+#         """
+#         import torch
+#
+#         bundle = self.model_loader.load_depression_bundle()
+#         fusion_model = bundle["fusion_model"]
+#         audio_model = bundle["audio_model"]
+#         audio_scaler = bundle["audio_scaler"]
+#         visual_model = bundle["visual_model"]
+#         text_tokenizer = bundle["text_tokenizer"]
+#         text_model = bundle["text_model"]
+#         device = bundle["device"]
+#
+#         results = {
+#             "individual_results": [],
+#             "modalities_used": [],
+#             "fused_prediction": 0,
+#             "fused_confidence": 0.0
+#         }
+#
+#         audio_prob = None
+#         visual_prob = None
+#         text_prob = None
+#
+#         # 1. TEXT MODALITY
+#         if questionnaire_data:
+#             # Combine all text answers from the questionnaire
+#             text_answers = []
+#             for k, v in questionnaire_data.items():
+#                 if isinstance(k, str) and k.endswith("_text") and isinstance(v, str):
+#                     text_answers.append(v)
+#
+#             combined_text = " ".join(text_answers).strip()
+#
+#             if combined_text:
+#                 try:
+#                     inputs = text_tokenizer(combined_text, return_tensors="pt", truncation=True, max_length=512, padding="max_length")
+#                     inputs = {k: v.to(device) for k, v in inputs.items()}
+#
+#                     with torch.no_grad():
+#                         outputs = text_model(**inputs)
+#                         logits = outputs.logits
+#                         prob = torch.softmax(logits, dim=-1)[0][1].item()  # Probability of class 1 (Depression)
+#
+#                     text_prob = float(prob)
+#                     results["individual_results"].append({
+#                         "model_type": "text",
+#                         "confidence": text_prob,
+#                         "prediction": int(text_prob >= 0.5)
+#                     })
+#                     results["modalities_used"].append("text")
+#                 except Exception as e:
+#                     print(f"[Depression/Text] Error: {e}")
+#
+#         # 2. AUDIO & VISUAL MODALITIES (Require Video File)
+#         if video_path and os.path.exists(video_path):
+#             audio_path = video_path.replace(".mp4", "_audio.wav")
+#
+#             # AUDIO
+#             try:
+#                 # Extract WAV from MP4
+#                 import subprocess
+#                 subprocess.run([
+#                     "ffmpeg", "-y", "-i", video_path,
+#                     "-vn", "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1",
+#                     audio_path
+#                 ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+#
+#                 # Extract COVAREP (Mocked to use openSMILE or fallback if COVAREP strict binary missing)
+#                 # Since COVAREP is MATLAB based and we are in production, we use the feature_extractor's combined audio features
+#                 # The LightGBM model was trained on 438 features. We need to match this via our feature_extractor
+#
+#                 # We will attempt to get exactly 438 features or fallback to zeros if mismatch (to let fusion handle it)
+#                 audio_features = await self.feature_extractor.extract_audio_features_from_path(audio_path)
+#
+#                 vec = []
+#                 if isinstance(audio_features, dict) and "combined" in audio_features:
+#                     raw_vec = audio_features["combined"]
+#                 else:
+#                     raw_vec = audio_features
+#
+#                 if len(raw_vec) == 438:
+#                     vec = raw_vec
+#                 else:
+#                     # Pad or truncate to exactly 438 (temporary mitigation if extractor changed since training)
+#                     vec = np.zeros(438)
+#                     n = min(len(raw_vec), 438)
+#                     vec[:n] = raw_vec[:n]
+#
+#                 X_audio = np.array(vec, dtype=np.float32).reshape(1, -1)
+#                 X_audio_scaled = audio_scaler.transform(X_audio)
+#
+#                 audio_prob = float(audio_model.predict_proba(X_audio_scaled)[0][1])
+#                 results["individual_results"].append({
+#                     "model_type": "audio",
+#                     "confidence": audio_prob,
+#                     "prediction": int(audio_prob >= 0.5)
+#                 })
+#                 results["modalities_used"].append("audio")
+#             except Exception as e:
+#                 print(f"[Depression/Audio] Error: {e}")
+#             finally:
+#                 if os.path.exists(audio_path):
+#                     try:
+#                         os.remove(audio_path)
+#                     except:
+#                         pass
+#
+#             # VISUAL
+#             try:
+#                 # Extract Action Units sequence via OpenCV fallback in feature extractor
+#                 # Real OpenFace/CLNF is heavy, so we use the AUs extracted over frames
+#                 au_seq = await self.feature_extractor.extract_facial_aus_sequence(video_path, max_frames=300)
+#
+#                 # Pad/Sequence to match expected model input
+#                 n_aus = bundle["n_aus"]
+#                 seq_len = bundle["seq_len"]
+#                 seq = np.zeros((seq_len, n_aus), dtype=np.float32)
+#                 for i, frame_aus in enumerate(au_seq):
+#                     if i >= seq_len: break
+#                     for j in range(min(len(frame_aus), n_aus)):
+#                         seq[i, j] = frame_aus[j]
+#
+#                 X_vis = torch.tensor(seq).unsqueeze(0).to(device)  # (1, seq_len, n_aus)
+#
+#                 with torch.no_grad():
+#                     logits = visual_model(X_vis)
+#                     prob = torch.sigmoid(logits).item()
+#
+#                 visual_prob = float(prob)
+#                 results["individual_results"].append({
+#                     "model_type": "visual",
+#                     "confidence": visual_prob,
+#                     "prediction": int(visual_prob >= 0.5)
+#                 })
+#                 results["modalities_used"].append("visual")
+#             except Exception as e:
+#                 print(f"[Depression/Visual] Error: {e}")
+#
+#         # 3. FUSION
+#         # If any modality failed, use the mean of the available probabilities as a fallback substitute
+#         available_probs = [p for p in [audio_prob, visual_prob, text_prob] if p is not None]
+#
+#         if not available_probs:
+#             raise Exception("All modalities failed to extract features. Cannot run depression screening.")
+#
+#         mean_prob = sum(available_probs) / len(available_probs)
+#
+#         a_p = audio_prob if audio_prob is not None else mean_prob
+#         v_p = visual_prob if visual_prob is not None else mean_prob
+#         t_p = text_prob if text_prob is not None else mean_prob
+#
+#         X_fusion = np.array([[a_p, v_p, t_p]], dtype=np.float32)
+#         fused_prob = float(fusion_model.predict_proba(X_fusion)[0][1])
+#         fused_pred = int(fused_prob >= 0.5)
+#
+#         results["fused_prediction"] = fused_pred
+#         results["fused_confidence"] = fused_prob
+#
+#         return results
+# >>>>>>> ff182c9fdac30379da638d9ac6fea7dfb94ed4ad

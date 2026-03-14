@@ -12,4 +12,7 @@ tensorflow==2.15.0
 keras==2.15.0
 Pillow==10.1.0
 pydantic==2.5.0
+catboost
+requests
+python-dotenv
 
