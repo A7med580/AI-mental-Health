@@ -12,13 +12,14 @@ TRAIN_SPLIT  = os.path.join(DATASET_DIR, "train_split_Depression_AVEC2017.csv")
 DEV_SPLIT    = os.path.join(DATASET_DIR, "dev_split_Depression_AVEC2017.csv")
 
 # Output on 1TB storage
-OUTPUT_BASE_DIR   = "/Volumes/1t storage/grad project/depression_training"
+OUTPUT_BASE_DIR   = "/Volumes/1t storage/grad project/backend/depression_training_output"
 CHECKPOINTS_DIR   = os.path.join(OUTPUT_BASE_DIR, "checkpoints")
 LOGS_DIR          = os.path.join(OUTPUT_BASE_DIR, "logs")
-TRAINED_MODELS_DIR = os.path.join(OUTPUT_BASE_DIR, "trained_models")
+# User requested folder: "depression models foler"
+TRAINED_MODELS_DIR = "/Volumes/1t storage/grad project/backend/depression models foler"
 
 # Backend integration path (final models copied here for API use)
-BACKEND_MODELS_DIR = "/Volumes/1t storage/grad project/Graduation project/backend/Models/depression"
+BACKEND_MODELS_DIR = "/Volumes/1t storage/grad project/backend/Models/depression"
 
 # ─────────────────────────────────────────────
 # FEATURES
