@@ -32,12 +32,9 @@ frontend/android/app/debug/
 frontend/android/app/release/
 
 # Large Model Files & Data
-**/Models/
 **/datasets/
 **/data/
 **/processed/
-**/uploads/
-**/results/
 *.h5
 *.keras
 *.pkl
