@@ -121,7 +121,23 @@ graph TD
 
 ## 🏁 Setup Instructions
 
-### 1. Backend Setup (FastAPI + AI Models)
+### 1. 🧠 AI Models & Weight Setup
+
+Due to their large size, pre-trained model weights are not included in this repository. You must download them separately and place them in the correct directories.
+
+1.  **Download Models**: [Mindful AI Models (Google Drive)](https://drive.google.com/drive/folders/1DlIcp-XBuJwFHGiEiisUnSHuxXqU59ZW?usp=sharing)
+2.  **Placement**: Extract and copy the folders/files into `backend/Models/` following this structure:
+    ```text
+    backend/Models/
+    ├── adhd/          # Place ADHD .pkl and .keras files here
+    ├── asd/           # Place ASD .joblib and face/ models here
+    └── depression/    # Place DAIC-WOZ .pt, .joblib and text_model_dir here
+    ```
+
+> [!TIP]
+> The backend includes **Robust Loading Architecture**. If a specific model weight is missing, the server will log a warning and continue to operate using available models (fallback mode) rather than crashing.
+
+### 2. Backend Setup (FastAPI + AI Models)
 
 The backend handles heavy ML workloads natively.
 
@@ -132,7 +148,7 @@ The backend handles heavy ML workloads natively.
 2. Create and activate a Virtual Environment:
    ```bash
    python -m venv .venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   source .venv/bin/activate  # On macOS: source ../venv_mac/bin/activate
    ```
 3. Install dependencies:
    ```bash
@@ -141,11 +157,11 @@ The backend handles heavy ML workloads natively.
 4. Set up environment variables (see `.env` Configuration below).
 5. Start the server:
    ```bash
-   python main.py
+   uvicorn main:app --host 0.0.0.0 --port 8000
    ```
-   *The Swagger UI will be available at `http://localhost:8000/docs`.*
+   *The Swagger UI will be available at `http://localhost:8000/docs` or `http://127.0.0.1:8000/docs`.*
 
-### 2. Frontend Setup (Flutter App)
+### 3. Frontend Setup (Flutter App)
 
 1. Navigate to the `frontend/` directory:
    ```bash
