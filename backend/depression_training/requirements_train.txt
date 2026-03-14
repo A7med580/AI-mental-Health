@@ -1,0 +1,28 @@
+# ─────────────────────────────────────────────
+# DAIC-WOZ Depression Model Training Requirements
+# Install via:
+#   pip install -r requirements_train.txt
+# ─────────────────────────────────────────────
+
+# Core data
+pandas>=1.5.0
+numpy>=1.23.0
+scikit-learn>=1.2.0
+scipy>=1.9.0
+
+# Audio model
+lightgbm>=4.0.0
+joblib>=1.2.0
+
+# Text model (DistilBERT)
+torch>=2.0.0
+transformers>=4.35.0
+sentencepiece>=0.1.99
+
+# Visual model
+# (torch already covers BiLSTM, no extra dep needed)
+
+# Utilities
+tqdm>=4.64.0
+matplotlib>=3.6.0
+seaborn>=0.12.0

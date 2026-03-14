@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:mindful/app_colors.dart';
 import 'package:mindful/screens/adhd_chat_screen.dart';
 import 'package:mindful/screens/autism_questionnaire_screen.dart';
+import 'package:mindful/screens/depression_questionnaire_screen.dart';
 
 
 import 'package:mindful/widgets/page_transitions.dart';
@@ -239,10 +240,12 @@ class _InitialQuestionnaireScreenState
         break;
 
       case 'depression':
-        // TODO: Depression deep-dive screen coming soon
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Depression screening is coming soon!'),
+        Navigator.pushReplacement(
+          context,
+          AppPageRoute(
+            page: DepressionQuestionnaireScreen(
+              questionnaireAnswers: answersAsStrings,
+            ),
           ),
         );
         break;

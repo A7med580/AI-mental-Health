@@ -61,6 +61,8 @@ UPLOAD_DIR = "uploads"
 RESULTS_DIR = "results"
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(os.path.join(UPLOAD_DIR, "adhd"), exist_ok=True)
+os.makedirs(os.path.join(UPLOAD_DIR, "depression"), exist_ok=True)
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
 
@@ -587,6 +589,36 @@ def process_adhd_job(job_id: str, video_path: str, questionnaire_dict: Dict[str,
                 pass
 
 
+async def process_depression_job(job_id: str, video_path: Optional[str], questionnaire_data: Dict[str, Any]):
+    """Background task for DAIC-WOZ Multimodal Depression Screening"""
+    try:
+        _update_job(job_id, status="processing")
+        
+        # The updated execute_depression_screening already returns the full formatted dict
+        results = await model_router.execute_depression_screening(
+            video_path=video_path,
+            questionnaire_data=questionnaire_data
+        )
+
+        # write result JSON
+        result_path = os.path.join(RESULTS_DIR, f"{job_id}.json")
+        with open(result_path, "w") as f:
+            json.dump(results, f)
+
+        _update_job(job_id, status="completed", result_path=result_path)
+
+        _update_job(job_id, status="completed", result_path=result_path)
+
+    except Exception as e:
+        _update_job(job_id, status="failed", error=str(e))
+        print(f"[process_depression_job] FAILED job={job_id}: {e}")
+
+    finally:
+        # cleanup audio temp ONLY (extracted from video)
+        # We don't delete the video_path because user wants to keep it in uploads/depression
+        pass
+
+
 @app.post("/jobs/adhd")
 async def submit_adhd_job(
     background_tasks: BackgroundTasks,
@@ -597,10 +629,10 @@ async def submit_adhd_job(
         job_id = str(uuid.uuid4())
         questionnaire_dict = json.loads(questionnaire_data) if questionnaire_data else {}
 
-        # Save video file to uploads
+        # Save video file to uploads/adhd
         safe_name = video_file.filename or "video.mp4"
         video_filename = f"{job_id}_{safe_name}"
-        video_path = os.path.join(UPLOAD_DIR, video_filename)
+        video_path = os.path.join(UPLOAD_DIR, "adhd", video_filename)
 
         await video_file.seek(0)
         with open(video_path, "wb") as f:
@@ -624,6 +656,52 @@ async def submit_adhd_job(
             "job_id": job_id,
             "status": "queued",
             "message": "Job submitted successfully.",
+        }
+
+    except json.JSONDecodeError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid questionnaire JSON: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to submit job: {str(e)}")
+
+
+@app.post("/jobs/depression")
+async def submit_depression_job(
+    background_tasks: BackgroundTasks,
+    video_file: Optional[UploadFile] = File(None),
+    questionnaire_data: Optional[str] = Form(None),
+):
+    try:
+        job_id = str(uuid.uuid4())
+        questionnaire_dict = json.loads(questionnaire_data) if questionnaire_data else {}
+
+        video_path = None
+        if video_file:
+            safe_name = video_file.filename or "video.mp4"
+            video_filename = f"{job_id}_{safe_name}"
+            video_path = os.path.join(UPLOAD_DIR, "depression", video_filename)
+
+            await video_file.seek(0)
+            with open(video_path, "wb") as f:
+                shutil.copyfileobj(video_file.file, f)
+            await video_file.seek(0)
+
+        job_store[job_id] = {
+            "job_id": job_id,
+            "status": "queued",
+            "created_at": datetime.now().isoformat(),
+            "updated_at": datetime.now().isoformat(),
+            "video_path": video_path,
+            "result_path": None,
+            "error": None,
+        }
+
+        # Attach depression job processor
+        background_tasks.add_task(process_depression_job, job_id, video_path, questionnaire_dict)
+
+        return {
+            "job_id": job_id,
+            "status": "queued",
+            "message": "Depression screening job submitted successfully.",
         }
 
     except json.JSONDecodeError as e:

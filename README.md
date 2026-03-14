@@ -56,6 +56,8 @@ sequenceDiagram
 
 ### AI Fusion Engine — Internal Architecture
 
+Mindful employs a multimodal late-fusion strategy to combine signals from different behavioral domains.
+
 ```mermaid
 graph TD
     subgraph Input Modalities
@@ -65,24 +67,29 @@ graph TD
         Text[Questionnaire / Text]
     end
 
-    subgraph Feature Extraction & Modeling
+    subgraph ADHD & ASD Feature Modeling
         Face --> ResNet["ResNet50 (Facial Emotion)"]
-        Voice --> MFCC["MFCC / CNN (Voice Stress)"]
-        Gaze --> MP["MediaPipe / RF (Eye Gaze)"]
+        Voice --> CNN["CNN (Voice Stress)"]
+        Gaze --> EyeGaze["MediaPipe (Eye Gaze)"]
         Text --> CatBoost["CatBoost (Behavioral NLP)"]
     end
-    
-    ResNet --> FV1[Feature Vector]
-    MFCC --> FV2[Feature Vector]
-    MP --> FV3[Feature Vector]
-    CatBoost --> FV4[Feature Vector]
-    
-    subgraph Late Fusion
-        FV1 & FV2 & FV3 & FV4 --> WPA[Weighted Probability Aggregator]
+
+    subgraph Depression (DAIC-WOZ) Modeling
+        Text --> DistilBERT["DistilBERT (NLP)"]
+        Voice --> LIGHTGBM["LightGBM (COVAREP Acoustics)"]
+        Face --> BILSTM["BiLSTM + Attention (Action Units)"]
     end
     
-    WPA --> Result["Final Screening Result<br/>(ADHD / ASD / Depression / Social Anxiety)"]
+    ResNet & CNN & EyeGaze & CatBoost --> ADHD_FUSION[Weighted Prob Aggregator]
+    DistilBERT & LIGHTGBM & BILSTM --> DEP_FUSION[Logistic Regression Meta-Learner]
+    
+    ADHD_FUSION --> Result1["ADHD / ASD Result"]
+    DEP_FUSION --> Result2["Depression Screening Result"]
 ```
+
+### 💽 Development Environment (macOS Fix)
+> [!IMPORTANT]
+> Since standard external drives (ExFAT) do not support the symlinks required by Flutter/Dart, this project is optimized to run inside an **APFS Sparse Disk Image** located at `/Volumes/Mindful_Dev`. If building from source, ensure the project is mounted to a symlink-compatible filesystem.
 
 ### App Screen Flow
 

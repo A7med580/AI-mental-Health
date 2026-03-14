@@ -1,35 +1,62 @@
-# Environments
+# Mindful Project Git Ignore
+
+# Environments & venv
 .env
-backend/.venv/
-.venv/
-venv/
+**/venv/
+**/.venv/
+env/
+.env/
+node_modules/
 
 # Python caching
-__pycache__/
+**/__pycache__/
 *.pyc
 *.pyo
 *.pyd
 
-# Flutter build artifacts
-frontend/build/
-frontend/.dart_tool/
-frontend/.flutter-plugins
-frontend/.flutter-plugins-dependencies
-frontend/.packages
-frontend/.pub-cache/
-frontend/.pub/
+# Flutter & Dart
+**/build/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.packages
+**/.pub-cache/
+**/.pub/
+frontend/ios/Pods/
+frontend/ios/.symlinks/
+frontend/ios/Flutter/Generated.xcconfig
+frontend/ios/Flutter/flutter_export_environment.sh
+frontend/ios/Flutter/ephemeral/
+frontend/android/local.properties
+frontend/android/app/debug/
+frontend/android/app/release/
 
-# Backend Output
-backend/results/
-
-# Serialized Model Files (Large files)
+# Large Model Files & Data
+**/datasets/
+**/data/
+**/processed/
 *.h5
 *.keras
-*.keras.bak
-*.keras.bak_dtype
 *.pkl
+*.pt
+*.joblib
+*.safetensors
+*.bin
+*.model
+*.onnx
+*.weights
+*.ptl
+*.tflite
 
 # OS specific
 .DS_Store
 **/.DS_Store
 Thumbs.db
+._*
+**/._*
+
+# Ide specific
+.vscode/
+.idea/
+*.swp
+*.swo

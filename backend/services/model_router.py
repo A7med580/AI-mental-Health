@@ -13,6 +13,8 @@ from fastapi import UploadFile
 from services.model_loader import ModelLoader
 from services.feature_extractor import FeatureExtractor
 from config.model_config import ModelConfig
+from services.depression_inference import DepressionTextInference, DepressionAudioInference, DepressionFacialInference
+from services.depression_fusion import DepressionFusion
 
 
 class ModelRouter:
@@ -376,6 +378,9 @@ class ModelRouter:
 
             feature_names = list(feature_names)
 
+            if not model:
+                return {"prediction": 0, "confidence": 0.0, "details": {"error": "Behavior model not loaded"}}
+
             row = {name: features.get(name, 0.0) for name in feature_names}
             X = pd.DataFrame([row], columns=feature_names)
 
@@ -418,6 +423,9 @@ class ModelRouter:
                 "reaction_time_mean_ms",
                 "reaction_time_std_ms",
             ]
+
+            if not model:
+                return {"prediction": 0, "confidence": 0.0, "details": {"error": "Eye model not loaded"}}
 
             X = pd.DataFrame([[float(eye_features.get(c, 0.0)) for c in feature_cols]], columns=feature_cols)
 
@@ -462,42 +470,54 @@ class ModelRouter:
             Xs = scaler.transform(X)
 
             # ---- SVM probability ----
-            if hasattr(svm, "predict_proba"):
-                svm_proba = float(svm.predict_proba(Xs)[0][1])
-                svm_pred = int(svm_proba >= 0.5)
+            svm_proba = 0.5
+            svm_pred = 0
+            if svm:
+                if hasattr(svm, "predict_proba"):
+                    svm_proba = float(svm.predict_proba(Xs)[0][1])
+                    svm_pred = int(svm_proba >= 0.5)
+                else:
+                    raw_pred = int(svm.predict(Xs)[0])
+                    svm_pred = 1 if raw_pred > 0 else 0
+                    svm_proba = 0.85 if svm_pred == 1 else 0.15
             else:
-                raw_pred = int(svm.predict(Xs)[0])
-                svm_pred = 1 if raw_pred > 0 else 0
-                # If no proba available, assign a synthetic probability based on the binary class
-                svm_proba = 0.85 if svm_pred == 1 else 0.15
+                print("[ADHD/voice] Warning: SVM model not found")
 
             # ---- CNN probability ----
-            Xcnn = np.expand_dims(Xs, axis=2)  # (1, features, 1)
-            out = cnn.predict(Xcnn, verbose=0)[0]
-            out = np.array(out)
+            cnn_proba = 0.5
+            cnn_pred = 0
+            if cnn:
+                Xcnn = np.expand_dims(Xs, axis=2)  # (1, features, 1)
+                out = cnn.predict(Xcnn, verbose=0)[0]
+                out = np.array(out)
 
-            if out.ndim == 0:
-                cnn_proba = float(out)
-            elif out.size == 1:
-                # sigmoid
-                cnn_proba = float(out[0])
-            elif out.size == 2:
-                # 2-class softmax
-                cnn_proba = float(out[1])
-            else:
-                # multi-class (e.g., 8 emotions): fallback proxy
-                top_idx = int(np.argmax(out))
-                top_prob = float(out[top_idx])
-                # RAVDESS commonly has 0=neutral, 1=calm
-                if top_idx in [0, 1]:
-                    cnn_proba = 0.15
+                if out.ndim == 0:
+                    cnn_proba = float(out)
+                elif out.size == 1:
+                    cnn_proba = float(out[0])
+                elif out.size == 2:
+                    cnn_proba = float(out[1])
                 else:
-                    cnn_proba = min(0.90, top_prob * 0.6 + 0.2)
-
-            cnn_pred = int(cnn_proba >= 0.5)
+                    top_idx = int(np.argmax(out))
+                    top_prob = float(out[top_idx])
+                    if top_idx in [0, 1]:
+                        cnn_proba = 0.15
+                    else:
+                        cnn_proba = min(0.90, top_prob * 0.6 + 0.2)
+                cnn_pred = int(cnn_proba >= 0.5)
+            else:
+                print("[ADHD/voice] Warning: CNN model not found")
 
             # ---- Fuse voice ----
-            avg_proba = (svm_proba + cnn_proba) / 2.0
+            if svm and cnn:
+                avg_proba = (svm_proba + cnn_proba) / 2.0
+            elif svm:
+                avg_proba = svm_proba
+            elif cnn:
+                avg_proba = cnn_proba
+            else:
+                return {"prediction": 0, "confidence": 0.0, "details": {"error": "Voice models not loaded"}}
+
             pred = int(avg_proba >= 0.5)
 
             print(f"[ADHD/voice] svm={svm_proba:.4f} cnn={cnn_proba:.4f} avg={avg_proba:.4f} pred={pred}")
@@ -509,7 +529,7 @@ class ModelRouter:
                 "svm_probability": float(svm_proba),
                 "cnn_prediction": cnn_pred,
                 "cnn_probability": float(cnn_proba),
-                "cnn_output_dim": int(out.size),
+                "cnn_output_dim": int(out.size) if cnn else 0,
             }
 
         except Exception as e:
@@ -535,6 +555,8 @@ class ModelRouter:
 
             adhd_bundle = self._get_adhd_bundle()
             model = adhd_bundle["emotion_model"]
+            if not model:
+                return {"prediction": 0, "confidence": 0.0, "details": {"error": "Emotion model not loaded"}}
             preds = model.predict(X, verbose=0)[0]
             preds = np.array(preds)
             # proxy mapping based on dominant emotion
@@ -558,3 +580,91 @@ class ModelRouter:
 
         except Exception as e:
             raise Exception(f"ADHD facial prediction failed: {e}")
+
+    # =========================================================
+    # DEPRESSION (DAIC-WOZ DAIC-WOZ)
+    # =========================================================
+    async def execute_depression_screening(
+        self,
+        video_path: Optional[str],
+        questionnaire_data: Optional[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """
+        Executes the multimodal DAIC-WOZ depression screening using new services.
+        """
+        import torch
+
+        # 1. LOAD BUNDLE
+        bundle = self.model_loader.load_depression_bundle()
+        device = bundle["device"]
+
+        # Initialize inference workers
+        text_inf = DepressionTextInference(bundle["text_tokenizer"], bundle["text_model"], device) if bundle["text_model"] else None
+        audio_inf = DepressionAudioInference(bundle["audio_model"], bundle["audio_scaler"]) if bundle["audio_model"] else None
+        visual_inf = DepressionFacialInference(bundle["visual_model"], device, bundle["n_aus"], bundle["seq_len"]) if bundle["visual_model"] else None
+
+        individual_results = []
+        modalities_used = []
+
+        # 2. TEXT MODALITY
+        if questionnaire_data and text_inf:
+            try:
+                res = text_inf.predict(questionnaire_data)
+                res["model_type"] = "text"
+                individual_results.append(res)
+                modalities_used.append("text")
+            except Exception as e:
+                print(f"[Depression/Text] Inference error: {e}")
+
+        # 3. VIDEO-BASED MODALITIES (Audio/Facial)
+        if video_path and os.path.exists(video_path):
+            # Extract Audio features
+            if audio_inf:
+                try:
+                    # ffmpeg extraction (handled by feature_extractor)
+                    audio_feats = await self.feature_extractor.extract_audio_from_video_path(video_path)
+                    res = await audio_inf.predict(audio_feats)
+                    res["model_type"] = "audio"
+                    individual_results.append(res)
+                    modalities_used.append("audio")
+                except Exception as e:
+                    print(f"[Depression/Audio] Inference error: {e}")
+            
+            # Extract Facial features
+            if visual_inf:
+                try:
+                    au_seq = await self.feature_extractor.extract_facial_aus_sequence(video_path, max_frames=bundle["seq_len"])
+                    res = await visual_inf.predict(au_seq)
+                    res["model_type"] = "facial" # Frontend expects "facial"
+                    individual_results.append(res)
+                    modalities_used.append("video") # Frontend expects "video" in modalities_used
+                except Exception as e:
+                    print(f"[Depression/Visual] Inference error: {e}")
+
+        # 4. FUSION
+        if not individual_results:
+            return {
+                "success": False,
+                "condition": "Depression",
+                "message": "Insufficient data/models to complete depression screening.",
+                "fused_result": None,
+                "individual_results": [],
+                "modalities_used": []
+            }
+
+        fused = DepressionFusion.fuse_results(individual_results)
+        
+        # 5. ASSEMBLE FRONTEND RESPONSE
+        return {
+            "success": True,
+            "condition": "Depression",
+            "fused_result": {
+                "fused_prediction": fused["fused_prediction"],
+                "fused_confidence": fused["fused_confidence"],
+                "phq8_score": fused["phq8_score"],
+                "severity": fused["severity"],
+                "message": fused["message"] # Optional helper
+            },
+            "individual_results": individual_results,
+            "modalities_used": modalities_used
+        }
