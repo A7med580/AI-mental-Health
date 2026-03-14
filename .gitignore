@@ -36,6 +36,8 @@ frontend/android/app/release/
 **/datasets/
 **/data/
 **/processed/
+**/results/*.json
+.cache/
 *.h5
 *.keras
 *.pkl
