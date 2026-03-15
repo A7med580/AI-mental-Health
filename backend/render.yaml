@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: mental-health-backend
+    runtime: docker
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false

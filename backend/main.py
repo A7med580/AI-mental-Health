@@ -11,8 +11,12 @@ import uuid
 import shutil
 from datetime import datetime
 import asyncio
+import asyncio
 import subprocess
 import tempfile
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 import uvicorn
