@@ -14,8 +14,8 @@ class GeminiService {
   List<Map<String, dynamic>> _history = [];
   
   // Update with the provided API key
-  final String _apiKey = "AIzaSyBI14HQifE50cyay3GJCV_SSiulM0Zkd8Q";
-  final String _apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+  final String _apiKey = "AIzaSyAChhohhZY6icUBjdXYULU4WT0ZnijZ5es";
+  final String _apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent";
 
   void resetConversation() {
     _history.clear();

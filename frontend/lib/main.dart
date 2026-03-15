@@ -11,12 +11,14 @@ import 'package:mindful/face_detection.dart';
 import 'package:mindful/results_screen.dart';
 import 'package:mindful/screens/notifications_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: '.env');
   await Supabase.initialize(
-    url: 'https://lerzabsngwcxgmbvfsyp.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxlcnphYnNuZ3djeGdtYnZmc3lwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NDczMjMsImV4cCI6MjA4MDQyMzMyM30.LbIA8bwu5P63aGxi-k5IDByKjzuEgRF6Z8cytAPtoLE',               // your Supabase anon/public key
+    url: dotenv.env['SUPABASE_URL']!,
+    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
 
   runApp(const MyApp());

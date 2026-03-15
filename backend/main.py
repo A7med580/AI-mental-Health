@@ -420,6 +420,7 @@ async def screen_adhd(
             }
 
         finally:
+            feature_extractor.clear_cache(video_path)
             if video_path and os.path.exists(video_path):
                 try:
                     os.remove(video_path)

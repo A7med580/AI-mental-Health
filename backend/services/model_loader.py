@@ -40,6 +40,31 @@ class DepressionBiLSTM(nn.Module):
         context = torch.sum(attn_weights * lstm_out, dim=1)
         return self.classifier(context).squeeze(-1)
 
+class ADHDSequenceLSTM(nn.Module):
+    def __init__(self, input_dim: int = 17, hidden_dim: int = 64, num_layers: int = 2, dropout: float = 0.3):
+        super().__init__()
+        self.lstm = nn.LSTM(
+            input_size=input_dim,
+            hidden_size=hidden_dim,
+            num_layers=num_layers,
+            batch_first=True,
+            bidirectional=True,
+            dropout=dropout if num_layers > 1 else 0.0,
+        )
+        self.attention = nn.Linear(hidden_dim * 2, 1)
+        self.classifier = nn.Sequential(
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim * 2, 32),
+            nn.ReLU(),
+            nn.Linear(32, 1),
+        )
+
+    def forward(self, x):
+        out, _ = self.lstm(x)
+        attn_weights = torch.softmax(self.attention(out), dim=1)
+        context = (out * attn_weights).sum(dim=1)
+        return self.classifier(context).squeeze(-1)
+
 
 class ModelLoader:
     _instance = None
@@ -122,6 +147,30 @@ class ModelLoader:
             print("[ModelLoader] TensorFlow not available, skipping voice_cnn/emotion models")
             bundle["voice_cnn"] = None
             bundle["emotion_model"] = None
+
+        # Sequence Model (PyTorch)
+        bundle["sequence_model"] = self._load_adhd_sequence_model()
+
+        self._models[key] = bundle
+        return bundle
+
+    def _load_adhd_sequence_model(self) -> Any:
+        # Implementation loads from backend/Models/adhd/adhd_facial_sequence_best.pt
+        model_path = "/Volumes/1t storage/grad project/backend/Models/adhd/adhd_facial_sequence_best.pt"
+        device = torch.device('mps' if torch.backends.mps.is_available() else ('cuda' if torch.cuda.is_available() else 'cpu'))
+        
+        try:
+            model = ADHDSequenceLSTM(input_dim=17, hidden_dim=64, num_layers=2)
+            if os.path.exists(model_path):
+                model.load_state_dict(torch.load(model_path, map_location=device, weights_only=True))
+            else:
+                print(f"[ModelLoader] Warning: ADHD Sequence model file not found at {model_path}. Using uninitialized weights.")
+            model.to(device)
+            model.eval()
+            return {"model": model, "device": device}
+        except Exception as e:
+            print(f"[ModelLoader] ADHD Sequence model loading error: {e}")
+            return None
 
         self._models[key] = bundle
         return bundle
