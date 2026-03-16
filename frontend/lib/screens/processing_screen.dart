@@ -124,9 +124,9 @@ class _ProcessingScreenState extends State<ProcessingScreen>
 
       if (!mounted) return;
 
-      final fused = (result['fused_result'] ?? {}) as Map<String, dynamic>;
-      final individual = (result['individual_results'] ?? []) as List<dynamic>;
-      final modalitiesUsedRaw = (result['modalities_used'] ?? []) as List<dynamic>;
+      final fused = Map<String, dynamic>.from(result['fused_result'] ?? {});
+      final individual = List<dynamic>.from(result['individual_results'] ?? []);
+      final modalitiesUsedRaw = List<dynamic>.from(result['modalities_used'] ?? []);
       final modalitiesUsed = modalitiesUsedRaw.map((e) => e.toString()).toList();
 
       if (_isDepression) {
