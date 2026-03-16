@@ -81,9 +81,9 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
       if (!mounted) return;
       setState(() => _isSubmitting = false);
 
-      final predictionObj = (response['prediction'] is Map<String, dynamic>)
-          ? (response['prediction'] as Map<String, dynamic>)
-          : response;
+      final predictionObj = (response['prediction'] is Map)
+          ? Map<String, dynamic>.from(response['prediction'] as Map)
+          : Map<String, dynamic>.from(response);
 
       final String label = (predictionObj['prediction'] ?? '').toString();
       final double confidence = (predictionObj['confidence'] is num)

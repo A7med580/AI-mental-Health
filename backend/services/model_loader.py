@@ -16,29 +16,32 @@ import torch
 import torch.nn as nn
 
 class DepressionBiLSTM(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers, dropout=0.5):
+    def __init__(self, input_size=14, hidden_size=64, num_layers=2, dropout=0.3):
         super(DepressionBiLSTM, self).__init__()
-        self.lstm = nn.LSTM(
-            input_size=input_size,
-            hidden_size=hidden_size,
-            num_layers=num_layers,
-            batch_first=True,
-            bidirectional=True,
-            dropout=dropout if num_layers > 1 else 0.0
+        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, 
+                           batch_first=True, bidirectional=True, dropout=dropout)
+        
+        # Self-attention
+        self.attention = nn.Sequential(
+            nn.Linear(hidden_size * 2, hidden_size),
+            nn.Tanh(),
+            nn.Linear(hidden_size, 1),
+            nn.Softmax(dim=1)
         )
-        self.attention = nn.Linear(hidden_size * 2, 1)
+        
         self.classifier = nn.Sequential(
-            nn.Dropout(dropout),
-            nn.Linear(hidden_size * 2, 32),
+            nn.Linear(hidden_size * 2, 64),
             nn.ReLU(),
-            nn.Linear(32, 1)
+            nn.Dropout(dropout),
+            nn.Linear(64, 1)
         )
 
     def forward(self, x):
-        lstm_out, _ = self.lstm(x)  # (batch, seq, 2*hidden)
-        attn_weights = torch.softmax(self.attention(lstm_out), dim=1)
-        context = torch.sum(attn_weights * lstm_out, dim=1)
-        return self.classifier(context).squeeze(-1)
+        lstm_out, _ = self.lstm(x)
+        weights = self.attention(lstm_out)
+        context = torch.sum(weights * lstm_out, dim=1)
+        logits = self.classifier(context)
+        return logits.squeeze(-1)
 
 class ADHDSequenceLSTM(nn.Module):
     def __init__(self, input_dim: int = 17, hidden_dim: int = 64, num_layers: int = 2, dropout: float = 0.3):

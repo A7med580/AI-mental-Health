@@ -8,6 +8,40 @@ import numpy as np
 import joblib
 from typing import Dict, Any, Optional, List
 
+import torch.nn as nn
+
+class DepressionBiLSTM(nn.Module):
+    def __init__(self, input_size=14, hidden_size=64, num_layers=2, dropout=0.3):
+        super(DepressionBiLSTM, self).__init__()
+        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, 
+                           batch_first=True, bidirectional=True, dropout=dropout)
+        
+        # Self-attention attempt
+        self.attention = nn.Sequential(
+            nn.Linear(hidden_size * 2, hidden_size),
+            nn.Tanh(),
+            nn.Linear(hidden_size, 1),
+            nn.Softmax(dim=1)
+        )
+        
+        self.classifier = nn.Sequential(
+            nn.Linear(hidden_size * 2, 64),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(64, 1) # Binary: Depression vs Normal
+        )
+
+    def forward(self, x):
+        # x: (batch, seq_len, input_size)
+        lstm_out, _ = self.lstm(x) # (batch, seq_len, hidden*2)
+        
+        # Basic Attention
+        weights = self.attention(lstm_out)
+        context = torch.sum(weights * lstm_out, dim=1)
+        
+        logits = self.classifier(context)
+        return logits.squeeze(-1)
+
 class DepressionTextInference:
     def __init__(self, tokenizer, model, device):
         self.tokenizer = tokenizer
@@ -17,6 +51,7 @@ class DepressionTextInference:
     def predict(self, questionnaire_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Concatenates depression_q_0_text through depression_q_7_text and predicts.
+        Uses AutoTokenizer for robustness.
         """
         text_answers = []
         for i in range(8):
@@ -29,9 +64,11 @@ class DepressionTextInference:
         if not combined_text:
             return {"prediction": 0, "confidence": 0.0, "details": {"error": "No text content"}}
 
+        # Use AutoTokenizer logic (tokenizer passed in already from loader which we'll fix next)
         inputs = self.tokenizer(combined_text, return_tensors="pt", truncation=True, max_length=512, padding="max_length")
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
         
+        self.model.eval()
         with torch.no_grad():
             outputs = self.model(**inputs)
             logits = outputs.logits
@@ -51,17 +88,12 @@ class DepressionAudioInference:
     async def predict(self, audio_features: Dict[str, Any]) -> Dict[str, Any]:
         """
         Takes extracted audio features and predicts depression.
-        Note: The LightGBM model was trained on 438 features.
-        We expect audio_features["combined"] to match this.
         """
         if "error" in audio_features:
             return {"prediction": 0, "confidence": 0.0, "details": {"error": audio_features["error"]}}
 
         raw_vec = audio_features.get("combined", [])
         
-        # Match the 438 features used in training if possible, otherwise pad/truncate
-        # The COVAREP statistics used in training are: mean, std, min, max, skew, median
-        # for each of the 73-74 features. 73 * 6 = 438.
         if len(raw_vec) != 438:
             vec = np.zeros(438)
             n = min(len(raw_vec), 438)
@@ -99,13 +131,16 @@ class DepressionFacialInference:
         for i, frame_aus in enumerate(au_sequence):
             if i >= self.seq_len:
                 break
+            # Ensure we only take up to n_aus
             for j in range(min(len(frame_aus), self.n_aus)):
                 seq[i, j] = frame_aus[j]
                     
         X = torch.tensor(seq).unsqueeze(0).to(self.device)
         
+        self.model.eval()
         with torch.no_grad():
             logits = self.model(X)
+            # Binary sigmoid output
             prob = torch.sigmoid(logits).item()
         
         return {
