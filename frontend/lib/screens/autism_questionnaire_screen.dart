@@ -25,14 +25,14 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
   bool _isSubmitting = false;
 
   final List<String> _questions = const [
-    "Do you find it difficult to understand what others are feeling by looking at their faces?",
-    "Do you often notice small sounds that other people do not notice?",
-    "Do you usually focus more on the big picture rather than small details?",
-    "Do you find it easy to do more than one thing at the same time?",
-    "If you are interrupted, do you find it easy to quickly return to what you were doing?",
-    "Do you find it easy to understand hidden meanings or read between the lines when someone is talking to you?",
-    "Can you easily tell when the person you are talking to is getting bored?",
-    "When you read a story, do you find it easy to imagine what the characters look like?",
+    "Do you struggle to read emotions from people's faces?",
+    "Do you often notice small sounds others miss?",
+    "Do you focus on the big picture over small details?",
+    "Is multitasking easy for you?",
+    "After being interrupted, can you quickly resume your task?",
+    "Can you easily understand hidden meanings in conversation?",
+    "Can you tell when someone you're talking to gets bored?",
+    "Can you easily picture characters when reading a story?",
     "Do you find social situations easy to handle?",
     "Are you fascinated by dates, numbers, or patterns?",
   ];
@@ -210,7 +210,7 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
                 children: [
                   // ── Header ──
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
                     child: Row(
                       children: [
                         GestureDetector(
@@ -344,12 +344,12 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               color: AppColors.cardWhite,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.15)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 12,
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
               ],
@@ -416,7 +416,7 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
         padding: const EdgeInsets.symmetric(vertical: 32),
         decoration: BoxDecoration(
           color: isSelected ? asdTheme.accentColor.withValues(alpha: 0.06) : AppColors.cardWhite,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? asdTheme.accentColor : Colors.grey[300]!,
             width: isSelected ? 2 : 1.5,

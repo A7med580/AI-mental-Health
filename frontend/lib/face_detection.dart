@@ -164,7 +164,7 @@ class _EmotionDetectionScreenState extends State<EmotionDetectionScreen> {
           children: [
             // ── Header ──
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
               child: Row(
                 children: [
                   GestureDetector(

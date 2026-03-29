@@ -50,42 +50,42 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
   // DSM-5 aligned questions
   final List<ADHDQuestion> _adhdQuestions = [
     ADHDQuestion(
-      text: "Do you often find it hard to stay focused on tasks that require long attention, like reading or listening to lectures?",
+      text: "Do you struggle to stay focused on lengthy tasks?",
       category: "inattention",
       requiresVideo: false,
     ),
     ADHDQuestion(
-      text: "Do you often make careless mistakes in work or school activities because you're not paying attention to details?",
+      text: "Do you often make careless mistakes due to inattention?",
       category: "inattention",
       requiresVideo: false,
     ),
     ADHDQuestion(
-      text: "Do you often have trouble organizing tasks and activities? For example, do you struggle to keep things in order or manage your time?",
+      text: "Do you struggle to organize tasks or manage your time?",
       category: "inattention",
       requiresVideo: false,
     ),
     ADHDQuestion(
-      text: "Do you often feel restless, like you need to move around even when you're supposed to stay seated?",
+      text: "Do you often feel restless or unable to stay seated?",
       category: "hyperactivity",
       requiresVideo: true,
     ),
     ADHDQuestion(
-      text: "Do you often have difficulty waiting your turn in conversations or activities?",
+      text: "Do you find it hard to wait your turn?",
       category: "impulsivity",
       requiresVideo: true,
     ),
     ADHDQuestion(
-      text: "Do you often interrupt others when they're speaking or finish their sentences?",
+      text: "Do you often interrupt others or finish their sentences?",
       category: "impulsivity",
       requiresVideo: false,
     ),
     ADHDQuestion(
-      text: "Do you often lose things you need for tasks, like keys, phone, or important documents?",
+      text: "Do you frequently lose keys, phone, or important items?",
       category: "inattention",
       requiresVideo: false,
     ),
     ADHDQuestion(
-      text: "Do you often feel like your mind is racing or you have too many thoughts at once?",
+      text: "Does your mind often race with too many thoughts?",
       category: "inattention",
       requiresVideo: false,
     ),
@@ -465,7 +465,7 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
           children: [
             // ── Header ──
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               decoration: BoxDecoration(
                 color: Colors.white,
                 boxShadow: [
@@ -523,7 +523,7 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
                 height: 140,
                 margin: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.3), width: 2),
                 ),
                 child: ClipRRect(
@@ -588,7 +588,7 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
                                 borderRadius: BorderRadius.circular(12),
                                 onTap: _requestCameraAndMicPermission,
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  padding: const EdgeInsets.symmetric(vertical: 18),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
@@ -621,7 +621,7 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
                                 borderRadius: BorderRadius.circular(12),
                                 onTap: _startVideoRecording,
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  padding: const EdgeInsets.symmetric(vertical: 18),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [

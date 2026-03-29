@@ -31,7 +31,7 @@ class ADHDResultScreen extends StatelessWidget {
           children: [
             // ── Header ──
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
               child: Row(
                 children: [
                   GestureDetector(
@@ -215,7 +215,7 @@ class ADHDResultScreen extends StatelessWidget {
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: AppColors.primaryPurple.withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.2)),
                       ),
                       child: Column(
@@ -248,15 +248,15 @@ class ADHDResultScreen extends StatelessWidget {
                       child: Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(colors: [adhdTheme.accentColor, const Color(0xFFD98C1A)]),
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         child: Material(
                           color: Colors.transparent,
                           child: InkWell(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(12),
                             onTap: () => Navigator.popUntil(context, (route) => route.isFirst),
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              padding: const EdgeInsets.symmetric(vertical: 18),
                               child: Center(
                                 child: Text('Done', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
                               ),

@@ -56,49 +56,49 @@ class _DepressionQuestionnaireScreenState
   final List<DepressionQuestion> _depressionQuestions = [
     DepressionQuestion(
       text:
-          "How have you been feeling lately? Can you describe your general mood over the past few weeks?",
+          "How would you describe your mood the past few weeks?",
       category: "affect",
       requiresVideo: true,
     ),
     DepressionQuestion(
       text:
-          "Over the past two weeks, how often have you had little interest or pleasure in doing things you usually enjoy?",
+          "Have you lost interest or pleasure in things you enjoy?",
       category: "interest",
       requiresVideo: false,
     ),
     DepressionQuestion(
       text:
-          "Have you been feeling down, hopeless, or empty recently? Can you describe what that's been like for you?",
+          "Have you been feeling down, hopeless, or empty recently?",
       category: "mood",
       requiresVideo: true,
     ),
     DepressionQuestion(
       text:
-          "Have you noticed changes in your sleep — sleeping much more than usual, or struggling to sleep?",
+          "Have you noticed changes in your sleep patterns recently?",
       category: "sleep",
       requiresVideo: false,
     ),
     DepressionQuestion(
       text:
-          "How has your energy been? Do you often feel fatigued or that even small tasks feel exhausting?",
+          "Do you often feel fatigued or exhausted by small tasks?",
       category: "energy",
       requiresVideo: false,
     ),
     DepressionQuestion(
       text:
-          "Have you been feeling bad about yourself — like you've let people down, or that you're a failure?",
+          "Have you been feeling worthless or like a failure?",
       category: "self-worth",
       requiresVideo: false,
     ),
     DepressionQuestion(
       text:
-          "Have you found it harder than usual to concentrate on things like reading, watching TV, or making decisions?",
+          "Has it been harder to concentrate or make decisions lately?",
       category: "concentration",
       requiresVideo: false,
     ),
     DepressionQuestion(
       text:
-          "Is there anything else you'd like to share about how you've been feeling?",
+          "Anything else you'd like to share about how you feel?",
       category: "open",
       requiresVideo: true,
     ),
@@ -500,9 +500,9 @@ class _DepressionQuestionnaireScreenState
             children: [
               // ── Header ──
               Padding(
-                padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
                 child: GlassContainer(
-                  borderRadius: 16,
+                  borderRadius: 12,
                   padding: const EdgeInsets.symmetric(
                       horizontal: 14, vertical: 10),
                   child: Row(
@@ -514,7 +514,7 @@ class _DepressionQuestionnaireScreenState
                           height: 36,
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.3),
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(Icons.arrow_back,
                               size: 20, color: AppColors.textPrimary),
@@ -586,7 +586,7 @@ class _DepressionQuestionnaireScreenState
                   height: 140,
                   margin: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                         color: AppColors.primaryPurple.withValues(alpha: 0.3),
                         width: 2),
@@ -655,7 +655,7 @@ class _DepressionQuestionnaireScreenState
                                     onTap: _requestCameraAndMicPermission,
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(
-                                          vertical: 12),
+                                          vertical: 18),
                                       child: Row(
                                         mainAxisAlignment:
                                             MainAxisAlignment.center,
@@ -697,7 +697,7 @@ class _DepressionQuestionnaireScreenState
                                     onTap: _startVideoRecording,
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(
-                                          vertical: 12),
+                                          vertical: 18),
                                       child: Row(
                                         mainAxisAlignment:
                                             MainAxisAlignment.center,
