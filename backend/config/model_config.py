@@ -43,7 +43,7 @@ class ModelConfig:
     # Anxiety / ASD (keep your existing dirs if you want, but support env too)
     ANXIETY_MODEL = os.getenv("ANXIETY_MODEL", str(BACKEND_DIR / "Models" / "anxiety" / "anxiety_detection_model.pkl"))
 
-    ASD_FACE_MODEL = os.getenv("ASD_FACE_MODEL", str(BACKEND_DIR / "Models" / "asd" / "face" / "asd_vgg19_fixed.h5"))
+    ASD_FACE_MODEL = os.getenv("ASD_FACE_MODEL", str(BACKEND_DIR / "Models" / "asd" / "face" / "asd_vgg19_keras2.h5"))
     ASD_FACE_CLASSES = os.getenv("ASD_FACE_CLASSES", str(BACKEND_DIR / "Models" / "asd" / "face" / "class_indices.json"))
     ASD_TEXT_ADABOOST = os.getenv("ASD_TEXT_ADABOOST", str(BACKEND_DIR / "Models" / "asd" / "text" / "adaboost_model.joblib"))
     ASD_TEXT_XGBOOST = os.getenv("ASD_TEXT_XGBOOST", str(BACKEND_DIR / "Models" / "asd" / "text" / "xgboost_model.joblib"))

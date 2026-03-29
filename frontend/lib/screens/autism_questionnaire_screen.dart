@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mindful/app_colors.dart';
+import 'package:mindful/theme/module_themes.dart';
 import 'package:mindful/services/model_service.dart';
 import 'package:mindful/results_screen.dart';
 import 'package:mindful/face_detection.dart';
@@ -182,7 +183,7 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
     final percent = (progress * 100).round();
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: asdTheme.backgroundColor,
       body: SafeArea(
         child: _isSubmitting
             ? Center(
@@ -251,13 +252,21 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Autism Screening - Questionnaire',
-                          style: GoogleFonts.inter(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
+                        Row(
+                          children: [
+                            Icon(asdTheme.icon, size: 22, color: asdTheme.accentColor),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Autism Screening - Questionnaire',
+                                style: GoogleFonts.inter(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -406,16 +415,16 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 32),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryPurple.withValues(alpha: 0.06) : AppColors.cardWhite,
+          color: isSelected ? asdTheme.accentColor.withValues(alpha: 0.06) : AppColors.cardWhite,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? AppColors.primaryPurple : Colors.grey[300]!,
+            color: isSelected ? asdTheme.accentColor : Colors.grey[300]!,
             width: isSelected ? 2 : 1.5,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppColors.primaryPurple.withValues(alpha: 0.12),
+                    color: asdTheme.accentColor.withValues(alpha: 0.12),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),
@@ -430,9 +439,9 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
               height: 36,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isSelected ? AppColors.primaryPurple : Colors.transparent,
+                color: isSelected ? asdTheme.accentColor : Colors.transparent,
                 border: Border.all(
-                  color: isSelected ? AppColors.primaryPurple : Colors.grey[400]!,
+                  color: isSelected ? asdTheme.accentColor : Colors.grey[400]!,
                   width: 2,
                 ),
               ),
@@ -446,7 +455,7 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
               style: GoogleFonts.inter(
                 fontSize: 18,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected ? AppColors.primaryPurple : AppColors.textPrimary,
+                color: isSelected ? asdTheme.accentColor : AppColors.textPrimary,
               ),
             ),
           ],
