@@ -494,7 +494,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _buildNavItem(Icons.chat_bubble_outline, Icons.chat_bubble, 'AI Chat', 1),
           _buildNavItem(Icons.favorite_outline, Icons.favorite, 'Mood', 2),
           _buildNavItem(Icons.library_books_outlined, Icons.library_books, 'Resources', 3),
-          _buildNavItem(Icons.self_improvement_outlined, Icons.self_improvement, 'Meditate', 4),
+          _buildNavItem(Icons.person_outline, Icons.person, 'Profile', 4),
         ],
       ),
     );
@@ -508,7 +508,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         if (index == 1) switchTab(context, const MindfulAIScreen());
         if (index == 2) switchTab(context, const MoodTrackerScreen());
         if (index == 3) switchTab(context, const ResourcesScreen());
-        if (index == 4) switchTab(context, const MeditationScreen());
+        if (index == 4) switchTab(context, const ProfileScreen());
       },
       child: Column(
         mainAxisSize: MainAxisSize.min,

@@ -11,6 +11,7 @@ import 'package:mindful/dashboard_screen.dart';
 import 'package:mindful/chat_screen.dart';
 import 'package:mindful/mood_tracker_screen.dart';
 import 'package:mindful/resource_screen.dart';
+import 'package:mindful/profile_screen.dart';
 import 'package:mindful/screens/player_screen.dart';
 
 class MeditationScreen extends StatefulWidget {
@@ -353,27 +354,28 @@ class _MeditationScreenState extends State<MeditationScreen> with TickerProvider
           _buildNavItem(Icons.chat_bubble_outline, Icons.chat_bubble, 'AI Chat', 1),
           _buildNavItem(Icons.favorite_outline, Icons.favorite, 'Mood', 2),
           _buildNavItem(Icons.library_books_outlined, Icons.library_books, 'Resources', 3),
-          _buildNavItem(Icons.self_improvement_outlined, Icons.self_improvement, 'Meditate', 4),
+          _buildNavItem(Icons.person_outline, Icons.person, 'Profile', 4),
         ],
       ),
     );
   }
 
   Widget _buildNavItem(IconData icon, IconData activeIcon, String label, int index) {
-    final isSelected = index == 4;
+    // Meditation is no longer a nav tab, so no item is ever selected here
     return GestureDetector(
       onTap: () {
         if (index == 0) switchTab(context, const DashboardScreen());
         if (index == 1) switchTab(context, const MindfulAIScreen());
         if (index == 2) switchTab(context, const MoodTrackerScreen());
         if (index == 3) switchTab(context, const ResourcesScreen());
+        if (index == 4) switchTab(context, const ProfileScreen());
       },
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(isSelected ? activeIcon : icon, color: isSelected ? AppColors.primaryPurple : AppColors.textSecondary, size: 24),
+          Icon(icon, color: AppColors.textSecondary, size: 24),
           const SizedBox(height: 4),
-          Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500, color: isSelected ? AppColors.primaryPurple : AppColors.textSecondary)),
+          Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.textSecondary)),
         ],
       ),
     );

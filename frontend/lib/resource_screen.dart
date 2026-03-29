@@ -10,7 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:mindful/dashboard_screen.dart';
 import 'package:mindful/chat_screen.dart';
 import 'package:mindful/mood_tracker_screen.dart';
-import 'package:mindful/meditation_screen.dart';
+import 'package:mindful/profile_screen.dart';
 
 class ResourcesScreen extends StatefulWidget {
   const ResourcesScreen({Key? key}) : super(key: key);
@@ -288,7 +288,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
           _buildNavItem(Icons.chat_bubble_outline, Icons.chat_bubble, 'AI Chat', 1),
           _buildNavItem(Icons.favorite_outline, Icons.favorite, 'Mood', 2),
           _buildNavItem(Icons.library_books_outlined, Icons.library_books, 'Resources', 3),
-          _buildNavItem(Icons.self_improvement_outlined, Icons.self_improvement, 'Meditate', 4),
+          _buildNavItem(Icons.person_outline, Icons.person, 'Profile', 4),
         ],
       ),
     );
@@ -301,7 +301,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
         if (index == 0) switchTab(context, const DashboardScreen());
         if (index == 1) switchTab(context, const MindfulAIScreen());
         if (index == 2) switchTab(context, const MoodTrackerScreen());
-        if (index == 4) switchTab(context, const MeditationScreen());
+        if (index == 4) switchTab(context, const ProfileScreen());
       },
       child: Column(
         mainAxisSize: MainAxisSize.min,
