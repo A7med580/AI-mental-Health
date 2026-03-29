@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mindful/app_colors.dart';
+import 'package:mindful/theme/module_themes.dart';
 import 'package:mindful/services/video_storage_service.dart';
 import 'package:mindful/screens/video_preview_screen.dart';
 import 'package:mindful/screens/processing_screen.dart';
@@ -458,7 +459,7 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
         _cameraController!.value.isInitialized;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: adhdTheme.backgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -490,6 +491,8 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
+                  Icon(adhdTheme.icon, size: 20, color: adhdTheme.accentColor),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'AI Interview',
@@ -576,7 +579,7 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
                           width: double.infinity,
                           child: Container(
                             decoration: BoxDecoration(
-                              gradient: AppColors.primaryGradient,
+                              gradient: LinearGradient(colors: [adhdTheme.accentColor, const Color(0xFFD98C1A)]),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Material(
@@ -609,7 +612,7 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
                           width: double.infinity,
                           child: Container(
                             decoration: BoxDecoration(
-                              gradient: AppColors.primaryGradient,
+                              gradient: LinearGradient(colors: [adhdTheme.accentColor, const Color(0xFFD98C1A)]),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Material(
@@ -683,7 +686,7 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
                             width: 44,
                             height: 44,
                             decoration: BoxDecoration(
-                              gradient: AppColors.primaryGradient,
+                              gradient: LinearGradient(colors: [adhdTheme.accentColor, const Color(0xFFD98C1A)]),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(Icons.send, color: Colors.white, size: 20),
