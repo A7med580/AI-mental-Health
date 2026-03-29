@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mindful/app_colors.dart';
+import 'package:mindful/theme/module_themes.dart';
 import 'package:mindful/widgets/glass_container.dart';
 import 'package:mindful/widgets/page_transitions.dart';
 
@@ -40,7 +41,7 @@ class DepressionResultScreen extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: depressionTheme.backgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
@@ -66,14 +67,21 @@ class DepressionResultScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              Text(
-                'Assessment Complete',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(depressionTheme.icon,
+                      size: 22, color: depressionTheme.accentColor),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Assessment Complete',
+                    style: GoogleFonts.inter(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
               Text(
@@ -155,7 +163,7 @@ class DepressionResultScreen extends StatelessWidget {
                   Navigator.popUntil(context, (route) => route.isFirst);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryPurple,
+                  backgroundColor: depressionTheme.accentColor,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(

@@ -8,6 +8,7 @@ import 'package:mindful/screens/video_preview_screen.dart';
 import 'package:mindful/screens/processing_screen.dart';
 import 'package:mindful/widgets/glass_container.dart';
 import 'package:mindful/widgets/page_transitions.dart';
+import 'package:mindful/theme/module_themes.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:camera/camera.dart';
 import 'package:path_provider/path_provider.dart';
@@ -491,18 +492,8 @@ class _DepressionQuestionnaireScreenState
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFEEF0FF),
-              Color(0xFFE3E8FF),
-              Color(0xFFF2EEFF),
-              Color(0xFFE8E3FF),
-            ],
-            stops: [0.0, 0.3, 0.6, 1.0],
-          ),
+        decoration: BoxDecoration(
+          color: depressionTheme.backgroundColor,
         ),
         child: SafeArea(
           child: Column(
@@ -534,12 +525,20 @@ class _DepressionQuestionnaireScreenState
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Depression Screening',
-                              style: GoogleFonts.inter(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary),
+                            Row(
+                              children: [
+                                Icon(depressionTheme.icon,
+                                    size: 18,
+                                    color: depressionTheme.accentColor),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Depression Screening',
+                                  style: GoogleFonts.inter(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.textPrimary),
+                                ),
+                              ],
                             ),
                             Text(
                               'DAIC-WOZ Clinical Interview',
@@ -554,7 +553,7 @@ class _DepressionQuestionnaireScreenState
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          gradient: AppColors.primaryGradient,
+                          gradient: LinearGradient(colors: [depressionTheme.accentColor, const Color(0xFF4878D0)]),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -646,7 +645,7 @@ class _DepressionQuestionnaireScreenState
                               width: double.infinity,
                               child: Container(
                                 decoration: BoxDecoration(
-                                  gradient: AppColors.primaryGradient,
+                                  gradient: LinearGradient(colors: [depressionTheme.accentColor, const Color(0xFF4878D0)]),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Material(
@@ -688,7 +687,7 @@ class _DepressionQuestionnaireScreenState
                               width: double.infinity,
                               child: Container(
                                 decoration: BoxDecoration(
-                                  gradient: AppColors.primaryGradient,
+                                  gradient: LinearGradient(colors: [depressionTheme.accentColor, const Color(0xFF4878D0)]),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Material(
@@ -811,11 +810,11 @@ class _DepressionQuestionnaireScreenState
                                 width: 44,
                                 height: 44,
                                 decoration: BoxDecoration(
-                                  gradient: AppColors.primaryGradient,
+                                  gradient: LinearGradient(colors: [depressionTheme.accentColor, const Color(0xFF4878D0)]),
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: AppColors.primaryPurple
+                                      color: depressionTheme.accentColor
                                           .withValues(alpha: 0.3),
                                       blurRadius: 8,
                                       offset: const Offset(0, 2),
