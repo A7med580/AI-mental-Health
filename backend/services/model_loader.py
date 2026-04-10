@@ -6,6 +6,7 @@ Handles loading and caching of ML models + ADHD bundle
 import os
 import json
 import joblib
+from pathlib import Path
 from typing import Any, Dict
 
 # ---------------------------------------------------------
@@ -156,9 +157,9 @@ class ModelLoader:
 
     def _load_adhd_sequence_model(self) -> Any:
         # Implementation loads from backend/Models/adhd/adhd_facial_sequence_best.pt
-        model_path = "/Volumes/1t storage/grad project/backend/Models/adhd/adhd_facial_sequence_best.pt"
+        model_path = str(Path(__file__).resolve().parent.parent / "Models" / "adhd" / "adhd_facial_sequence_best.pt")
         device = torch.device('mps' if torch.backends.mps.is_available() else ('cuda' if torch.cuda.is_available() else 'cpu'))
-        
+
         try:
             model = ADHDSequenceLSTM(input_dim=17, hidden_dim=64, num_layers=2)
             if os.path.exists(model_path):
@@ -171,9 +172,6 @@ class ModelLoader:
         except Exception as e:
             print(f"[ModelLoader] ADHD Sequence model loading error: {e}")
             return None
-
-        self._models[key] = bundle
-        return bundle
 
     # ✅ NEW: Depression (DAIC-WOZ) bundle loader
     def load_depression_bundle(self) -> Dict[str, Any]:

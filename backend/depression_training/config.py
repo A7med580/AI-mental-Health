@@ -1,4 +1,5 @@
 """
+DEPRECATED: This file is for training only and is not used by the API server.
 config.py — Central configuration for DAIC-WOZ depression training pipeline.
 All paths, hyperparameters, and constants are defined here.
 """
