@@ -90,9 +90,9 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
           Text('If you\'re in crisis, please reach out immediately.', style: GoogleFonts.inter(fontSize: 13, color: Colors.red.shade600)),
           const SizedBox(height: 16),
           Row(children: [
-            Expanded(child: _buildCrisisButton('988', 'Suicide Prevention', Icons.phone, () => _launchUrl('tel:988'))),
+            Expanded(child: _buildCrisisButton('16328', 'Ministry of Health Mental Health Hotline', Icons.phone, () => _launchUrl('tel:988'))),
             const SizedBox(width: 12),
-            Expanded(child: _buildCrisisButton('741741', 'Crisis Text Line', Icons.textsms, () => _launchUrl('sms:741741'))),
+            Expanded(child: _buildCrisisButton('15335', 'Just send "Nile" ', Icons.textsms, () => _launchUrl('sms:741741'))),
           ]),
         ],
       ),
