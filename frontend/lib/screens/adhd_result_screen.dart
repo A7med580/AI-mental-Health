@@ -52,7 +52,7 @@ class ADHDResultScreen extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Your ADHD Screening Result',
+                      'Your Result',
                       style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                     ),
                   ),
@@ -82,7 +82,7 @@ class ADHDResultScreen extends StatelessWidget {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              'This is a screening tool, NOT a medical diagnosis. Please consult a qualified healthcare professional.',
+                              'This is not a medical diagnosis. Please see a doctor.',
                               style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF9A3412), fontWeight: FontWeight.w600, height: 1.4),
                             ),
                           ),
@@ -201,7 +201,7 @@ class ADHDResultScreen extends StatelessWidget {
                     // Model Contributions
                     if (contributions.isNotEmpty) ...[
                       Text(
-                        'Assessment Methods Used',
+                        'How We Checked',
                         style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                       ),
                       const SizedBox(height: 12),
@@ -226,17 +226,17 @@ class ADHDResultScreen extends StatelessWidget {
                               const Icon(Icons.lightbulb_outline, color: AppColors.primaryPurple),
                               const SizedBox(width: 8),
                               Text(
-                                'Recommended Next Steps',
+                                'Next Steps',
                                 style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryPurple),
                               ),
                             ],
                           ),
                           const SizedBox(height: 16),
-                          _buildNextStepItem('Consult a healthcare professional', 'A qualified professional can provide proper evaluation and diagnosis.'),
+                          _buildNextStepItem('See a doctor', 'A doctor can give you a true check-up.'),
                           const SizedBox(height: 12),
-                          _buildNextStepItem('Keep a symptom journal', 'Track patterns in attention, focus, and daily activities.'),
+                          _buildNextStepItem('Keep a journal', 'Write down when you lose focus during the day.'),
                           const SizedBox(height: 12),
-                          _buildNextStepItem('Explore coping strategies', 'Learn about time management, organization, and focus techniques.'),
+                          _buildNextStepItem('Learn new skills', 'Read about how to manage your time and focus better.'),
                         ],
                       ),
                     ),
@@ -368,13 +368,13 @@ class ADHDResultScreen extends StatelessWidget {
   String _getModelTypeLabel(String type) {
     switch (type) {
       case 'behavior':
-        return 'Questionnaire Analysis';
+        return 'Questions';
       case 'eye':
-        return 'Eye-Tracking Analysis';
+        return 'Eye Tracking';
       case 'voice':
-        return 'Voice Pattern Analysis';
+        return 'Voice Analysis';
       case 'facial':
-        return 'Facial Expression Analysis';
+        return 'Expression Analysis';
       default:
         return type;
     }

@@ -85,7 +85,7 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
                     children: [
                       Text('Mood Tracker', style: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                       const SizedBox(height: 4),
-                      Text('Track your emotional wellbeing and identify patterns', style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary)),
+                      Text('Track how you feel', style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary)),
                       const SizedBox(height: 24),
                       _buildStatsRow(),
                       const SizedBox(height: 24),
@@ -109,7 +109,7 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
       children: [
         _buildStatCard('Average Mood', '${_averageMood.toStringAsFixed(1)}/10', 'Last 7 days', Icons.favorite_outline, AppColors.primaryPurple),
         const SizedBox(width: 12),
-        _buildStatCard('Entries', '$_entryCount', 'Total logged', Icons.calendar_today_outlined, Colors.blue),
+        _buildStatCard('Entries', '$_entryCount', 'Total', Icons.calendar_today_outlined, Colors.blue),
         const SizedBox(width: 12),
         _buildStatCard('Trend', _trend, _trend == 'Improving' ? 'Keep it up!' : (_trend == 'Declining' ? 'Take care' : 'Steady'),
             _trend == 'Improving' ? Icons.trending_up : (_trend == 'Declining' ? Icons.trending_down : Icons.trending_flat),
@@ -160,7 +160,7 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
             Text('Log Your Mood', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
           ]),
           const SizedBox(height: 8),
-          Text('How are you feeling right now?', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+          Text('How do you feel?', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
           const SizedBox(height: 16),
 
           GridView.builder(
@@ -199,14 +199,14 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
           ),
           const SizedBox(height: 16),
 
-          Text('Add a note (optional)', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+          Text('Add a note', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
           const SizedBox(height: 8),
           TextField(
             controller: _noteController,
             maxLines: 2,
             style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary),
             decoration: InputDecoration(
-              hintText: 'What\'s on your mind?',
+              hintText: 'Your thoughts...',
               hintStyle: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
               filled: true,
               fillColor: AppColors.surfaceLight.withValues(alpha: 0.5),
@@ -263,7 +263,7 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
-            Text('Weekly Overview', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+            Text('This Week', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
             const Spacer(),
             GestureDetector(
               onTap: () {
@@ -277,7 +277,7 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
                   ),
                 );
               },
-              child: Text('View Details →', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.primaryPurple)),
+              child: Text('More →', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.primaryPurple)),
             ),
           ]),
           const SizedBox(height: 20),

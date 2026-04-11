@@ -56,49 +56,49 @@ class _DepressionQuestionnaireScreenState
   final List<DepressionQuestion> _depressionQuestions = [
     DepressionQuestion(
       text:
-          "How would you describe your mood the past few weeks?",
+          "How has your mood been lately?",
       category: "affect",
       requiresVideo: true,
     ),
     DepressionQuestion(
       text:
-          "Have you lost interest or pleasure in things you enjoy?",
+          "Do you enjoy things less now?",
       category: "interest",
       requiresVideo: false,
     ),
     DepressionQuestion(
       text:
-          "Have you been feeling down, hopeless, or empty recently?",
+          "Have you felt sad or empty lately?",
       category: "mood",
       requiresVideo: true,
     ),
     DepressionQuestion(
       text:
-          "Have you noticed changes in your sleep patterns recently?",
+          "Has your sleep changed lately?",
       category: "sleep",
       requiresVideo: false,
     ),
     DepressionQuestion(
       text:
-          "Do you often feel fatigued or exhausted by small tasks?",
+          "Do you feel tired doing small tasks?",
       category: "energy",
       requiresVideo: false,
     ),
     DepressionQuestion(
       text:
-          "Have you been feeling worthless or like a failure?",
+          "Have you felt like a failure lately?",
       category: "self-worth",
       requiresVideo: false,
     ),
     DepressionQuestion(
       text:
-          "Has it been harder to concentrate or make decisions lately?",
+          "Is it harder to focus or make choices?",
       category: "concentration",
       requiresVideo: false,
     ),
     DepressionQuestion(
       text:
-          "Anything else you'd like to share about how you feel?",
+          "Is there anything else you want to share?",
       category: "open",
       requiresVideo: true,
     ),
@@ -115,11 +115,7 @@ class _DepressionQuestionnaireScreenState
 
   Future<void> _initializeChat() async {
     _addSystemMessage(
-      "Hi, I'm here with you. Based on your earlier responses, I'd like "
-      "to understand more about how you've been feeling lately.\n\n"
-      "There are no right or wrong answers — just share what feels true for you. "
-      "Some questions will ask you to record a short video so we can better "
-      "understand your experience. This is a confidential screening tool, not a medical diagnosis.",
+      "Hi, I am here to help. I want to know more about how you feel.\n\nThere are no wrong answers. For some questions, I will ask for a short video. This is not a diagnosis.",
     );
 
     await Future.delayed(const Duration(milliseconds: 500));
@@ -155,17 +151,13 @@ class _DepressionQuestionnaireScreenState
 
       if (!mounted) return;
 
-      _addSystemMessage(
-          "Camera access granted. You can now record your response.");
+      _addSystemMessage("Camera granted. You can answer with a video now.");
       await Future.delayed(const Duration(milliseconds: 200));
       _askNextQuestion();
     } catch (e) {
       if (!mounted) return;
 
-      _addSystemMessage(
-        "I couldn't access the camera. We'll continue with text-only responses. "
-        "If you want to enable camera later, go to iPhone Settings → Privacy & Security.",
-      );
+      _addSystemMessage("No camera found. We will use text only.");
 
       setState(() {
         _cameraPermissionGranted = false;
@@ -243,12 +235,11 @@ class _DepressionQuestionnaireScreenState
     if (question.requiresVideo && !_cameraPermissionGranted) {
       if (!_cameraPermissionRequested) {
         _addSystemMessage(
-          "For the next question, it would be helpful to record a short video response. "
-          "Tap the button below to allow camera access (you can still continue with text if you prefer).",
+          "For the next question, a video is helpful. Tap below to allow the camera, or you can use text.",
         );
       } else {
         _addSystemMessage(question.text);
-        _addSystemMessage("Please answer in text (camera not available).");
+        _addSystemMessage("Please use text (no camera found).");
       }
       return;
     }
@@ -256,9 +247,7 @@ class _DepressionQuestionnaireScreenState
     _addSystemMessage(question.text);
 
     if (question.requiresVideo) {
-      _addSystemMessage(
-        "Please record a short video (30–60 seconds). Speak naturally and be yourself.",
-      );
+      _addSystemMessage("Please record a short video (30-60 seconds).");
     }
   }
 
@@ -401,8 +390,7 @@ class _DepressionQuestionnaireScreenState
   }
 
   Future<void> _completeScreening() async {
-    _addSystemMessage(
-        "Thank you for sharing that. Preparing your report now...");
+    _addSystemMessage("Thank you. Preparing your report...");
 
     setState(() => _isProcessing = true);
 
@@ -425,9 +413,7 @@ class _DepressionQuestionnaireScreenState
         ..sort((a, b) => a.key.compareTo(b.key));
 
       if (recorded.isEmpty) {
-        _addSystemMessage(
-          "No video recorded. We'll continue with text-only screening.",
-        );
+        _addSystemMessage("No video found. We will use text only.");
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
@@ -532,7 +518,7 @@ class _DepressionQuestionnaireScreenState
                                     color: depressionTheme.accentColor),
                                 const SizedBox(width: 6),
                                 Text(
-                                  'Depression Screening',
+                                  'Depression Check',
                                   style: GoogleFonts.inter(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -541,7 +527,7 @@ class _DepressionQuestionnaireScreenState
                               ],
                             ),
                             Text(
-                              'DAIC-WOZ Clinical Interview',
+                              'Clinical Interview',
                               style: GoogleFonts.inter(
                                   fontSize: 11,
                                   color: AppColors.textSecondary),
@@ -615,7 +601,7 @@ class _DepressionQuestionnaireScreenState
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Multimodal Assessment: Video, voice, and text analysis for comprehensive depression screening.',
+                        'We use text, video, and audio to give you better results.',
                         style: GoogleFonts.inter(
                             fontSize: 10,
                             color: AppColors.primaryPurple,
@@ -664,7 +650,7 @@ class _DepressionQuestionnaireScreenState
                                               color: Colors.white, size: 18),
                                           const SizedBox(width: 8),
                                           Text(
-                                            'Allow Camera & Microphone',
+                                            'Allow Camera & Mic',
                                             style: GoogleFonts.inter(
                                                 color: Colors.white,
                                                 fontWeight: FontWeight.w600,
@@ -706,7 +692,7 @@ class _DepressionQuestionnaireScreenState
                                               color: Colors.white, size: 18),
                                           const SizedBox(width: 8),
                                           Text(
-                                            'Record Video Response',
+                                            'Record Video',
                                             style: GoogleFonts.inter(
                                                 color: Colors.white,
                                                 fontWeight: FontWeight.w600,
@@ -730,7 +716,7 @@ class _DepressionQuestionnaireScreenState
                               child: ElevatedButton.icon(
                                 onPressed: _stopVideoRecording,
                                 icon: const Icon(Icons.stop, size: 18),
-                                label: Text('Stop Recording',
+                                label: Text('Stop',
                                     style: GoogleFonts.inter(
                                         fontWeight: FontWeight.w600,
                                         fontSize: 14)),
@@ -758,7 +744,7 @@ class _DepressionQuestionnaireScreenState
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
-                                  'Your answers are confidential — be honest with yourself',
+                                  'Your answers are private. Please be honest.',
                                   style: GoogleFonts.inter(
                                       fontSize: 10,
                                       color: AppColors.textSecondary,

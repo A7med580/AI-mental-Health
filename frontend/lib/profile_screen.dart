@@ -255,7 +255,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         children: [
                           // ── Header ──
                           Text(
-                            'Your Profile',
+                            'Profile',
                             style: GoogleFonts.inter(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
@@ -264,7 +264,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Manage your account and track your progress',
+                            'Manage your account',
                             style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
                           ),
 
@@ -375,7 +375,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 2),
                     Text(
                       memberSince.isNotEmpty
-                          ? 'Member since $memberSince'
+                          ? 'Joined $memberSince'
                           : 'Member',
                       style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
                     ),
@@ -408,7 +408,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  _isEditing ? 'Cancel' : 'Edit Profile',
+                  _isEditing ? 'Cancel' : 'Edit',
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -586,9 +586,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildStatsGrid() {
     final stats = [
       {'label': 'Days Active', 'value': '47', 'icon': Icons.calendar_today_outlined},
-      {'label': 'Mood Entries', 'value': '145', 'icon': Icons.person_outline},
+      {'label': 'Mood Logs', 'value': '145', 'icon': Icons.person_outline},
       {'label': 'Meditation Min', 'value': '380', 'icon': Icons.visibility_outlined},
-      {'label': 'Chat Sessions', 'value': '23', 'icon': Icons.email_outlined},
+      {'label': 'Chats', 'value': '23', 'icon': Icons.email_outlined},
     ];
 
     return GridView.count(
@@ -641,9 +641,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildGoalsProgress() {
     final goals = [
-      {'title': 'Daily Mood Check-in', 'progress': 0.85, 'color': const Color(0xFF8B5CF6)},
-      {'title': 'Weekly Meditation', 'progress': 0.60, 'color': const Color(0xFFEC4899)},
-      {'title': 'Resource Reading', 'progress': 0.40, 'color': const Color(0xFF3B82F6)},
+      {'title': 'Mood Check', 'progress': 0.85, 'color': const Color(0xFF8B5CF6)},
+      {'title': 'Meditation', 'progress': 0.60, 'color': const Color(0xFFEC4899)},
+      {'title': 'Reading', 'progress': 0.40, 'color': const Color(0xFF3B82F6)},
     ];
 
     return Container(
@@ -665,7 +665,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Your Goals Progress',
+            'Your Goals',
             style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
           ),
           const SizedBox(height: 20),
@@ -734,19 +734,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const Icon(Icons.notifications_outlined, size: 22, color: AppColors.primaryPurple),
               const SizedBox(width: 10),
               Text(
-                'Notification Preferences',
+                'Alerts',
                 style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          _buildToggleRow('Email Notifications', 'Receive updates via email', _emailNotifications, (v) => setState(() => _emailNotifications = v)),
+          _buildToggleRow('Email Alerts', 'Get emails', _emailNotifications, (v) => setState(() => _emailNotifications = v)),
           const SizedBox(height: 10),
-          _buildToggleRow('Push Notifications', 'Get notifications on your device', _pushNotifications, (v) => setState(() => _pushNotifications = v)),
+          _buildToggleRow('Phone Alerts', 'Get phone alerts', _pushNotifications, (v) => setState(() => _pushNotifications = v)),
           const SizedBox(height: 10),
-          _buildToggleRow('Daily Mood Reminders', 'Remind me to log my mood', _moodReminders, (v) => setState(() => _moodReminders = v)),
+          _buildToggleRow('Mood Reminders', 'Remind me to log mood', _moodReminders, (v) => setState(() => _moodReminders = v)),
           const SizedBox(height: 10),
-          _buildToggleRow('Weekly Progress Reports', 'Get weekly summaries', _weeklyReports, (v) => setState(() => _weeklyReports = v)),
+          _buildToggleRow('Weekly Reports', 'Get weekly summary', _weeklyReports, (v) => setState(() => _weeklyReports = v)),
         ],
       ),
     );
@@ -842,7 +842,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         children: const [
                           Text('Terms of Service', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                           SizedBox(height: 4),
-                          Text('Review our terms and conditions', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                          Text('Read terms', style: TextStyle(fontSize: 12, color: Colors.grey)),
                         ],
                       ),
                     ),
@@ -870,7 +870,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         children: const [
                           Text('Privacy Policy', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                           SizedBox(height: 4),
-                          Text('How we protect and use your data', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                          Text('Read policy', style: TextStyle(fontSize: 12, color: Colors.grey)),
                         ],
                       ),
                     ),
@@ -907,11 +907,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Account Actions',
+            'Account',
             style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
           ),
           const SizedBox(height: 14),
-          _buildActionRow('Download My Data', const Color(0xFFFAF5FF), AppColors.textPrimary, AppColors.primaryPurple, _downloadMyData),
+          _buildActionRow('Get My Data', const Color(0xFFFAF5FF), AppColors.textPrimary, AppColors.primaryPurple, _downloadMyData),
           const SizedBox(height: 10),
           _buildActionRow('Sign Out', const Color(0xFFFEF2F2), AppColors.error, AppColors.error, _logout, icon: Icons.logout),
         ],

@@ -25,16 +25,16 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
   bool _isSubmitting = false;
 
   final List<String> _questions = const [
-    "Do you struggle to read emotions from people's faces?",
-    "Do you often notice small sounds others miss?",
-    "Do you focus on the big picture over small details?",
-    "Is multitasking easy for you?",
-    "After being interrupted, can you quickly resume your task?",
-    "Can you easily understand hidden meanings in conversation?",
-    "Can you tell when someone you're talking to gets bored?",
-    "Can you easily picture characters when reading a story?",
-    "Do you find social situations easy to handle?",
-    "Are you fascinated by dates, numbers, or patterns?",
+    "Is it hard for you to know how people feel from their faces?",
+    "Do you hear small sounds that others miss?",
+    "Do you look at the big picture instead of small details?",
+    "Is it easy for you to do many things at once?",
+    "When someone stops you, is it easy to go back to work?",
+    "Can you understand hidden hints when people talk?",
+    "Can you tell if someone is getting bored?",
+    "Can you easily picture characters in a book?",
+    "Are social times easy for you?",
+    "Do you love dates, numbers, or patterns?",
   ];
 
   @override
@@ -114,8 +114,7 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
                 'confidence': confidence,
                 'message':
                     'Based on your answers, the screening indicates Non-Autism.\n\n'
-                    'This is a screening tool, not a medical diagnosis. '
-                    'Please consult a healthcare professional for proper evaluation.',
+                    'This does not diagnose you. Please see a doctor.',
                 'model_type': 'ASD Text Model (AQ-10)',
               },
             ),
@@ -127,22 +126,14 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
       setState(() => _isSubmitting = false);
       _showErrorDialog(
         'Connection Error',
-        "Couldn't connect to the AI server.\n\n"
-        "Check:\n"
-        "• Backend server is running\n"
-        "• Correct base URL\n"
-        "• Same Wi-Fi (if physical phone)\n",
+        "Could not connect. Please check your network.",
       );
     } on TimeoutException {
       if (!mounted) return;
       setState(() => _isSubmitting = false);
       _showErrorDialog(
         'Request Timeout',
-        'The request took too long.\n\n'
-        'Try:\n'
-        '• Check base URL / network\n'
-        '• Restart backend\n'
-        '• Try again\n',
+        "It took too long. Please try again.",
       );
     } catch (e) {
       if (!mounted) return;
@@ -200,7 +191,7 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      'Processing your answers...',
+                      'Processing answers...',
                       style: GoogleFonts.inter(fontSize: 16, color: AppColors.textSecondary),
                     ),
                   ],
@@ -258,7 +249,7 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'Autism Screening - Questionnaire',
+                                'Autism Questions',
                                 style: GoogleFonts.inter(
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold,
@@ -270,7 +261,7 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Step 1 of 4: Answer these questions honestly',
+                          'Step 1 of 4: Please answer honestly',
                           style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
                         ),
                       ],

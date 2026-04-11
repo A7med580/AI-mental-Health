@@ -187,11 +187,11 @@ class _MeditationScreenState extends State<MeditationScreen> with TickerProvider
                     children: [
                       Text('Meditation', style: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                       const SizedBox(height: 4),
-                      Text('Find your inner peace with guided exercises', style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary)),
+                      Text('Relax with these exercises', style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary)),
                       const SizedBox(height: 24),
                       _buildBreathingExercise(),
                       const SizedBox(height: 28),
-                      Text('Meditation Library', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                      Text('Exercises', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                       const SizedBox(height: 16),
                       _buildMeditationGrid(),
                     ],
@@ -216,9 +216,9 @@ class _MeditationScreenState extends State<MeditationScreen> with TickerProvider
       ),
       child: Column(
         children: [
-          Text('Quick Breathing Exercise', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+          Text('Quick Breathing', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
           const SizedBox(height: 4),
-          Text('4-4-4 Box Breathing', style: GoogleFonts.inter(fontSize: 13, color: Colors.white70)),
+          Text('Box Breathing', style: GoogleFonts.inter(fontSize: 13, color: Colors.white70)),
           const SizedBox(height: 24),
 
           AnimatedBuilder(
@@ -252,7 +252,7 @@ class _MeditationScreenState extends State<MeditationScreen> with TickerProvider
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
               decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(30)),
-              child: Text(_breathingActive ? 'Stop' : 'Start Breathing', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.primaryPurple)),
+              child: Text(_breathingActive ? 'Stop' : 'Start', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.primaryPurple)),
             ),
           ),
 

@@ -113,7 +113,7 @@ class _SplashScreenState extends State<SplashScreen>
                   const SizedBox(height: 12),
                   // Tagline
                   Text(
-                    'Your mental wellness companion,\nalways here to listen.',
+                    'Always here to listen.',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.inter(
                       fontSize: 16,

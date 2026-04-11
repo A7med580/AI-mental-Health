@@ -34,7 +34,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String _currentMood = 'No data';
   String _moodTrend = 'Start logging!';
 
-  String _quoteText = '"I am worthy of love, peace, and happiness. Today I choose to focus on what I can control and let go of what I cannot."';
+  String _quoteText = '"I am worthy of love and peace. I focus on what I can control."';
   String _quoteAuthor = 'Daily Affirmation';
   bool _isLoadingQuote = true;
 
@@ -239,14 +239,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 children: [
                   const Icon(Icons.psychology_outlined, color: Colors.white, size: 14),
                   const SizedBox(width: 4),
-                  Text('AI-Powered Screening', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white)),
+                  Text('AI Test', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white)),
                 ],
               ),
             ),
             const SizedBox(height: 14),
-            Text('Mental Health\nScreening', style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white, height: 1.2)),
+            Text('Mental Health\nTest', style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white, height: 1.2)),
             const SizedBox(height: 10),
-            Text('Take our comprehensive multimodal screening for ADHD and Autism. Quick, private, and evidence-based assessment.',
+            Text('Take our quick test for ADHD and Autism.',
                 style: GoogleFonts.inter(fontSize: 13, color: Colors.white.withValues(alpha: 0.9), height: 1.5)),
             const SizedBox(height: 16),
 
@@ -266,7 +266,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       children: [
                         const Icon(Icons.assessment, color: AppColors.primaryPurple, size: 20),
                         const SizedBox(width: 8),
-                        Text('Start Mental Health Screening', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.primaryPurple)),
+                        Text('Start Test', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.primaryPurple)),
                         const SizedBox(width: 6),
                         const Icon(Icons.arrow_forward, size: 16, color: AppColors.primaryPurple),
                       ],
@@ -291,16 +291,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     children: [
                       const Icon(Icons.shield_outlined, color: Colors.white, size: 16),
                       const SizedBox(width: 6),
-                      Text('100% Private & Secure', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white)),
+                      Text('100% Private', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white)),
                     ],
                   ),
                   const SizedBox(height: 6),
-                  Text('Your data is encrypted and never shared. Results are for screening purposes only.',
+                  Text('Your data is safe.',
                       style: GoogleFonts.inter(fontSize: 11, color: Colors.white70, height: 1.3)),
                   const SizedBox(height: 6),
-                  _buildBullet('Text + Video + Audio analysis (ADHD)'),
-                  _buildBullet('Text + Facial analysis (Autism)'),
-                  _buildBullet('Results in minutes with confidence scores'),
+                  _buildBullet('Text, Video, and Audio (ADHD)'),
+                  _buildBullet('Text and Face (Autism)'),
+                  _buildBullet('Fast results'),
                 ],
               ),
             ),
@@ -456,7 +456,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Daily Affirmation', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+              Text('Daily Quote', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
               if (_isLoadingQuote) const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
             ],
           ),
@@ -472,7 +472,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               const Text('💜', style: TextStyle(fontSize: 14)),
               const SizedBox(width: 6),
-              Text('Take a deep breath and believe it', style: GoogleFonts.inter(fontSize: 12, color: Colors.white70)),
+              Text('Take a deep breath', style: GoogleFonts.inter(fontSize: 12, color: Colors.white70)),
             ],
           ),
         ],

@@ -74,7 +74,7 @@ class DepressionResultScreen extends StatelessWidget {
                       size: 22, color: depressionTheme.accentColor),
                   const SizedBox(width: 8),
                   Text(
-                    'Assessment Complete',
+                    'Done',
                     style: GoogleFonts.inter(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -86,8 +86,8 @@ class DepressionResultScreen extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 isDepression
-                    ? 'Significant indicators of depression detected.'
-                    : 'No significant indicators of depression detected.',
+                    ? 'We found signs of depression.'
+                    : 'We didn\'t find signs of depression.',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
                   fontSize: 16,
@@ -103,7 +103,7 @@ class DepressionResultScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     Text(
-                      'Overall Multimodal Confidence',
+                      'Overall Confidence',
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -126,7 +126,7 @@ class DepressionResultScreen extends StatelessWidget {
 
               // ── Breakdown ──
               Text(
-                'Modality Breakdown',
+                'Details',
                 style: GoogleFonts.inter(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -137,21 +137,21 @@ class DepressionResultScreen extends StatelessWidget {
               
               _buildModalityRow(
                 icon: Icons.chat_bubble_outline,
-                title: 'Text Analysis (DistilBERT)',
+                title: 'Text Analysis',
                 confidence: textConfidence,
               ),
               const SizedBox(height: 12),
               if (modalitiesUsed.contains('audio'))
                 _buildModalityRow(
                   icon: Icons.graphic_eq,
-                  title: 'Voice Acoustics (COVAREP)',
+                  title: 'Voice Analysis',
                   confidence: audioConfidence,
                 ),
               if (modalitiesUsed.contains('audio')) const SizedBox(height: 12),
               if (modalitiesUsed.contains('visual'))
                 _buildModalityRow(
                   icon: Icons.face,
-                  title: 'Facial Dynamics (CLNF)',
+                  title: 'Expression Analysis',
                   confidence: visualConfidence,
                 ),
 
@@ -172,7 +172,7 @@ class DepressionResultScreen extends StatelessWidget {
                   elevation: 0,
                 ),
                 child: Text(
-                  'Return to Dashboard',
+                  'Home',
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,

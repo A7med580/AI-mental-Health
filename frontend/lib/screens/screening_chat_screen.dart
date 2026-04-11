@@ -42,7 +42,7 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
   Future<void> _initializeChat() async {
     // Add welcome message
     setState(() {
-      _messages.add('system: Welcome! I\'ll guide you through the screening process.');
+      _messages.add('system: Welcome! I will help you.');
     });
 
     // Start with first condition
@@ -98,19 +98,15 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
     final probability = condition['probability'] ?? 0.0;
 
     setState(() {
-      _messages.add(
-        'system: Now screening for $conditionName (probability: ${(probability * 100).toStringAsFixed(1)}%)',
-      );
-      _messages.add(
-        'system: Please record a short video (30-60 seconds) responding to the question.',
-      );
+        'system: Checking for $conditionName (${(probability * 100).toStringAsFixed(1)}%)',
+        'system: Please record a short video (30-60 seconds) to answer.',
     });
   }
 
   Future<void> _startRecording() async {
     if (_cameraController == null || !_cameraController!.value.isInitialized) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Camera not available')),
+        const SnackBar(content: Text('Camera not found')),
       );
       return;
     }
@@ -163,7 +159,7 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
 
     setState(() {
       _isProcessing = true;
-      _messages.add('system: Processing your recording...');
+      _messages.add('system: Processing...');
     });
 
     try {
@@ -183,9 +179,7 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
         if (detectedCondition != null && confidence >= 0.5) {
           // Strong indicator detected
           setState(() {
-            _messages.add(
-              'system: Strong indicators detected for $detectedCondition (confidence: ${(confidence * 100).toStringAsFixed(1)}%)',
-            );
+              'system: Found signs of $detectedCondition (${(confidence * 100).toStringAsFixed(1)}%)',
           });
 
           // Navigate to results screen
@@ -194,7 +188,7 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
           // Move to next condition
           setState(() {
             _currentConditionIndex++;
-            _messages.add('system: Moving to next condition...');
+            _messages.add('system: Moving to next...');
           });
           await _processNextCondition();
         }
@@ -203,7 +197,7 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
       }
     } catch (e) {
       setState(() {
-        _messages.add('system: Error processing recording: $e');
+        _messages.add('system: Error processing: $e');
       });
     } finally {
       setState(() {
@@ -230,7 +224,7 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
     final result = {
       'detected_condition': null,
       'confidence': 0.0,
-      'message': 'No strong indicators detected. Consider consulting a healthcare professional.',
+      'message': 'No strong signs found. Please see a doctor.',
       'all_results': [],
     };
 
@@ -251,7 +245,7 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         title: Text(
-          'Screening Session',
+          'Screening',
           style: GoogleFonts.inter(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -320,7 +314,7 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
                   ElevatedButton.icon(
                     onPressed: _startRecording,
                     icon: const Icon(Icons.videocam),
-                    label: const Text('Start Recording'),
+                    label: const Text('Start'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       foregroundColor: Colors.white,
@@ -334,7 +328,7 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
                   ElevatedButton.icon(
                     onPressed: _stopRecording,
                     icon: const Icon(Icons.stop),
-                    label: const Text('Stop Recording'),
+                    label: const Text('Stop'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
                       foregroundColor: Colors.white,

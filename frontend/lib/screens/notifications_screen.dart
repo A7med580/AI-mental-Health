@@ -77,7 +77,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       ),
                       const SizedBox(height: 20),
                       Text(
-                        'Screening Complete',
+                        'Screening Done',
                         style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                       ),
                       const SizedBox(height: 12),
@@ -157,7 +157,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     GestureDetector(
                       onTap: _markAllAsRead,
                       child: Text(
-                        'Mark all read',
+                        'Read all',
                         style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primaryPurple),
                       ),
                     ),
@@ -190,7 +190,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                 child: const Icon(Icons.notifications_none, size: 40, color: AppColors.primaryPurple),
                               ),
                               const SizedBox(height: 16),
-                              Text('No notifications', style: GoogleFonts.inter(fontSize: 16, color: AppColors.textSecondary)),
+                              Text('No alerts', style: GoogleFonts.inter(fontSize: 16, color: AppColors.textSecondary)),
                             ],
                           ),
                         )

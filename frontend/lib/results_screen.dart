@@ -44,7 +44,7 @@ class ResultsScreen extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    'Screening Results',
+                    'Test Results',
                     style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                   ),
                 ],
@@ -73,7 +73,7 @@ class ResultsScreen extends StatelessWidget {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              'This is a screening tool, not a medical diagnosis. Please consult a healthcare professional.',
+                              'This is a test, not an official diagnosis. Please see a doctor.',
                               style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF9A3412), fontWeight: FontWeight.w500),
                             ),
                           ),
@@ -125,8 +125,8 @@ class ResultsScreen extends StatelessWidget {
 
                           Text(
                             detectedCondition != null
-                                ? 'Indicators Detected'
-                                : 'No Strong Indicators',
+                                ? 'Signs Found'
+                                : 'No Strong Signs',
                             style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                           ),
 
@@ -195,7 +195,7 @@ class ResultsScreen extends StatelessWidget {
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          'Detailed Results',
+                          'Details',
                           style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                         ),
                       ),
@@ -221,7 +221,7 @@ class ResultsScreen extends StatelessWidget {
                             child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               child: Center(
-                                child: Text('Return to Home', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
+                                child: Text('Go Home', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
                               ),
                             ),
                           ),

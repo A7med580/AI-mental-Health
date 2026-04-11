@@ -28,7 +28,7 @@ class _MindfulAIScreenState extends State<MindfulAIScreen> {
   bool _isWaitingForResponse = false;
   final List<_ChatBubble> _messages = [
     _ChatBubble(
-      text: "Hello! I'm MindCare AI, your Mental Health Companion. I'm here to listen to whatever is on your mind today.",
+      text: "Hello! I am MindCare AI. I am here to listen to you.",
       isBot: true,
     ),
   ];
@@ -70,7 +70,7 @@ class _MindfulAIScreenState extends State<MindfulAIScreen> {
     } catch (e) {
       setState(() {
         _isWaitingForResponse = false;
-        _messages.add(_ChatBubble(text: 'Oops. I had trouble connecting. Please try again.', isBot: true, isError: true));
+        _messages.add(_ChatBubble(text: 'Error connecting. Please try again.', isBot: true, isError: true));
       });
       _scrollToBottom();
     }
@@ -138,7 +138,7 @@ class _MindfulAIScreenState extends State<MindfulAIScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('MindCare AI Companion', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                Text('MindCare AI', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                 const SizedBox(height: 2),
                 Row(
                   children: [
@@ -265,7 +265,7 @@ class _MindfulAIScreenState extends State<MindfulAIScreen> {
           const Icon(Icons.info_outline, size: 14, color: AppColors.primaryPurple),
           const SizedBox(width: 8),
           Expanded(
-            child: Text('This AI companion provides support but is not a replacement for professional therapy.',
+            child: Text('This AI is for support, not a doctor.',
                 style: GoogleFonts.inter(fontSize: 10, color: AppColors.primaryPurple, fontWeight: FontWeight.w500)),
           ),
         ],
@@ -294,7 +294,7 @@ class _MindfulAIScreenState extends State<MindfulAIScreen> {
                 maxLines: null,
                 style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary),
                 decoration: InputDecoration(
-                  hintText: 'Type your message...',
+                  hintText: 'Type here...',
                   hintStyle: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),

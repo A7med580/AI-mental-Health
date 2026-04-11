@@ -50,42 +50,42 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
   // DSM-5 aligned questions
   final List<ADHDQuestion> _adhdQuestions = [
     ADHDQuestion(
-      text: "Do you struggle to stay focused on lengthy tasks?",
+      text: "Is it hard to stay focused on long tasks?",
       category: "inattention",
       requiresVideo: false,
     ),
     ADHDQuestion(
-      text: "Do you often make careless mistakes due to inattention?",
+      text: "Do you often make small mistakes because you lose focus?",
       category: "inattention",
       requiresVideo: false,
     ),
     ADHDQuestion(
-      text: "Do you struggle to organize tasks or manage your time?",
+      text: "Is it hard to organize your work or time?",
       category: "inattention",
       requiresVideo: false,
     ),
     ADHDQuestion(
-      text: "Do you often feel restless or unable to stay seated?",
+      text: "Do you often feel like you can't sit still?",
       category: "hyperactivity",
       requiresVideo: true,
     ),
     ADHDQuestion(
-      text: "Do you find it hard to wait your turn?",
+      text: "Is it hard to wait for your turn?",
       category: "impulsivity",
       requiresVideo: true,
     ),
     ADHDQuestion(
-      text: "Do you often interrupt others or finish their sentences?",
+      text: "Do you often talk over others or finish their words?",
       category: "impulsivity",
       requiresVideo: false,
     ),
     ADHDQuestion(
-      text: "Do you frequently lose keys, phone, or important items?",
+      text: "Do you often lose things like keys or your phone?",
       category: "inattention",
       requiresVideo: false,
     ),
     ADHDQuestion(
-      text: "Does your mind often race with too many thoughts?",
+      text: "Does your mind often have too many thoughts?",
       category: "inattention",
       requiresVideo: false,
     ),
@@ -101,11 +101,7 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
   // ─── ALL LOGIC BELOW IS UNCHANGED ───────────────────────────────────
 
   Future<void> _initializeChat() async {
-    _addSystemMessage(
-      "Hello! I'm here to help you understand patterns related to attention and focus. "
-      "This is a screening tool, not a medical diagnosis. "
-      "I'll ask you some questions - please answer honestly and take your time.",
-    );
+      "Hello! I am here to help you check your focus. This is not a diagnosis. Please answer my questions honestly.",
 
     await Future.delayed(const Duration(milliseconds: 400));
     _askNextQuestion();
@@ -140,16 +136,13 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
 
       if (!mounted) return;
 
-      _addSystemMessage("Camera access granted. You can now record your response.");
+      _addSystemMessage("Camera granted. You can answer with a video now.");
       await Future.delayed(const Duration(milliseconds: 200));
       _askNextQuestion();
     } catch (e) {
       if (!mounted) return;
 
-      _addSystemMessage(
-        "I couldn't access the camera. We'll continue with text-only responses. "
-        "If you want to enable camera later, go to iPhone Settings → Privacy & Security.",
-      );
+        "No camera found. We will use text only.",
 
       setState(() {
         _cameraPermissionGranted = false;
@@ -222,12 +215,11 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
     if (question.requiresVideo && !_cameraPermissionGranted) {
       if (!_cameraPermissionRequested) {
         _addSystemMessage(
-          "For the next question, it would be helpful to record a short video response. "
-          "Tap the button below to allow camera access (you can still continue with text if you prefer).",
+          "For the next question, a video is helpful. Tap below to allow the camera, or you can use text.",
         );
       } else {
         _addSystemMessage(question.text);
-        _addSystemMessage("Please answer in text (camera not available).");
+        _addSystemMessage("Please use text (no camera found).");
       }
       return;
     }
@@ -235,9 +227,7 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
     _addSystemMessage(question.text);
 
     if (question.requiresVideo) {
-      _addSystemMessage(
-        "Please record a short video (15–60 seconds). Speak naturally and be yourself.",
-      );
+        "Please record a short video (15-60 seconds).",
     }
   }
 
@@ -396,9 +386,7 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
         ..sort((a, b) => a.key.compareTo(b.key));
 
       if (recorded.isEmpty) {
-        _addSystemMessage(
-          "No video recorded. We'll continue with text-only screening.",
-        );
+        "No video found. We will use text only.",
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
@@ -495,7 +483,7 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'AI Interview',
+                      'AI Chat',
                       style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                     ),
                   ),
@@ -547,7 +535,7 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Multimodal Assessment: This screening combines text responses, video, and audio analysis for more comprehensive results.',
+                      'We use text, video, and audio to give you better results.',
                       style: GoogleFonts.inter(fontSize: 11, color: AppColors.primaryPurple, fontWeight: FontWeight.w500),
                     ),
                   ),
@@ -594,7 +582,7 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
                                     children: [
                                       const Icon(Icons.lock_open, color: Colors.white, size: 18),
                                       const SizedBox(width: 8),
-                                      Text('Allow Camera & Microphone', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+                                      Text('Allow Camera & Mic', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
                                     ],
                                   ),
                                 ),
@@ -627,7 +615,7 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
                                     children: [
                                       const Icon(Icons.videocam, color: Colors.white, size: 18),
                                       const SizedBox(width: 8),
-                                      Text('Record Video Response', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+                                      Text('Record Video', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
                                     ],
                                   ),
                                 ),
@@ -645,7 +633,7 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
                           child: ElevatedButton.icon(
                             onPressed: _stopVideoRecording,
                             icon: const Icon(Icons.stop, size: 18),
-                            label: Text('Stop Recording', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
+                            label: Text('Stop', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.error,
                               foregroundColor: Colors.white,
