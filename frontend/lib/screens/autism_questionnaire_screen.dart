@@ -230,7 +230,7 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
                             decoration: BoxDecoration(
                               color: AppColors.cardWhite,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.grey[300]!),
+                              border: Border.all(color: const Color(0xFFE8E4DF)),
                             ),
                             child: const Icon(Icons.arrow_back, size: 20, color: AppColors.textPrimary),
                           ),
@@ -418,7 +418,7 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
           color: isSelected ? asdTheme.accentColor.withValues(alpha: 0.06) : AppColors.cardWhite,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? asdTheme.accentColor : Colors.grey[300]!,
+            color: isSelected ? asdTheme.accentColor : const Color(0xFFE8E4DF),
             width: isSelected ? 2 : 1.5,
           ),
           boxShadow: isSelected

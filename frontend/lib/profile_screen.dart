@@ -359,7 +359,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               decoration: BoxDecoration(
                 color: AppColors.background,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[300]!),
+                border: Border.all(color: const Color(0xFFE8E4DF)),
               ),
               child: Text(
                 'Change Password',
@@ -454,11 +454,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey[300]!),
+                borderSide: BorderSide(color: const Color(0xFFE8E4DF)),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey[300]!),
+                borderSide: BorderSide(color: const Color(0xFFE8E4DF)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -466,7 +466,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               disabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey[200]!),
+                borderSide: BorderSide(color: const Color(0xFFE8E4DF)),
               ),
             ),
           )
@@ -477,7 +477,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             decoration: BoxDecoration(
               color: AppColors.background,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[200]!),
+              border: Border.all(color: const Color(0xFFE8E4DF)),
             ),
             child: Text(
               value ?? '',
@@ -602,7 +602,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: LinearProgressIndicator(
                       value: progress,
                       minHeight: 10,
-                      backgroundColor: Colors.grey[200],
+                      backgroundColor: const Color(0xFFE8E4DF),
                       valueColor: AlwaysStoppedAnimation<Color>(color),
                     ),
                   ),
@@ -686,7 +686,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               width: 50,
               height: 28,
               decoration: BoxDecoration(
-                color: value ? AppColors.primaryPurple : Colors.grey[300],
+                color: value ? AppColors.primaryPurple : const Color(0xFFE8E4DF),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: AnimatedAlign(
@@ -783,7 +783,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey[200]!)),
+        border: Border(top: BorderSide(color: const Color(0xFFE8E4DF))),
       ),
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(

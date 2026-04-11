@@ -37,7 +37,7 @@ class ResultsScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: AppColors.cardWhite,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[300]!),
+                        border: Border.all(color: const Color(0xFFE8E4DF)),
                       ),
                       child: const Icon(Icons.arrow_back, size: 20, color: AppColors.textPrimary),
                     ),
@@ -162,7 +162,7 @@ class ResultsScreen extends StatelessWidget {
                                   child: LinearProgressIndicator(
                                     value: confidence is double ? confidence : 0.0,
                                     minHeight: 8,
-                                    backgroundColor: Colors.grey[200],
+                                    backgroundColor: const Color(0xFFE8E4DF),
                                     valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryPurple),
                                   ),
                                 ),
@@ -270,7 +270,7 @@ class ResultsScreen extends StatelessWidget {
         color: AppColors.cardWhite,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: metThreshold ? AppColors.primaryPurple.withValues(alpha: 0.4) : Colors.grey[300]!,
+          color: metThreshold ? AppColors.primaryPurple.withValues(alpha: 0.4) : const Color(0xFFE8E4DF),
           width: metThreshold ? 2 : 1,
         ),
       ),

@@ -118,7 +118,14 @@ class _RegisterPageState extends State<RegisterPage> {
                   height: 56,
                   decoration: BoxDecoration(
                     gradient: AppColors.primaryGradient,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primaryPurple.withValues(alpha: 0.15),
+                        blurRadius: 16,
+                        spreadRadius: 2,
+                      ),
+                    ],
                   ),
                   child: const Icon(Icons.psychology, color: Colors.white, size: 32),
                 ),
@@ -231,7 +238,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primaryPurple.withValues(alpha: 0.3),
+                        color: AppColors.primaryPurple.withValues(alpha: 0.15),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -319,9 +326,9 @@ class _RegisterPageState extends State<RegisterPage> {
         const SizedBox(height: 6),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.cardWhite,
+            color: AppColors.surfaceLight,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(color: const Color(0xFFE8E4DF)),
           ),
           child: TextField(
             controller: controller,

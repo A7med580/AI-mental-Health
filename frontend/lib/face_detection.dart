@@ -175,7 +175,7 @@ class _EmotionDetectionScreenState extends State<EmotionDetectionScreen> {
                       decoration: BoxDecoration(
                         color: AppColors.cardWhite,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[300]!),
+                        border: Border.all(color: const Color(0xFFE8E4DF)),
                       ),
                       child: const Icon(Icons.arrow_back, size: 20, color: AppColors.textPrimary),
                     ),
@@ -275,7 +275,7 @@ class _EmotionDetectionScreenState extends State<EmotionDetectionScreen> {
                       decoration: BoxDecoration(
                         color: AppColors.cardWhite,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.grey[200]!),
+                        border: Border.all(color: const Color(0xFFE8E4DF)),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.04),

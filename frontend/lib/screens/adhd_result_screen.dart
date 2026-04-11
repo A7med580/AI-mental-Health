@@ -42,7 +42,7 @@ class ADHDResultScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: AppColors.cardWhite,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[300]!),
+                        border: Border.all(color: const Color(0xFFE8E4DF)),
                       ),
                       child: const Icon(Icons.arrow_back, size: 20, color: AppColors.textPrimary),
                     ),
@@ -173,7 +173,7 @@ class ADHDResultScreen extends StatelessWidget {
                             child: LinearProgressIndicator(
                               value: fusedConfidence is double ? fusedConfidence : 0.0,
                               minHeight: 8,
-                              backgroundColor: Colors.grey[200],
+                              backgroundColor: const Color(0xFFE8E4DF),
                               valueColor: AlwaysStoppedAnimation<Color>(_getConfidenceColor(confidenceLevel)),
                             ),
                           ),
@@ -288,7 +288,7 @@ class ADHDResultScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.cardWhite,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(color: const Color(0xFFE8E4DF)),
       ),
       child: Row(
         children: [
@@ -361,7 +361,7 @@ class ADHDResultScreen extends StatelessWidget {
       case 'low':
         return AppColors.primaryPurple;
       default:
-        return Colors.grey;
+        return AppColors.textSecondary;
     }
   }
 

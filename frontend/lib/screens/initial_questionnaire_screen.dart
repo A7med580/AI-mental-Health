@@ -305,7 +305,7 @@ class _InitialQuestionnaireScreenState
                     child: LinearProgressIndicator(
                       value:
                           (_currentQuestionIndex + 1) / _questions.length,
-                      backgroundColor: Colors.grey[200],
+                      backgroundColor: AppColors.surfaceLight,
                       valueColor: const AlwaysStoppedAnimation<Color>(
                           AppColors.primaryPurple),
                       minHeight: 6,
@@ -428,7 +428,7 @@ class _InitialQuestionnaireScreenState
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color:
-                isSelected ? AppColors.primaryPurple : Colors.grey[300]!,
+                isSelected ? AppColors.primaryPurple : const Color(0xFFE8E4DF),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -461,7 +461,7 @@ class _InitialQuestionnaireScreenState
                 border: Border.all(
                   color: isSelected
                       ? AppColors.primaryPurple
-                      : Colors.grey[400]!,
+                      : AppColors.textSecondary,
                   width: 2,
                 ),
               ),
@@ -506,7 +506,7 @@ class _InitialQuestionnaireScreenState
                     foregroundColor: AppColors.textPrimary,
                     padding:
                         const EdgeInsets.symmetric(vertical: 14),
-                    side: BorderSide(color: Colors.grey[300]!),
+                    side: BorderSide(color: const Color(0xFFE8E4DF)),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
                   ),
@@ -519,7 +519,7 @@ class _InitialQuestionnaireScreenState
                   decoration: BoxDecoration(
                     gradient:
                         hasAnswer ? AppColors.primaryGradient : null,
-                    color: hasAnswer ? null : Colors.grey[300],
+                    color: hasAnswer ? null : const Color(0xFFE8E4DF),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Material(
@@ -543,7 +543,7 @@ class _InitialQuestionnaireScreenState
                                 fontWeight: FontWeight.w600,
                                 color: hasAnswer
                                     ? Colors.white
-                                    : Colors.grey[500],
+                                    : AppColors.textSecondary,
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -552,7 +552,7 @@ class _InitialQuestionnaireScreenState
                               size: 18,
                               color: hasAnswer
                                   ? Colors.white
-                                  : Colors.grey[500],
+                                  : AppColors.textSecondary,
                             ),
                           ],
                         ),

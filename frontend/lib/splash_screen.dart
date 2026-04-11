@@ -60,13 +60,14 @@ class _SplashScreenState extends State<SplashScreen>
         height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF7C3AED),
-              Color(0xFF9333EA),
-              Color(0xFFDB2777),
+              Color(0xFF8B7EC8),  // muted lavender
+              Color(0xFFA8B8D8),  // soft sky
+              Color(0xFFD4A97A),  // warm gold accent
             ],
+            stops: [0.0, 0.6, 1.0],
           ),
         ),
         child: SafeArea(
@@ -82,8 +83,15 @@ class _SplashScreenState extends State<SplashScreen>
                     width: 100,
                     height: 100,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(24),
+                      color: Colors.white.withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(28),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF8B7EC8).withValues(alpha: 0.3),
+                          blurRadius: 24,
+                          spreadRadius: 4,
+                        ),
+                      ],
                     ),
                     child: const Icon(
                       Icons.psychology,
@@ -109,7 +117,7 @@ class _SplashScreenState extends State<SplashScreen>
                     textAlign: TextAlign.center,
                     style: GoogleFonts.inter(
                       fontSize: 16,
-                      color: Colors.white.withValues(alpha: 0.85),
+                      color: Colors.white.withValues(alpha: 0.9),
                       height: 1.5,
                     ),
                   ),
@@ -121,7 +129,7 @@ class _SplashScreenState extends State<SplashScreen>
                     child: CircularProgressIndicator(
                       strokeWidth: 2.5,
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        Colors.white.withValues(alpha: 0.7),
+                        Colors.white.withValues(alpha: 0.75),
                       ),
                     ),
                   ),

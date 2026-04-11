@@ -204,7 +204,7 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          disabledBackgroundColor: Colors.grey,
+                          disabledBackgroundColor: AppColors.textSecondary,
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,

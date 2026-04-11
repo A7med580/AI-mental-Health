@@ -664,7 +664,7 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
                             decoration: BoxDecoration(
                               color: AppColors.background,
                               borderRadius: BorderRadius.circular(24),
-                              border: Border.all(color: Colors.grey[300]!),
+                              border: Border.all(color: const Color(0xFFE8E4DF)),
                             ),
                             child: TextField(
                               controller: _textController,

@@ -284,7 +284,7 @@ class _MindfulAIScreenState extends State<MindfulAIScreen> {
         children: [
           Expanded(
             child: Container(
-              decoration: BoxDecoration(color: AppColors.background.withValues(alpha: 0.7), borderRadius: BorderRadius.circular(24), border: Border.all(color: Colors.grey[300]!)),
+              decoration: BoxDecoration(color: AppColors.background.withValues(alpha: 0.7), borderRadius: BorderRadius.circular(24), border: Border.all(color: const Color(0xFFE8E4DF))),
               child: TextField(
                 controller: _messageController,
                 focusNode: _focusNode,
@@ -304,7 +304,7 @@ class _MindfulAIScreenState extends State<MindfulAIScreen> {
           ),
           const SizedBox(width: 8),
           Material(
-            color: _isWaitingForResponse ? Colors.grey[400] : AppColors.primaryPurple,
+            color: _isWaitingForResponse ? AppColors.textSecondary : AppColors.primaryPurple,
             borderRadius: BorderRadius.circular(24),
             child: InkWell(
               borderRadius: BorderRadius.circular(24),

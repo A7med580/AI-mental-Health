@@ -152,10 +152,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildTopBar() {
     return GlassContainer(
       borderRadius: 0,
-      opacity: 0.72,
-      blur: 24,
+      opacity: 0.88,
+      blur: 12,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.3), width: 0.5)),
+      border: Border(bottom: BorderSide(color: const Color(0xFFE8E4DF).withValues(alpha: 0.6), width: 0.5)),
       child: Row(
         children: [
           Container(
@@ -224,7 +224,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       decoration: BoxDecoration(
         gradient: AppColors.primaryGradient,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: AppColors.primaryPurple.withValues(alpha: 0.25), blurRadius: 20, offset: const Offset(0, 6))],
+        boxShadow: [BoxShadow(color: AppColors.primaryPurple.withValues(alpha: 0.15), blurRadius: 20, offset: const Offset(0, 6))],
       ),
       child: Padding(
         padding: const EdgeInsets.all(22),
@@ -350,9 +350,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildStatCard(String title, String value, String subtitle, IconData icon, Color iconColor) {
     return GlassContainer(
       borderRadius: 18,
-      opacity: 0.7,
-      blur: 12,
+      opacity: 0.82,
+      blur: 8,
       padding: const EdgeInsets.all(14),
+      border: Border.all(color: const Color(0xFFE8E4DF).withValues(alpha: 0.5)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -402,9 +403,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildQuickAction(String label, IconData icon, Color color, VoidCallback onTap) {
     return GlassContainer(
       borderRadius: 16,
-      opacity: 0.6,
-      blur: 10,
+      opacity: 0.82,
+      blur: 8,
       padding: EdgeInsets.zero,
+      border: Border.all(color: const Color(0xFFE8E4DF).withValues(alpha: 0.5)),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -444,9 +446,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [Color(0xFFE91E63), Color(0xFFAD1457)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+        gradient: const LinearGradient(colors: [Color(0xFFD4A97A), Color(0xFFC4917A)], begin: Alignment.topLeft, end: Alignment.bottomRight),
         borderRadius: BorderRadius.circular(22),
-        boxShadow: [BoxShadow(color: const Color(0xFFE91E63).withValues(alpha: 0.2), blurRadius: 20, offset: const Offset(0, 6))],
+        boxShadow: [BoxShadow(color: const Color(0xFFD4A97A).withValues(alpha: 0.2), blurRadius: 20, offset: const Offset(0, 6))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -483,10 +485,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildBottomNav() {
     return GlassContainer(
       borderRadius: 0,
-      opacity: 0.72,
-      blur: 24,
+      opacity: 0.88,
+      blur: 12,
       padding: const EdgeInsets.symmetric(vertical: 8),
-      border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.4), width: 0.5)),
+      border: Border(top: BorderSide(color: const Color(0xFFE8E4DF).withValues(alpha: 0.6), width: 0.5)),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [

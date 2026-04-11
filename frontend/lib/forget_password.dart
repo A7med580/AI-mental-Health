@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:mindful/app_colors.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -32,11 +34,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     try {
       await _supabase.auth.resetPasswordForEmail(
         _emailController.text.trim(),
-        redirectTo: 'your-app://reset-password', // Optional: customize redirect URL
+        redirectTo: 'your-app://reset-password',
       );
 
       if (mounted) {
-        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Password reset email sent! Check your inbox.'),
@@ -44,8 +45,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             duration: Duration(seconds: 4),
           ),
         );
-
-        // Optional: Navigate back after successful request
         Navigator.pop(context);
       }
     } on AuthException catch (e) {
@@ -80,7 +79,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -97,43 +96,44 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: Colors.grey[200],
+                      color: AppColors.surfaceLight,
                       shape: BoxShape.circle,
+                      border: Border.all(color: const Color(0xFFE8E4DF)),
                     ),
                     child: const Icon(
                       Icons.arrow_back_ios_new,
-                      color: Colors.black,
+                      color: AppColors.textPrimary,
                       size: 20,
                     ),
                   ),
                 ),
                 const SizedBox(height: 40),
                 // Title
-                const Text(
+                Text(
                   'Forgot password',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 12),
                 // Subtitle
                 Text(
                   'Please enter your email to reset the password',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     fontSize: 16,
-                    color: Colors.grey[600],
+                    color: AppColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 40),
                 // Email label
-                const Text(
+                Text(
                   'Your Email',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black,
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -146,31 +146,31 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   enabled: !_isLoading,
                   decoration: InputDecoration(
                     hintText: 'Enter your email',
-                    hintStyle: TextStyle(
-                      color: Colors.grey[400],
+                    hintStyle: GoogleFonts.inter(
+                      color: AppColors.textSecondary,
                       fontSize: 16,
                     ),
                     filled: true,
-                    fillColor: Colors.grey[100],
+                    fillColor: AppColors.surfaceLight,
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(14),
                       borderSide: BorderSide.none,
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: Color(0xFFE8E4DF)),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: Color(0xFF5B8DEE),
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(
+                        color: AppColors.primaryPurple,
                         width: 2,
                       ),
                     ),
                     errorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: Colors.red,
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(
+                        color: AppColors.error,
                         width: 1,
                       ),
                     ),
@@ -195,31 +195,42 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 SizedBox(
                   width: double.infinity,
                   height: 56,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _resetPassword,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF5B8DEE),
-                      disabledBackgroundColor: const Color(0xFF5B8DEE).withOpacity(0.6),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: AppColors.primaryGradient,
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primaryPurple.withValues(alpha: 0.15),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                    child: _isLoading
-                        ? const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2.5,
-                      ),
-                    )
-                        : const Text(
-                      'Reset Password',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(14),
+                        onTap: _isLoading ? null : _resetPassword,
+                        child: Center(
+                          child: _isLoading
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2.5,
+                                  ),
+                                )
+                              : Text(
+                                  'Reset Password',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                        ),
                       ),
                     ),
                   ),

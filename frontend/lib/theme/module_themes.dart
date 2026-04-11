@@ -15,22 +15,22 @@ class ModuleTheme {
 }
 
 const depressionTheme = ModuleTheme(
-  accentColor: Color(0xFF5B8DEF),
-  backgroundColor: Color(0xFFF0F4FF),
+  accentColor: Color(0xFF7BA3CF),      // soft steel blue
+  backgroundColor: Color(0xFFF5F2EF),  // warm cream with blue hint
   icon: Icons.cloud_outlined,
   displayName: 'Depression',
 );
 
 const adhdTheme = ModuleTheme(
-  accentColor: Color(0xFFF4A335),
-  backgroundColor: Color(0xFFFFF8ED),
+  accentColor: Color(0xFFD4A05A),      // warm amber
+  backgroundColor: Color(0xFFFAF6F0),  // warm cream with amber hint
   icon: Icons.bolt_outlined,
   displayName: 'ADHD',
 );
 
 const asdTheme = ModuleTheme(
-  accentColor: Color(0xFF4CAF82),
-  backgroundColor: Color(0xFFF0FAF4),
+  accentColor: Color(0xFF6BAF8D),      // sage green
+  backgroundColor: Color(0xFFF3F7F4),  // warm cream with green hint
   icon: Icons.psychology_outlined,
   displayName: 'ASD',
 );

@@ -72,8 +72,8 @@ RESULTS_DIR = "results"
 
 # File upload limits and validation
 MAX_UPLOAD_BYTES = 100 * 1024 * 1024  # 100 MB
-ALLOWED_VIDEO_TYPES = {"video/mp4", "video/quicktime", "video/webm"}
-ALLOWED_AUDIO_TYPES = {"audio/wav", "audio/x-wav", "audio/mpeg"}
+ALLOWED_VIDEO_TYPES = {"video/mp4", "video/quicktime", "video/webm", "application/octet-stream"}
+ALLOWED_AUDIO_TYPES = {"audio/wav", "audio/x-wav", "audio/mpeg", "application/octet-stream"}
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(os.path.join(UPLOAD_DIR, "adhd"), exist_ok=True)
@@ -768,6 +768,8 @@ async def submit_adhd_job(
             "message": "Job submitted successfully.",
         }
 
+    except HTTPException:
+        raise
     except json.JSONDecodeError as e:
         raise HTTPException(status_code=400, detail=f"Invalid questionnaire JSON: {str(e)}")
     except Exception as e:
@@ -822,6 +824,8 @@ async def submit_depression_job(
             "message": "Depression screening job submitted successfully.",
         }
 
+    except HTTPException:
+        raise
     except json.JSONDecodeError as e:
         raise HTTPException(status_code=400, detail=f"Invalid questionnaire JSON: {str(e)}")
     except Exception as e:
