@@ -261,7 +261,7 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Step 1 of 4: Please answer honestly',
+                          'Step 1 of 4: Answer honestly',
                           style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
                         ),
                       ],
@@ -279,7 +279,7 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Question ${_currentQuestionIndex + 1} of ${_questions.length}',
+                              '${_currentQuestionIndex + 1} / ${_questions.length}',
                               style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.textSecondary),
                             ),
                             Text(

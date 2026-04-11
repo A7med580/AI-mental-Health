@@ -98,8 +98,10 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
     final probability = condition['probability'] ?? 0.0;
 
     setState(() {
-        'system: Checking for $conditionName (${(probability * 100).toStringAsFixed(1)}%)',
-        'system: Please record a short video (30-60 seconds) to answer.',
+      _messages.add(
+          'system: Checking for $conditionName (${(probability * 100).toStringAsFixed(1)}%)');
+      _messages.add(
+          'system: Record a short video (30-60 seconds).');
     });
   }
 
@@ -129,7 +131,7 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
     } catch (e) {
       print('Error starting recording: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error starting recording: $e')),
+        SnackBar(content: Text('Error. Try again.')),
       );
     }
   }
@@ -179,7 +181,8 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
         if (detectedCondition != null && confidence >= 0.5) {
           // Strong indicator detected
           setState(() {
-              'system: Found signs of $detectedCondition (${(confidence * 100).toStringAsFixed(1)}%)',
+            _messages.add(
+                'system: Found signs of $detectedCondition (${(confidence * 100).toStringAsFixed(1)}%)');
           });
 
           // Navigate to results screen
@@ -188,7 +191,7 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
           // Move to next condition
           setState(() {
             _currentConditionIndex++;
-            _messages.add('system: Moving to next...');
+            _messages.add('system: Next...');
           });
           await _processNextCondition();
         }
@@ -197,7 +200,7 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
       }
     } catch (e) {
       setState(() {
-        _messages.add('system: Error processing: $e');
+        _messages.add('system: Error. Try again.');
       });
     } finally {
       setState(() {
@@ -224,7 +227,7 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
     final result = {
       'detected_condition': null,
       'confidence': 0.0,
-      'message': 'No strong signs found. Please see a doctor.',
+      'message': 'No signs found. Talk to a doctor.',
       'all_results': [],
     };
 

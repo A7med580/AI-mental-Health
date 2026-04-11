@@ -115,7 +115,7 @@ class _DepressionQuestionnaireScreenState
 
   Future<void> _initializeChat() async {
     _addSystemMessage(
-      "Hi, I am here to help. I want to know more about how you feel.\n\nThere are no wrong answers. For some questions, I will ask for a short video. This is not a diagnosis.",
+      "Answer questions about your feelings. Some need video. This is not a diagnosis.",
     );
 
     await Future.delayed(const Duration(milliseconds: 500));
@@ -151,13 +151,13 @@ class _DepressionQuestionnaireScreenState
 
       if (!mounted) return;
 
-      _addSystemMessage("Camera granted. You can answer with a video now.");
+      _addSystemMessage("Camera ready. You can use video now.");
       await Future.delayed(const Duration(milliseconds: 200));
       _askNextQuestion();
     } catch (e) {
       if (!mounted) return;
 
-      _addSystemMessage("No camera found. We will use text only.");
+      _addSystemMessage("No camera found. Using text only.");
 
       setState(() {
         _cameraPermissionGranted = false;
@@ -235,11 +235,11 @@ class _DepressionQuestionnaireScreenState
     if (question.requiresVideo && !_cameraPermissionGranted) {
       if (!_cameraPermissionRequested) {
         _addSystemMessage(
-          "For the next question, a video is helpful. Tap below to allow the camera, or you can use text.",
+          "This question needs video. Allow camera or use text.",
         );
       } else {
         _addSystemMessage(question.text);
-        _addSystemMessage("Please use text (no camera found).");
+        _addSystemMessage("Use text. No camera found.");
       }
       return;
     }
@@ -247,7 +247,7 @@ class _DepressionQuestionnaireScreenState
     _addSystemMessage(question.text);
 
     if (question.requiresVideo) {
-      _addSystemMessage("Please record a short video (30-60 seconds).");
+      _addSystemMessage("Record a short video (30-60 seconds).");
     }
   }
 
@@ -390,7 +390,7 @@ class _DepressionQuestionnaireScreenState
   }
 
   Future<void> _completeScreening() async {
-    _addSystemMessage("Thank you. Preparing your report...");
+    _addSystemMessage("Done! Preparing your report...");
 
     setState(() => _isProcessing = true);
 
@@ -413,7 +413,7 @@ class _DepressionQuestionnaireScreenState
         ..sort((a, b) => a.key.compareTo(b.key));
 
       if (recorded.isEmpty) {
-        _addSystemMessage("No video found. We will use text only.");
+        _addSystemMessage("No video found. Using text only.");
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
@@ -601,7 +601,7 @@ class _DepressionQuestionnaireScreenState
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'We use text, video, and audio to give you better results.',
+                        'We use text, video, and audio for better results.',
                         style: GoogleFonts.inter(
                             fontSize: 10,
                             color: AppColors.primaryPurple,
@@ -650,7 +650,7 @@ class _DepressionQuestionnaireScreenState
                                               color: Colors.white, size: 18),
                                           const SizedBox(width: 8),
                                           Text(
-                                            'Allow Camera & Mic',
+                                            'Allow Camera',
                                             style: GoogleFonts.inter(
                                                 color: Colors.white,
                                                 fontWeight: FontWeight.w600,
@@ -744,7 +744,7 @@ class _DepressionQuestionnaireScreenState
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
-                                  'Your answers are private. Please be honest.',
+                                  'Your answers are private. Be honest.',
                                   style: GoogleFonts.inter(
                                       fontSize: 10,
                                       color: AppColors.textSecondary,
@@ -774,7 +774,7 @@ class _DepressionQuestionnaireScreenState
                                       fontSize: 14,
                                       color: AppColors.textPrimary),
                                   decoration: InputDecoration(
-                                    hintText: 'Share your thoughts...',
+                                    hintText: 'Type your answer...',
                                     hintStyle: GoogleFonts.inter(
                                         fontSize: 14,
                                         color: AppColors.textSecondary),

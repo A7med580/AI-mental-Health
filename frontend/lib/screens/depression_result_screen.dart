@@ -86,8 +86,8 @@ class DepressionResultScreen extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 isDepression
-                    ? 'We found signs of depression.'
-                    : 'We didn\'t find signs of depression.',
+                    ? 'Signs of depression found.'
+                    : 'No signs of depression found.',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
                   fontSize: 16,
@@ -103,7 +103,7 @@ class DepressionResultScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     Text(
-                      'Overall Confidence',
+                      'Confidence',
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,

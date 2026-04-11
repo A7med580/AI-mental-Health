@@ -101,7 +101,9 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
   // ─── ALL LOGIC BELOW IS UNCHANGED ───────────────────────────────────
 
   Future<void> _initializeChat() async {
-      "Hello! I am here to help you check your focus. This is not a diagnosis. Please answer my questions honestly.",
+    _addSystemMessage(
+      "Check your focus. Answer 8 questions. This is not a diagnosis.",
+    );
 
     await Future.delayed(const Duration(milliseconds: 400));
     _askNextQuestion();
@@ -136,13 +138,13 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
 
       if (!mounted) return;
 
-      _addSystemMessage("Camera granted. You can answer with a video now.");
+      _addSystemMessage("Camera ready. You can use video now.");
       await Future.delayed(const Duration(milliseconds: 200));
       _askNextQuestion();
     } catch (e) {
       if (!mounted) return;
 
-        "No camera found. We will use text only.",
+      _addSystemMessage("No camera found. Using text only.");
 
       setState(() {
         _cameraPermissionGranted = false;
@@ -215,11 +217,11 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
     if (question.requiresVideo && !_cameraPermissionGranted) {
       if (!_cameraPermissionRequested) {
         _addSystemMessage(
-          "For the next question, a video is helpful. Tap below to allow the camera, or you can use text.",
+          "This question needs video. Allow camera or use text.",
         );
       } else {
         _addSystemMessage(question.text);
-        _addSystemMessage("Please use text (no camera found).");
+        _addSystemMessage("Use text. No camera found.");
       }
       return;
     }
@@ -227,7 +229,7 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
     _addSystemMessage(question.text);
 
     if (question.requiresVideo) {
-        "Please record a short video (15-60 seconds).",
+      _addSystemMessage("Record a short video (15-60 seconds).");
     }
   }
 
@@ -365,7 +367,7 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
   }
 
   Future<void> _completeScreening() async {
-    _addSystemMessage("Thank you! Preparing your screening...");
+    _addSystemMessage("Done! Preparing your results...");
 
     setState(() => _isProcessing = true);
 
@@ -386,7 +388,7 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
         ..sort((a, b) => a.key.compareTo(b.key));
 
       if (recorded.isEmpty) {
-        "No video found. We will use text only.",
+        _addSystemMessage("No video found. Using text only.");
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
@@ -535,7 +537,7 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'We use text, video, and audio to give you better results.',
+                      'We use text, video, and audio for better results.',
                       style: GoogleFonts.inter(fontSize: 11, color: AppColors.primaryPurple, fontWeight: FontWeight.w500),
                     ),
                   ),
@@ -582,7 +584,7 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
                                     children: [
                                       const Icon(Icons.lock_open, color: Colors.white, size: 18),
                                       const SizedBox(width: 8),
-                                      Text('Allow Camera & Mic', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+                                      Text('Allow Camera', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
                                     ],
                                   ),
                                 ),
@@ -658,7 +660,7 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
                               controller: _textController,
                               style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary),
                               decoration: InputDecoration(
-                                hintText: 'Type your response...',
+                                hintText: 'Type your answer...',
                                 hintStyle: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
                                 border: InputBorder.none,
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),

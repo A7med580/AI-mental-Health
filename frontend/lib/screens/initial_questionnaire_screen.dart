@@ -314,7 +314,7 @@ class _InitialQuestionnaireScreenState
                 ),
                 const SizedBox(width: 16),
                 Text(
-                  'Question ${_currentQuestionIndex + 1} of ${_questions.length}',
+                  '${_currentQuestionIndex + 1} / ${_questions.length}',
                   style: GoogleFonts.inter(
                       fontSize: 13, color: AppColors.textSecondary),
                 ),
@@ -571,7 +571,7 @@ class _InitialQuestionnaireScreenState
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              'Note: This does not diagnose you. Please talk to a doctor.',
+              'This is not a diagnosis. Talk to a doctor.',
               style: GoogleFonts.inter(
                 fontSize: 12,
                 color: AppColors.textSecondary,
