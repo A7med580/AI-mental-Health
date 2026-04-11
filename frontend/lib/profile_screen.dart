@@ -6,6 +6,8 @@ import 'package:mindful/face_detection.dart';
 import 'package:mindful/resource_screen.dart';
 import 'package:mindful/widgets/page_transitions.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:mindful/screens/legal/terms_of_service_screen.dart';
+import 'package:mindful/screens/legal/privacy_policy_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -199,6 +201,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                           // ── Notification Preferences ──
                           _buildNotificationPreferences(),
+
+                          const SizedBox(height: 20),
+
+                          // ── Legal & Privacy ──
+                          _buildLegalPrivacy(),
 
                           const SizedBox(height: 20),
 
@@ -709,6 +716,89 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // ── Legal & Privacy ───────────────────────────────────────────────
+
+  Widget _buildLegalPrivacy() {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Legal & Privacy',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1F4788),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TermsOfServiceScreen())),
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    const Icon(Icons.description, color: Color(0xFF2E5C99)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text('Terms of Service', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                          SizedBox(height: 4),
+                          Text('Review our terms and conditions', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen())),
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    const Icon(Icons.privacy_tip, color: Color(0xFF2E5C99)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text('Privacy Policy', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                          SizedBox(height: 4),
+                          Text('How we protect and use your data', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ── Account Actions ───────────────────────────────────────────────
 
   Widget _buildAccountActions() {
@@ -736,10 +826,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 14),
           _buildActionRow('Download My Data', const Color(0xFFFAF5FF), AppColors.textPrimary, AppColors.primaryPurple, () {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon!')));
-          }),
-          const SizedBox(height: 10),
-          _buildActionRow('Privacy Settings', const Color(0xFFFAF5FF), AppColors.textPrimary, AppColors.primaryPurple, () {
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon!')));
           }),
           const SizedBox(height: 10),
