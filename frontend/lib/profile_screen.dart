@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mindful/app_colors.dart';
@@ -144,6 +146,90 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final f = firstName.isNotEmpty ? firstName[0].toUpperCase() : '';
     final l = lastName.isNotEmpty ? lastName[0].toUpperCase() : '';
     return '$f$l'.isEmpty ? '?' : '$f$l';
+  }
+
+  // ── ──────────────────────────────────────────────────────────────
+
+  Future<void> _downloadMyData() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final user = supabase.auth.currentUser;
+      if (user == null) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User not logged in.')));
+        return;
+      }
+      
+      final data = await supabase.from('users').select().eq('id', user.id).maybeSingle();
+      if (!mounted) return;
+      Navigator.pop(context); // close loading
+
+      if (data != null) {
+        final formattedData = const JsonEncoder.withIndent('  ').convert(data);
+        
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: AppColors.cardWhite,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: [
+                const Icon(Icons.download_done, color: AppColors.primaryPurple),
+                const SizedBox(width: 10),
+                Text('Your Data', style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.textPrimary)),
+              ],
+            ),
+            content: Container(
+              width: double.maxFinite,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.1)),
+              ),
+              child: SingleChildScrollView(
+                child: Text(
+                  formattedData,
+                  style: GoogleFonts.inter(fontSize: 12, color: AppColors.textPrimary),
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('Close', style: GoogleFonts.inter(color: AppColors.textSecondary)),
+              ),
+              ElevatedButton.icon(
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: formattedData));
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Data copied to clipboard!'), backgroundColor: Colors.green),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryPurple,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                ),
+                icon: const Icon(Icons.copy, size: 16, color: Colors.white),
+                label: Text('Copy JSON', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
+              ),
+            ],
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No data found.')));
+      }
+    } catch (e) {
+      if (mounted) Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error fetching data: $e')));
+    }
   }
 
   // ─── UI (MATCHING REACT REFERENCE) ──────────────────────────────────
@@ -825,9 +911,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
           ),
           const SizedBox(height: 14),
-          _buildActionRow('Download My Data', const Color(0xFFFAF5FF), AppColors.textPrimary, AppColors.primaryPurple, () {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon!')));
-          }),
+          _buildActionRow('Download My Data', const Color(0xFFFAF5FF), AppColors.textPrimary, AppColors.primaryPurple, _downloadMyData),
           const SizedBox(height: 10),
           _buildActionRow('Sign Out', const Color(0xFFFEF2F2), AppColors.error, AppColors.error, _logout, icon: Icons.logout),
         ],
