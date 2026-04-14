@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mindful/app_colors.dart';
+import 'package:mindful/theme/module_themes.dart';
 import 'package:mindful/services/model_service.dart';
 import 'package:mindful/results_screen.dart';
 import 'package:mindful/face_detection.dart';
@@ -24,16 +25,16 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
   bool _isSubmitting = false;
 
   final List<String> _questions = const [
-    "Do you find it difficult to understand what others are feeling by looking at their faces?",
-    "Do you often notice small sounds that other people do not notice?",
-    "Do you usually focus more on the big picture rather than small details?",
-    "Do you find it easy to do more than one thing at the same time?",
-    "If you are interrupted, do you find it easy to quickly return to what you were doing?",
-    "Do you find it easy to understand hidden meanings or read between the lines when someone is talking to you?",
-    "Can you easily tell when the person you are talking to is getting bored?",
-    "When you read a story, do you find it easy to imagine what the characters look like?",
-    "Do you find social situations easy to handle?",
-    "Are you fascinated by dates, numbers, or patterns?",
+    "Is it hard for you to know how people feel from their faces?",
+    "Do you hear small sounds that others miss?",
+    "Do you look at the big picture instead of small details?",
+    "Is it easy for you to do many things at once?",
+    "When someone stops you, is it easy to go back to work?",
+    "Can you understand hidden hints when people talk?",
+    "Can you tell if someone is getting bored?",
+    "Can you easily picture characters in a book?",
+    "Are social times easy for you?",
+    "Do you love dates, numbers, or patterns?",
   ];
 
   @override
@@ -81,9 +82,9 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
       if (!mounted) return;
       setState(() => _isSubmitting = false);
 
-      final predictionObj = (response['prediction'] is Map<String, dynamic>)
-          ? (response['prediction'] as Map<String, dynamic>)
-          : response;
+      final predictionObj = (response['prediction'] is Map)
+          ? Map<String, dynamic>.from(response['prediction'] as Map)
+          : Map<String, dynamic>.from(response);
 
       final String label = (predictionObj['prediction'] ?? '').toString();
       final double confidence = (predictionObj['confidence'] is num)
@@ -113,8 +114,7 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
                 'confidence': confidence,
                 'message':
                     'Based on your answers, the screening indicates Non-Autism.\n\n'
-                    'This is a screening tool, not a medical diagnosis. '
-                    'Please consult a healthcare professional for proper evaluation.',
+                    'This does not diagnose you. Please see a doctor.',
                 'model_type': 'ASD Text Model (AQ-10)',
               },
             ),
@@ -126,22 +126,14 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
       setState(() => _isSubmitting = false);
       _showErrorDialog(
         'Connection Error',
-        "Couldn't connect to the AI server.\n\n"
-        "Check:\n"
-        "• Backend server is running\n"
-        "• Correct base URL\n"
-        "• Same Wi-Fi (if physical phone)\n",
+        "Could not connect. Please check your network.",
       );
     } on TimeoutException {
       if (!mounted) return;
       setState(() => _isSubmitting = false);
       _showErrorDialog(
         'Request Timeout',
-        'The request took too long.\n\n'
-        'Try:\n'
-        '• Check base URL / network\n'
-        '• Restart backend\n'
-        '• Try again\n',
+        "It took too long. Please try again.",
       );
     } catch (e) {
       if (!mounted) return;
@@ -182,7 +174,7 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
     final percent = (progress * 100).round();
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: asdTheme.backgroundColor,
       body: SafeArea(
         child: _isSubmitting
             ? Center(
@@ -199,7 +191,7 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      'Processing your answers...',
+                      'Processing answers...',
                       style: GoogleFonts.inter(fontSize: 16, color: AppColors.textSecondary),
                     ),
                   ],
@@ -209,7 +201,7 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
                 children: [
                   // ── Header ──
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
                     child: Row(
                       children: [
                         GestureDetector(
@@ -229,7 +221,7 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
                             decoration: BoxDecoration(
                               color: AppColors.cardWhite,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.grey[300]!),
+                              border: Border.all(color: const Color(0xFFE8E4DF)),
                             ),
                             child: const Icon(Icons.arrow_back, size: 20, color: AppColors.textPrimary),
                           ),
@@ -251,17 +243,25 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Autism Screening - Questionnaire',
-                          style: GoogleFonts.inter(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
+                        Row(
+                          children: [
+                            Icon(asdTheme.icon, size: 22, color: asdTheme.accentColor),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Autism Questions',
+                                style: GoogleFonts.inter(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Step 1 of 4: Answer these questions honestly',
+                          'Step 1 of 4: Answer honestly',
                           style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
                         ),
                       ],
@@ -279,7 +279,7 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Question ${_currentQuestionIndex + 1} of ${_questions.length}',
+                              '${_currentQuestionIndex + 1} / ${_questions.length}',
                               style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.textSecondary),
                             ),
                             Text(
@@ -335,12 +335,12 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               color: AppColors.cardWhite,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.15)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 12,
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
               ],
@@ -406,16 +406,16 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 32),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryPurple.withValues(alpha: 0.06) : AppColors.cardWhite,
-          borderRadius: BorderRadius.circular(16),
+          color: isSelected ? asdTheme.accentColor.withValues(alpha: 0.06) : AppColors.cardWhite,
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppColors.primaryPurple : Colors.grey[300]!,
+            color: isSelected ? asdTheme.accentColor : const Color(0xFFE8E4DF),
             width: isSelected ? 2 : 1.5,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppColors.primaryPurple.withValues(alpha: 0.12),
+                    color: asdTheme.accentColor.withValues(alpha: 0.12),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),
@@ -430,9 +430,9 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
               height: 36,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isSelected ? AppColors.primaryPurple : Colors.transparent,
+                color: isSelected ? asdTheme.accentColor : Colors.transparent,
                 border: Border.all(
-                  color: isSelected ? AppColors.primaryPurple : Colors.grey[400]!,
+                  color: isSelected ? asdTheme.accentColor : Colors.grey[400]!,
                   width: 2,
                 ),
               ),
@@ -446,7 +446,7 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
               style: GoogleFonts.inter(
                 fontSize: 18,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected ? AppColors.primaryPurple : AppColors.textPrimary,
+                color: isSelected ? asdTheme.accentColor : AppColors.textPrimary,
               ),
             ),
           ],

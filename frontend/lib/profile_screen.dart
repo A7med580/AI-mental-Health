@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mindful/app_colors.dart';
@@ -6,6 +8,8 @@ import 'package:mindful/face_detection.dart';
 import 'package:mindful/resource_screen.dart';
 import 'package:mindful/widgets/page_transitions.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:mindful/screens/legal/terms_of_service_screen.dart';
+import 'package:mindful/screens/legal/privacy_policy_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -115,7 +119,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       await supabase.auth.signOut();
       if (mounted) {
-        Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       }
     } catch (e) {
       if (mounted) {
@@ -144,6 +148,90 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return '$f$l'.isEmpty ? '?' : '$f$l';
   }
 
+  // ── ──────────────────────────────────────────────────────────────
+
+  Future<void> _downloadMyData() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final user = supabase.auth.currentUser;
+      if (user == null) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User not logged in.')));
+        return;
+      }
+      
+      final data = await supabase.from('users').select().eq('id', user.id).maybeSingle();
+      if (!mounted) return;
+      Navigator.pop(context); // close loading
+
+      if (data != null) {
+        final formattedData = const JsonEncoder.withIndent('  ').convert(data);
+        
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: AppColors.cardWhite,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: [
+                const Icon(Icons.download_done, color: AppColors.primaryPurple),
+                const SizedBox(width: 10),
+                Text('Your Data', style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.textPrimary)),
+              ],
+            ),
+            content: Container(
+              width: double.maxFinite,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.1)),
+              ),
+              child: SingleChildScrollView(
+                child: Text(
+                  formattedData,
+                  style: GoogleFonts.inter(fontSize: 12, color: AppColors.textPrimary),
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('Close', style: GoogleFonts.inter(color: AppColors.textSecondary)),
+              ),
+              ElevatedButton.icon(
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: formattedData));
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Data copied to clipboard!'), backgroundColor: Colors.green),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryPurple,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                ),
+                icon: const Icon(Icons.copy, size: 16, color: Colors.white),
+                label: Text('Copy JSON', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
+              ),
+            ],
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No data found.')));
+      }
+    } catch (e) {
+      if (mounted) Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error fetching data: $e')));
+    }
+  }
+
   // ─── UI (MATCHING REACT REFERENCE) ──────────────────────────────────
 
   @override
@@ -167,7 +255,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         children: [
                           // ── Header ──
                           Text(
-                            'Your Profile',
+                            'Profile',
                             style: GoogleFonts.inter(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
@@ -176,7 +264,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Manage your account and track your progress',
+                            'Manage your account',
                             style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
                           ),
 
@@ -199,6 +287,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                           // ── Notification Preferences ──
                           _buildNotificationPreferences(),
+
+                          const SizedBox(height: 20),
+
+                          // ── Legal & Privacy ──
+                          _buildLegalPrivacy(),
 
                           const SizedBox(height: 20),
 
@@ -282,7 +375,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 2),
                     Text(
                       memberSince.isNotEmpty
-                          ? 'Member since $memberSince'
+                          ? 'Joined $memberSince'
                           : 'Member',
                       style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
                     ),
@@ -315,7 +408,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  _isEditing ? 'Cancel' : 'Edit Profile',
+                  _isEditing ? 'Cancel' : 'Edit',
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -359,7 +452,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               decoration: BoxDecoration(
                 color: AppColors.background,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[300]!),
+                border: Border.all(color: const Color(0xFFE8E4DF)),
               ),
               child: Text(
                 'Change Password',
@@ -454,11 +547,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey[300]!),
+                borderSide: BorderSide(color: const Color(0xFFE8E4DF)),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey[300]!),
+                borderSide: BorderSide(color: const Color(0xFFE8E4DF)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -466,7 +559,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               disabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey[200]!),
+                borderSide: BorderSide(color: const Color(0xFFE8E4DF)),
               ),
             ),
           )
@@ -477,7 +570,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             decoration: BoxDecoration(
               color: AppColors.background,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[200]!),
+              border: Border.all(color: const Color(0xFFE8E4DF)),
             ),
             child: Text(
               value ?? '',
@@ -493,9 +586,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildStatsGrid() {
     final stats = [
       {'label': 'Days Active', 'value': '47', 'icon': Icons.calendar_today_outlined},
-      {'label': 'Mood Entries', 'value': '145', 'icon': Icons.person_outline},
+      {'label': 'Mood Logs', 'value': '145', 'icon': Icons.person_outline},
       {'label': 'Meditation Min', 'value': '380', 'icon': Icons.visibility_outlined},
-      {'label': 'Chat Sessions', 'value': '23', 'icon': Icons.email_outlined},
+      {'label': 'Chats', 'value': '23', 'icon': Icons.email_outlined},
     ];
 
     return GridView.count(
@@ -504,10 +597,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: 12,
       mainAxisSpacing: 12,
-      childAspectRatio: 1.6,
+      childAspectRatio: 1.4,
       children: stats.map((stat) {
         return Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: AppColors.cardWhite,
             borderRadius: BorderRadius.circular(18),
@@ -548,9 +641,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildGoalsProgress() {
     final goals = [
-      {'title': 'Daily Mood Check-in', 'progress': 0.85, 'color': const Color(0xFF8B5CF6)},
-      {'title': 'Weekly Meditation', 'progress': 0.60, 'color': const Color(0xFFEC4899)},
-      {'title': 'Resource Reading', 'progress': 0.40, 'color': const Color(0xFF3B82F6)},
+      {'title': 'Mood Check', 'progress': 0.85, 'color': const Color(0xFF8B5CF6)},
+      {'title': 'Meditation', 'progress': 0.60, 'color': const Color(0xFFEC4899)},
+      {'title': 'Reading', 'progress': 0.40, 'color': const Color(0xFF3B82F6)},
     ];
 
     return Container(
@@ -572,7 +665,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Your Goals Progress',
+            'Your Goals',
             style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
           ),
           const SizedBox(height: 20),
@@ -602,7 +695,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: LinearProgressIndicator(
                       value: progress,
                       minHeight: 10,
-                      backgroundColor: Colors.grey[200],
+                      backgroundColor: const Color(0xFFE8E4DF),
                       valueColor: AlwaysStoppedAnimation<Color>(color),
                     ),
                   ),
@@ -641,19 +734,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const Icon(Icons.notifications_outlined, size: 22, color: AppColors.primaryPurple),
               const SizedBox(width: 10),
               Text(
-                'Notification Preferences',
+                'Alerts',
                 style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          _buildToggleRow('Email Notifications', 'Receive updates via email', _emailNotifications, (v) => setState(() => _emailNotifications = v)),
+          _buildToggleRow('Email Alerts', 'Get emails', _emailNotifications, (v) => setState(() => _emailNotifications = v)),
           const SizedBox(height: 10),
-          _buildToggleRow('Push Notifications', 'Get notifications on your device', _pushNotifications, (v) => setState(() => _pushNotifications = v)),
+          _buildToggleRow('Phone Alerts', 'Get phone alerts', _pushNotifications, (v) => setState(() => _pushNotifications = v)),
           const SizedBox(height: 10),
-          _buildToggleRow('Daily Mood Reminders', 'Remind me to log my mood', _moodReminders, (v) => setState(() => _moodReminders = v)),
+          _buildToggleRow('Mood Reminders', 'Remind me to log mood', _moodReminders, (v) => setState(() => _moodReminders = v)),
           const SizedBox(height: 10),
-          _buildToggleRow('Weekly Progress Reports', 'Get weekly summaries', _weeklyReports, (v) => setState(() => _weeklyReports = v)),
+          _buildToggleRow('Weekly Reports', 'Get weekly summary', _weeklyReports, (v) => setState(() => _weeklyReports = v)),
         ],
       ),
     );
@@ -686,7 +779,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               width: 50,
               height: 28,
               decoration: BoxDecoration(
-                color: value ? AppColors.primaryPurple : Colors.grey[300],
+                color: value ? AppColors.primaryPurple : const Color(0xFFE8E4DF),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: AnimatedAlign(
@@ -700,6 +793,89 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     color: Colors.white,
                     shape: BoxShape.circle,
                   ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Legal & Privacy ───────────────────────────────────────────────
+
+  Widget _buildLegalPrivacy() {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Legal & Privacy',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1F4788),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TermsOfServiceScreen())),
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    const Icon(Icons.description, color: Color(0xFF2E5C99)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text('Terms of Service', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                          SizedBox(height: 4),
+                          Text('Read terms', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen())),
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    const Icon(Icons.privacy_tip, color: Color(0xFF2E5C99)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text('Privacy Policy', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                          SizedBox(height: 4),
+                          Text('Read policy', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                  ],
                 ),
               ),
             ),
@@ -731,17 +907,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Account Actions',
+            'Account',
             style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
           ),
           const SizedBox(height: 14),
-          _buildActionRow('Download My Data', const Color(0xFFFAF5FF), AppColors.textPrimary, AppColors.primaryPurple, () {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon!')));
-          }),
-          const SizedBox(height: 10),
-          _buildActionRow('Privacy Settings', const Color(0xFFFAF5FF), AppColors.textPrimary, AppColors.primaryPurple, () {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon!')));
-          }),
+          _buildActionRow('Get My Data', const Color(0xFFFAF5FF), AppColors.textPrimary, AppColors.primaryPurple, _downloadMyData),
           const SizedBox(height: 10),
           _buildActionRow('Sign Out', const Color(0xFFFEF2F2), AppColors.error, AppColors.error, _logout, icon: Icons.logout),
         ],
@@ -783,7 +953,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey[200]!)),
+        border: Border(top: BorderSide(color: const Color(0xFFE8E4DF))),
       ),
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(

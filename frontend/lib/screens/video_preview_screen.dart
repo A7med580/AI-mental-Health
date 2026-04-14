@@ -84,7 +84,7 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Video Preview',
+          'Preview Video',
           style: GoogleFonts.inter(
             color: Colors.white,
             fontSize: 18,
@@ -204,7 +204,7 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          disabledBackgroundColor: Colors.grey,
+                          disabledBackgroundColor: AppColors.textSecondary,
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -212,7 +212,7 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
                             const Icon(Icons.check, size: 20),
                             const SizedBox(width: 8),
                             Text(
-                              'Continue to Screening',
+                              'Next',
                               style: GoogleFonts.inter(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,

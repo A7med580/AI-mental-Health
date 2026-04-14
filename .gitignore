@@ -4,6 +4,7 @@
 .env
 **/venv/
 **/.venv/
+venv_mac/
 env/
 .env/
 node_modules/
@@ -35,6 +36,8 @@ frontend/android/app/release/
 **/datasets/
 **/data/
 **/processed/
+**/results/*.json
+.cache/
 *.h5
 *.keras
 *.pkl

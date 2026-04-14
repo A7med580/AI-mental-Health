@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mindful/app_colors.dart';
+import 'package:mindful/theme/module_themes.dart';
 import 'package:mindful/widgets/glass_container.dart';
 import 'package:mindful/widgets/page_transitions.dart';
 
@@ -40,7 +41,7 @@ class DepressionResultScreen extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: depressionTheme.backgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
@@ -66,20 +67,27 @@ class DepressionResultScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              Text(
-                'Assessment Complete',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(depressionTheme.icon,
+                      size: 22, color: depressionTheme.accentColor),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Done',
+                    style: GoogleFonts.inter(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
               Text(
                 isDepression
-                    ? 'Significant indicators of depression detected.'
-                    : 'No significant indicators of depression detected.',
+                    ? 'Signs of depression found.'
+                    : 'No signs of depression found.',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
                   fontSize: 16,
@@ -95,7 +103,7 @@ class DepressionResultScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     Text(
-                      'Overall Multimodal Confidence',
+                      'Confidence',
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -118,7 +126,7 @@ class DepressionResultScreen extends StatelessWidget {
 
               // ── Breakdown ──
               Text(
-                'Modality Breakdown',
+                'Details',
                 style: GoogleFonts.inter(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -129,21 +137,21 @@ class DepressionResultScreen extends StatelessWidget {
               
               _buildModalityRow(
                 icon: Icons.chat_bubble_outline,
-                title: 'Text Analysis (DistilBERT)',
+                title: 'Text Analysis',
                 confidence: textConfidence,
               ),
               const SizedBox(height: 12),
               if (modalitiesUsed.contains('audio'))
                 _buildModalityRow(
                   icon: Icons.graphic_eq,
-                  title: 'Voice Acoustics (COVAREP)',
+                  title: 'Voice Analysis',
                   confidence: audioConfidence,
                 ),
               if (modalitiesUsed.contains('audio')) const SizedBox(height: 12),
               if (modalitiesUsed.contains('visual'))
                 _buildModalityRow(
                   icon: Icons.face,
-                  title: 'Facial Dynamics (CLNF)',
+                  title: 'Expression Analysis',
                   confidence: visualConfidence,
                 ),
 
@@ -155,16 +163,16 @@ class DepressionResultScreen extends StatelessWidget {
                   Navigator.popUntil(context, (route) => route.isFirst);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryPurple,
+                  backgroundColor: depressionTheme.accentColor,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 18),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   elevation: 0,
                 ),
                 child: Text(
-                  'Return to Dashboard',
+                  'Home',
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -196,7 +204,7 @@ class DepressionResultScreen extends StatelessWidget {
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: AppColors.primaryPurple.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: AppColors.primaryPurple, size: 24),
           ),

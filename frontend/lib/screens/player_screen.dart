@@ -180,7 +180,7 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
                         margin: const EdgeInsets.symmetric(horizontal: 32),
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                         decoration: BoxDecoration(color: widget.color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20)),
-                        child: Text('Clinical Focus: ${widget.focus}',
+                        child: Text('Focus: ${widget.focus}',
                           style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.bold, color: widget.color),
                           textAlign: TextAlign.center,
                         ),
@@ -277,7 +277,7 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
                       if (_hasError)
                         Padding(
                           padding: const EdgeInsets.only(top: 6),
-                          child: Text('Could not load audio — tap refresh to retry', style: GoogleFonts.inter(fontSize: 11, color: Colors.red.shade400)),
+                          child: Text('Could not load audio — tap refresh to try again', style: GoogleFonts.inter(fontSize: 11, color: Colors.red.shade400)),
                         ),
 
                       const SizedBox(height: 28),
@@ -286,7 +286,7 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24),
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text('Prefer to listen on:',
+                          Text('Listen on:',
                             style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
                           ),
                           const SizedBox(height: 10),
@@ -321,7 +321,7 @@ class _PlayerScreenState extends State<PlayerScreen> with TickerProviderStateMix
                             Row(children: [
                               Icon(Icons.verified_rounded, size: 16, color: widget.color),
                               const SizedBox(width: 6),
-                              Expanded(child: Text('Based on International Standards',
+                              Expanded(child: Text('Uses Global Standards',
                                 style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: widget.color),
                               )),
                             ]),

@@ -10,7 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:mindful/dashboard_screen.dart';
 import 'package:mindful/chat_screen.dart';
 import 'package:mindful/mood_tracker_screen.dart';
-import 'package:mindful/meditation_screen.dart';
+import 'package:mindful/profile_screen.dart';
 
 class ResourcesScreen extends StatefulWidget {
   const ResourcesScreen({Key? key}) : super(key: key);
@@ -37,23 +37,23 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
                     children: [
                       Text('Resources', style: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                       const SizedBox(height: 4),
-                      Text('Educational content and support resources', style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary)),
+                      Text('Helpful guides and links', style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary)),
                       const SizedBox(height: 24),
                       _buildCrisisSection(),
                       const SizedBox(height: 28),
-                      _buildSectionHeader('Articles & Guides', Icons.article_outlined),
+                      _buildSectionHeader('Articles', Icons.article_outlined),
                       const SizedBox(height: 12),
                       _buildArticlesList(),
                       const SizedBox(height: 28),
-                      _buildSectionHeader('Videos & Courses', Icons.play_circle_outline),
+                      _buildSectionHeader('Videos', Icons.play_circle_outline),
                       const SizedBox(height: 12),
                       _buildVideosList(),
                       const SizedBox(height: 28),
-                      _buildSectionHeader('Service Directories', Icons.link),
+                      _buildSectionHeader('Links', Icons.link),
                       const SizedBox(height: 12),
                       _buildServiceDirectories(),
                       const SizedBox(height: 28),
-                      _buildSectionHeader('Featured Content', Icons.star_outline),
+                      _buildSectionHeader('Featured', Icons.star_outline),
                       const SizedBox(height: 12),
                       _buildFeaturedContent(),
                     ],
@@ -84,15 +84,15 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
           Row(children: [
             Icon(Icons.emergency_outlined, color: Colors.red.shade700, size: 22),
             const SizedBox(width: 8),
-            Text('Crisis Support', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.red.shade700)),
+            Text('Help Now', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.red.shade700)),
           ]),
           const SizedBox(height: 8),
-          Text('If you\'re in crisis, please reach out immediately.', style: GoogleFonts.inter(fontSize: 13, color: Colors.red.shade600)),
+          Text('If you need help now, please call.', style: GoogleFonts.inter(fontSize: 13, color: Colors.red.shade600)),
           const SizedBox(height: 16),
           Row(children: [
-            Expanded(child: _buildCrisisButton('988', 'Suicide Prevention', Icons.phone, () => _launchUrl('tel:988'))),
+            Expanded(child: _buildCrisisButton('16328', 'Ministry of Health Mental Health Hotline', Icons.phone, () => _launchUrl('tel:988'))),
             const SizedBox(width: 12),
-            Expanded(child: _buildCrisisButton('741741', 'Crisis Text Line', Icons.textsms, () => _launchUrl('sms:741741'))),
+            Expanded(child: _buildCrisisButton('15335', 'Just send "Nile" ', Icons.textsms, () => _launchUrl('sms:741741'))),
           ]),
         ],
       ),
@@ -137,7 +137,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('${item.title} link coming soon!', style: GoogleFonts.inter()),
+              content: Text('${item.title} coming soon!', style: GoogleFonts.inter()),
               backgroundColor: AppColors.primaryPurple,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -288,7 +288,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
           _buildNavItem(Icons.chat_bubble_outline, Icons.chat_bubble, 'AI Chat', 1),
           _buildNavItem(Icons.favorite_outline, Icons.favorite, 'Mood', 2),
           _buildNavItem(Icons.library_books_outlined, Icons.library_books, 'Resources', 3),
-          _buildNavItem(Icons.self_improvement_outlined, Icons.self_improvement, 'Meditate', 4),
+          _buildNavItem(Icons.person_outline, Icons.person, 'Profile', 4),
         ],
       ),
     );
@@ -301,7 +301,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
         if (index == 0) switchTab(context, const DashboardScreen());
         if (index == 1) switchTab(context, const MindfulAIScreen());
         if (index == 2) switchTab(context, const MoodTrackerScreen());
-        if (index == 4) switchTab(context, const MeditationScreen());
+        if (index == 4) switchTab(context, const ProfileScreen());
       },
       child: Column(
         mainAxisSize: MainAxisSize.min,

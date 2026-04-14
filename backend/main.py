@@ -16,8 +16,17 @@ import tempfile
 
 
 import uvicorn
-from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Body, BackgroundTasks
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Body, BackgroundTasks, Depends, Security
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security.api_key import APIKeyHeader
+
+# API Key authentication
+API_KEY = os.getenv("BACKEND_API_KEY")
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+async def verify_api_key(key: str = Security(api_key_header)):
+    if API_KEY and key != API_KEY:
+        raise HTTPException(status_code=403, detail="Invalid API key")
 
 from services.model_router import ModelRouter
 from services.feature_extractor import FeatureExtractor
@@ -41,12 +50,13 @@ class ASDFaceUrlRequest(BaseModel):
 app = FastAPI(title="Mental Health Screening API")
 
 # CORS middleware for Flutter app
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost,http://localhost:3000").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # TODO: restrict in production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=False,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 # Initialize services
@@ -60,10 +70,29 @@ job_store: Dict[str, Dict[str, Any]] = {}
 UPLOAD_DIR = "uploads"
 RESULTS_DIR = "results"
 
+# File upload limits and validation
+MAX_UPLOAD_BYTES = 100 * 1024 * 1024  # 100 MB
+ALLOWED_VIDEO_TYPES = {"video/mp4", "video/quicktime", "video/webm", "application/octet-stream"}
+ALLOWED_AUDIO_TYPES = {"audio/wav", "audio/x-wav", "audio/mpeg", "application/octet-stream"}
+
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(os.path.join(UPLOAD_DIR, "adhd"), exist_ok=True)
 os.makedirs(os.path.join(UPLOAD_DIR, "depression"), exist_ok=True)
 os.makedirs(RESULTS_DIR, exist_ok=True)
+
+
+@app.on_event("startup")
+async def cleanup_old_files():
+    """Clean up temp files older than 24 hours on startup"""
+    import time, glob
+    cutoff = time.time() - 86400
+    for pattern in ["uploads/**/*", "results/*.json"]:
+        for f in glob.glob(pattern, recursive=True):
+            if os.path.isfile(f) and os.path.getmtime(f) < cutoff:
+                try:
+                    os.remove(f)
+                except Exception:
+                    pass
 
 
 @app.on_event("startup")
@@ -94,7 +123,7 @@ async def health_check():
 # -------------------------
 # Feature Extraction
 # -------------------------
-@app.post("/extract-features")
+@app.post("/extract-features", dependencies=[Depends(verify_api_key)])
 async def extract_features(
     modality: str = Form(...),
     video_file: Optional[UploadFile] = File(None),
@@ -106,6 +135,22 @@ async def extract_features(
     modality: video | audio | face | eye | text
     """
     try:
+        # File size and type validation
+        if video_file is not None:
+            vcontent = await video_file.read()
+            if len(vcontent) > MAX_UPLOAD_BYTES:
+                raise HTTPException(413, "File too large (max 100 MB)")
+            await video_file.seek(0)
+            if video_file.content_type not in ALLOWED_VIDEO_TYPES:
+                raise HTTPException(400, f"Invalid video type: {video_file.content_type}")
+        if audio_file is not None:
+            acontent = await audio_file.read()
+            if len(acontent) > MAX_UPLOAD_BYTES:
+                raise HTTPException(413, "File too large (max 100 MB)")
+            await audio_file.seek(0)
+            if audio_file.content_type not in ALLOWED_AUDIO_TYPES:
+                raise HTTPException(400, f"Invalid audio type: {audio_file.content_type}")
+
         if modality == "video" and video_file is not None:
             features = await feature_extractor.extract_from_video(video_file)
             return {"success": True, "features": features, "modality": modality}
@@ -137,7 +182,7 @@ async def extract_features(
 # -------------------------
 # General Screening (ranked)
 # -------------------------
-@app.post("/run-screening")
+@app.post("/run-screening", dependencies=[Depends(verify_api_key)])
 async def run_screening(
     ranked_conditions: str = Form(...),
     available_modalities: str = Form(...),
@@ -149,6 +194,22 @@ async def run_screening(
     ranked_conditions & available_modalities are JSON strings.
     """
     try:
+        # File size and type validation
+        if video_file is not None:
+            vcontent = await video_file.read()
+            if len(vcontent) > MAX_UPLOAD_BYTES:
+                raise HTTPException(413, "File too large (max 100 MB)")
+            await video_file.seek(0)
+            if video_file.content_type not in ALLOWED_VIDEO_TYPES:
+                raise HTTPException(400, f"Invalid video type: {video_file.content_type}")
+        if audio_file is not None:
+            acontent = await audio_file.read()
+            if len(acontent) > MAX_UPLOAD_BYTES:
+                raise HTTPException(413, "File too large (max 100 MB)")
+            await audio_file.seek(0)
+            if audio_file.content_type not in ALLOWED_AUDIO_TYPES:
+                raise HTTPException(400, f"Invalid audio type: {audio_file.content_type}")
+
         ranked_conditions_list = json.loads(ranked_conditions)
         available_modalities_list = json.loads(available_modalities)
 
@@ -174,7 +235,7 @@ async def run_screening(
 # ASD - REQUIRED PIPELINE ENDPOINTS
 # -------------------------
 
-@app.post("/asd/text/predict")
+@app.post("/asd/text/predict", dependencies=[Depends(verify_api_key)])
 async def asd_text_predict(payload: ASDTextRequest):
     """
     AQ-10 answers -> ASD Text model -> Autism / Non-Autism
@@ -193,7 +254,7 @@ async def asd_text_predict(payload: ASDTextRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/asd/face/predict-url")
+@app.post("/asd/face/predict-url", dependencies=[Depends(verify_api_key)])
 async def asd_face_predict_url(payload: ASDFaceUrlRequest):
     """
     image_url -> face crop (224x224) -> ASD Face TF model (.h5) -> Autism/Non-Autism + confidence
@@ -221,7 +282,7 @@ async def asd_face_predict_url(payload: ASDFaceUrlRequest):
 # -------------------------
 # ADHD Individual Predictors (Updated signatures)
 # -------------------------
-@app.post("/predict/adhd/behavior")
+@app.post("/predict/adhd/behavior", dependencies=[Depends(verify_api_key)])
 async def predict_adhd_behavior(features: Dict[str, Any] = Body(...)):
     try:
         result = await model_router.predict_adhd_behavior(features)
@@ -230,12 +291,20 @@ async def predict_adhd_behavior(features: Dict[str, Any] = Body(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/predict/adhd/eye")
+@app.post("/predict/adhd/eye", dependencies=[Depends(verify_api_key)])
 async def predict_adhd_eye(video_file: UploadFile = File(...)):
     """
     Updated: Eye model needs video to extract eye features
     """
     try:
+        # File size and type validation
+        vcontent = await video_file.read()
+        if len(vcontent) > MAX_UPLOAD_BYTES:
+            raise HTTPException(413, "File too large (max 100 MB)")
+        await video_file.seek(0)
+        if video_file.content_type not in ALLOWED_VIDEO_TYPES:
+            raise HTTPException(400, f"Invalid video type: {video_file.content_type}")
+
         # Save and route via path-based API
         import tempfile
         tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
@@ -258,12 +327,20 @@ async def predict_adhd_eye(video_file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/predict/adhd/voice")
+@app.post("/predict/adhd/voice", dependencies=[Depends(verify_api_key)])
 async def predict_adhd_voice(audio_file: UploadFile = File(...)):
     """
     Updated: Voice model needs audio file; run via path-based API
     """
     try:
+        # File size and type validation
+        acontent = await audio_file.read()
+        if len(acontent) > MAX_UPLOAD_BYTES:
+            raise HTTPException(413, "File too large (max 100 MB)")
+        await audio_file.seek(0)
+        if audio_file.content_type not in ALLOWED_AUDIO_TYPES:
+            raise HTTPException(400, f"Invalid audio type: {audio_file.content_type}")
+
         import tempfile
         tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
         tmp_path = tmp.name
@@ -285,12 +362,20 @@ async def predict_adhd_voice(audio_file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/predict/adhd/facial")
+@app.post("/predict/adhd/facial", dependencies=[Depends(verify_api_key)])
 async def predict_adhd_facial(video_file: UploadFile = File(...)):
     """
     Updated: Facial model needs video file; run via path-based API
     """
     try:
+        # File size and type validation
+        vcontent = await video_file.read()
+        if len(vcontent) > MAX_UPLOAD_BYTES:
+            raise HTTPException(413, "File too large (max 100 MB)")
+        await video_file.seek(0)
+        if video_file.content_type not in ALLOWED_VIDEO_TYPES:
+            raise HTTPException(400, f"Invalid video type: {video_file.content_type}")
+
         import tempfile
         tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
         tmp_path = tmp.name
@@ -315,7 +400,7 @@ async def predict_adhd_facial(video_file: UploadFile = File(...)):
 # -------------------------
 # ADHD Full Screening + Fusion (UPDATED: stable paths + no repeated reads)
 # -------------------------
-@app.post("/screening/adhd")
+@app.post("/screening/adhd", dependencies=[Depends(verify_api_key)])
 async def screen_adhd(
     video_file: Optional[UploadFile] = File(None),
     audio_file: Optional[UploadFile] = File(None),
@@ -326,6 +411,22 @@ async def screen_adhd(
     Uses stable temp paths to avoid 'same result' due to empty streams.
     """
     try:
+        # File size and type validation
+        if video_file is not None:
+            vcontent = await video_file.read()
+            if len(vcontent) > MAX_UPLOAD_BYTES:
+                raise HTTPException(413, "File too large (max 100 MB)")
+            await video_file.seek(0)
+            if video_file.content_type not in ALLOWED_VIDEO_TYPES:
+                raise HTTPException(400, f"Invalid video type: {video_file.content_type}")
+        if audio_file is not None:
+            acontent = await audio_file.read()
+            if len(acontent) > MAX_UPLOAD_BYTES:
+                raise HTTPException(413, "File too large (max 100 MB)")
+            await audio_file.seek(0)
+            if audio_file.content_type not in ALLOWED_AUDIO_TYPES:
+                raise HTTPException(400, f"Invalid audio type: {audio_file.content_type}")
+
         questionnaire_dict = json.loads(questionnaire_data) if questionnaire_data else None
 
         available_modalities: List[str] = []
@@ -420,6 +521,7 @@ async def screen_adhd(
             }
 
         finally:
+            feature_extractor.clear_cache(video_path)
             if video_path and os.path.exists(video_path):
                 try:
                     os.remove(video_path)
@@ -485,7 +587,7 @@ def _extract_wav_from_video(video_path: str) -> str:
     return wav_path
 
 
-def process_adhd_job(job_id: str, video_path: str, questionnaire_dict: Dict[str, Any]):
+async def process_adhd_job(job_id: str, video_path: str, questionnaire_dict: Dict[str, Any]):
     """
     Background job processor.
     Runs behavior + eye + facial + voice (voice from audio extracted from the same video).
@@ -522,7 +624,7 @@ def process_adhd_job(job_id: str, video_path: str, questionnaire_dict: Dict[str,
 
             try:
                 if model_type == "behavior" and questionnaire_dict:
-                    r = asyncio.run(model_router.predict_adhd_behavior(questionnaire_dict))
+                    r = await model_router.predict_adhd_behavior(questionnaire_dict)
                     model_results.append({
                         "model_type": "behavior",
                         "confidence": float(r.get("confidence", 0.0)),
@@ -531,7 +633,7 @@ def process_adhd_job(job_id: str, video_path: str, questionnaire_dict: Dict[str,
                     })
 
                 elif model_type == "eye" and video_path:
-                    r = asyncio.run(model_router.predict_adhd_eye_from_video(video_path))
+                    r = await model_router.predict_adhd_eye_from_video(video_path)
                     model_results.append({
                         "model_type": "eye",
                         "confidence": float(r.get("confidence", 0.0)),
@@ -540,7 +642,7 @@ def process_adhd_job(job_id: str, video_path: str, questionnaire_dict: Dict[str,
                     })
 
                 elif model_type == "facial" and video_path:
-                    r = asyncio.run(model_router.predict_adhd_facial_from_video(video_path))
+                    r = await model_router.predict_adhd_facial_from_video(video_path)
                     model_results.append({
                         "model_type": "facial",
                         "confidence": float(r.get("confidence", 0.0)),
@@ -549,7 +651,7 @@ def process_adhd_job(job_id: str, video_path: str, questionnaire_dict: Dict[str,
                     })
 
                 elif model_type == "voice" and wav_path:
-                    r = asyncio.run(model_router.predict_adhd_voice_from_audio(wav_path))
+                    r = await model_router.predict_adhd_voice_from_audio(wav_path)
                     model_results.append({
                         "model_type": "voice",
                         "confidence": float(r.get("confidence", 0.0)),
@@ -619,13 +721,21 @@ async def process_depression_job(job_id: str, video_path: Optional[str], questio
         pass
 
 
-@app.post("/jobs/adhd")
+@app.post("/jobs/adhd", dependencies=[Depends(verify_api_key)])
 async def submit_adhd_job(
     background_tasks: BackgroundTasks,
     video_file: UploadFile = File(...),
     questionnaire_data: Optional[str] = Form(None),
 ):
     try:
+        # File size and type validation
+        vcontent = await video_file.read()
+        if len(vcontent) > MAX_UPLOAD_BYTES:
+            raise HTTPException(413, "File too large (max 100 MB)")
+        await video_file.seek(0)
+        if video_file.content_type not in ALLOWED_VIDEO_TYPES:
+            raise HTTPException(400, f"Invalid video type: {video_file.content_type}")
+
         job_id = str(uuid.uuid4())
         questionnaire_dict = json.loads(questionnaire_data) if questionnaire_data else {}
 
@@ -658,13 +768,15 @@ async def submit_adhd_job(
             "message": "Job submitted successfully.",
         }
 
+    except HTTPException:
+        raise
     except json.JSONDecodeError as e:
         raise HTTPException(status_code=400, detail=f"Invalid questionnaire JSON: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to submit job: {str(e)}")
 
 
-@app.post("/jobs/depression")
+@app.post("/jobs/depression", dependencies=[Depends(verify_api_key)])
 async def submit_depression_job(
     background_tasks: BackgroundTasks,
     video_file: Optional[UploadFile] = File(None),
@@ -676,6 +788,14 @@ async def submit_depression_job(
 
         video_path = None
         if video_file:
+            # File size and type validation
+            vcontent = await video_file.read()
+            if len(vcontent) > MAX_UPLOAD_BYTES:
+                raise HTTPException(413, "File too large (max 100 MB)")
+            await video_file.seek(0)
+            if video_file.content_type not in ALLOWED_VIDEO_TYPES:
+                raise HTTPException(400, f"Invalid video type: {video_file.content_type}")
+
             safe_name = video_file.filename or "video.mp4"
             video_filename = f"{job_id}_{safe_name}"
             video_path = os.path.join(UPLOAD_DIR, "depression", video_filename)
@@ -704,6 +824,8 @@ async def submit_depression_job(
             "message": "Depression screening job submitted successfully.",
         }
 
+    except HTTPException:
+        raise
     except json.JSONDecodeError as e:
         raise HTTPException(status_code=400, detail=f"Invalid questionnaire JSON: {str(e)}")
     except Exception as e:

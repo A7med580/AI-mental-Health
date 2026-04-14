@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:mindful/app_colors.dart';
+import 'package:mindful/theme/module_themes.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -157,13 +158,13 @@ class _EmotionDetectionScreenState extends State<EmotionDetectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: asdTheme.backgroundColor,
       body: SafeArea(
         child: Column(
           children: [
             // ── Header ──
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
               child: Row(
                 children: [
                   GestureDetector(
@@ -174,7 +175,7 @@ class _EmotionDetectionScreenState extends State<EmotionDetectionScreen> {
                       decoration: BoxDecoration(
                         color: AppColors.cardWhite,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[300]!),
+                        border: Border.all(color: const Color(0xFFE8E4DF)),
                       ),
                       child: const Icon(Icons.arrow_back, size: 20, color: AppColors.textPrimary),
                     ),
@@ -196,15 +197,23 @@ class _EmotionDetectionScreenState extends State<EmotionDetectionScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    widget.isAutismScreening
-                        ? 'Autism Screening - Photo Capture'
-                        : 'Emotion Detection',
-                    style: GoogleFonts.inter(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
+                  Row(
+                    children: [
+                      Icon(asdTheme.icon, size: 22, color: asdTheme.accentColor),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          widget.isAutismScreening
+                              ? 'Autism Screening - Photo Capture'
+                              : 'Emotion Detection',
+                          style: GoogleFonts.inter(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -266,7 +275,7 @@ class _EmotionDetectionScreenState extends State<EmotionDetectionScreen> {
                       decoration: BoxDecoration(
                         color: AppColors.cardWhite,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.grey[200]!),
+                        border: Border.all(color: const Color(0xFFE8E4DF)),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.04),
@@ -331,7 +340,7 @@ class _EmotionDetectionScreenState extends State<EmotionDetectionScreen> {
                                   )
                                 : Container(
                                     decoration: BoxDecoration(
-                                      gradient: AppColors.primaryGradient,
+                                      gradient: LinearGradient(colors: [asdTheme.accentColor, const Color(0xFF3A9A6E)]),
                                       borderRadius: BorderRadius.circular(14),
                                     ),
                                     child: Material(

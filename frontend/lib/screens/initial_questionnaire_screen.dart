@@ -38,32 +38,32 @@ class _InitialQuestionnaireScreenState
     // ── ADHD ──────────────────────────────────────────────────────────────
     {
       "text":
-          "How often do you find it difficult to focus on tasks that require sustained attention?",
+          "How often is it hard to focus?",
       "category": "adhd",
     },
     {
       "text":
-          "How often do you feel restless or have difficulty sitting still for extended periods?",
+          "How often is it hard to sit still?",
       "category": "adhd",
     },
     {
-      "text": "How often do you have trouble organizing tasks and activities?",
+      "text": "How often is it hard to organize tasks?",
       "category": "adhd",
     },
 
     // ── AUTISM (ASD) ───────────────────────────────────────────────────────
     {
-      "text": "How often do you feel overwhelmed in social situations?",
+      "text": "How often do you feel stressed with people?",
       "category": "autism",
     },
     {
       "text":
-          "How often do you have difficulty understanding social cues or maintaining conversations?",
+          "How often is it hard to talk with others?",
       "category": "autism",
     },
     {
       "text":
-          "How often do you feel the need to adhere to strict routines or rituals?",
+          "How often do you need strict routines?",
       "category": "autism",
     },
 
@@ -74,29 +74,29 @@ class _InitialQuestionnaireScreenState
     // Adapted here to 0–4 (Never → Very Often) to match app's Likert scale.
     {
       "text":
-          "Over the past two weeks, how often have you had little interest or pleasure in doing things you usually enjoy?",
+          "In the past two weeks, how often did you not enjoy things?",
       "category": "depression",
     },
     {
       "text":
-          "Over the past two weeks, how often have you been feeling down, hopeless, or empty?",
+          "In the past two weeks, how often did you feel sad or empty?",
       "category": "depression",
     },
     {
       "text":
-          "Over the past two weeks, how often have you felt tired, low in energy, or had little motivation to start things?",
+          "In the past two weeks, how often did you feel tired?",
       "category": "depression",
     },
     {
       "text":
-          "Over the past two weeks, how often have you had trouble concentrating on everyday activities such as reading or watching TV?",
+          "In the past two weeks, how often was it hard to focus on a TV show or book?",
       "category": "depression",
     },
 
     // ── IMPACT (cross-cutting severity) ───────────────────────────────────
     {
       "text":
-          "How often do these difficulties interfere with your daily life (work, school, or relationships)?",
+          "How often do these feelings hurt your day-to-day life?",
       "category": "impact",
     },
   ];
@@ -283,7 +283,7 @@ class _InitialQuestionnaireScreenState
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Triage Questionnaire',
+          'Questions',
           style: GoogleFonts.inter(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -305,7 +305,7 @@ class _InitialQuestionnaireScreenState
                     child: LinearProgressIndicator(
                       value:
                           (_currentQuestionIndex + 1) / _questions.length,
-                      backgroundColor: Colors.grey[200],
+                      backgroundColor: AppColors.surfaceLight,
                       valueColor: const AlwaysStoppedAnimation<Color>(
                           AppColors.primaryPurple),
                       minHeight: 6,
@@ -314,7 +314,7 @@ class _InitialQuestionnaireScreenState
                 ),
                 const SizedBox(width: 16),
                 Text(
-                  'Question ${_currentQuestionIndex + 1} of ${_questions.length}',
+                  '${_currentQuestionIndex + 1} / ${_questions.length}',
                   style: GoogleFonts.inter(
                       fontSize: 13, color: AppColors.textSecondary),
                 ),
@@ -399,14 +399,14 @@ class _InitialQuestionnaireScreenState
   String _categoryLabel(String category) {
     switch (category) {
       case 'adhd':
-        return 'Attention & Activity';
+        return 'Focus';
       case 'autism':
-        return 'Social & Routine';
+        return 'Social';
       case 'depression':
-        return 'Mood & Energy';
+        return 'Mood';
 
       case 'impact':
-        return 'Daily Impact';
+        return 'Impact';
       default:
         return '';
     }
@@ -428,7 +428,7 @@ class _InitialQuestionnaireScreenState
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color:
-                isSelected ? AppColors.primaryPurple : Colors.grey[300]!,
+                isSelected ? AppColors.primaryPurple : const Color(0xFFE8E4DF),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -461,7 +461,7 @@ class _InitialQuestionnaireScreenState
                 border: Border.all(
                   color: isSelected
                       ? AppColors.primaryPurple
-                      : Colors.grey[400]!,
+                      : AppColors.textSecondary,
                   width: 2,
                 ),
               ),
@@ -506,7 +506,7 @@ class _InitialQuestionnaireScreenState
                     foregroundColor: AppColors.textPrimary,
                     padding:
                         const EdgeInsets.symmetric(vertical: 14),
-                    side: BorderSide(color: Colors.grey[300]!),
+                    side: BorderSide(color: const Color(0xFFE8E4DF)),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
                   ),
@@ -519,7 +519,7 @@ class _InitialQuestionnaireScreenState
                   decoration: BoxDecoration(
                     gradient:
                         hasAnswer ? AppColors.primaryGradient : null,
-                    color: hasAnswer ? null : Colors.grey[300],
+                    color: hasAnswer ? null : const Color(0xFFE8E4DF),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Material(
@@ -537,13 +537,13 @@ class _InitialQuestionnaireScreenState
                             Text(
                               isLastQuestion
                                   ? 'Submit'
-                                  : 'Next Question',
+                                  : 'Next',
                               style: GoogleFonts.inter(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                                 color: hasAnswer
                                     ? Colors.white
-                                    : Colors.grey[500],
+                                    : AppColors.textSecondary,
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -552,7 +552,7 @@ class _InitialQuestionnaireScreenState
                               size: 18,
                               color: hasAnswer
                                   ? Colors.white
-                                  : Colors.grey[500],
+                                  : AppColors.textSecondary,
                             ),
                           ],
                         ),
@@ -571,8 +571,7 @@ class _InitialQuestionnaireScreenState
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              'Note: This screening tool is not a diagnostic instrument. '
-              'Results should be discussed with a qualified healthcare professional.',
+              'This is not a diagnosis. Talk to a doctor.',
               style: GoogleFonts.inter(
                 fontSize: 12,
                 color: AppColors.textSecondary,

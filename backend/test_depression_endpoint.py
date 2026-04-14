@@ -8,8 +8,10 @@ async def test_endpoint():
     async with httpx.AsyncClient(timeout=30.0) as client:
         # Dummy questionnaire data mimicking Flutter payload
         q_data = {
-            "q1_text": "I have been feeling very sad lately.",
-            "q2_text": "I don't enjoy doing the things I used to do.",
+            "depression_q_0_text": "I have been feeling very sad and low lately. My mood is generally down.",
+            "depression_q_1_text": "Yes, I have definitely lost interest in my hobbies like football and gaming.",
+            "depression_q_2_text": "I haven't been sleeping well at all, waking up multiple times.",
+            "depression_q_3_text": "My energy is very low, I feel tired all the time.",
             "condition": "depression"
         }
         

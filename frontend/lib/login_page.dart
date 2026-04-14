@@ -60,7 +60,14 @@ class _LoginPageState extends State<LoginPage> {
                   height: 64,
                   decoration: BoxDecoration(
                     gradient: AppColors.primaryGradient,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primaryPurple.withValues(alpha: 0.15),
+                        blurRadius: 16,
+                        spreadRadius: 2,
+                      ),
+                    ],
                   ),
                   child: const Icon(Icons.psychology, color: Colors.white, size: 36),
                 ),
@@ -210,7 +217,7 @@ class _LoginPageState extends State<LoginPage> {
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primaryPurple.withValues(alpha: 0.3),
+                        color: AppColors.primaryPurple.withValues(alpha: 0.15),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -241,12 +248,12 @@ class _LoginPageState extends State<LoginPage> {
               // Divider
               Row(
                 children: [
-                  Expanded(child: Divider(color: Colors.grey[300])),
+                  Expanded(child: Divider(color: const Color(0xFFE8E4DF))),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Text('or', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
                   ),
-                  Expanded(child: Divider(color: Colors.grey[300])),
+                  Expanded(child: Divider(color: const Color(0xFFE8E4DF))),
                 ],
               ),
 
@@ -378,9 +385,9 @@ class _LoginPageState extends State<LoginPage> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.cardWhite,
+        color: AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(color: const Color(0xFFE8E4DF)),
       ),
       child: TextField(
         controller: controller,
@@ -409,9 +416,9 @@ class _LoginPageState extends State<LoginPage> {
         width: 52,
         height: 52,
         decoration: BoxDecoration(
-          color: AppColors.cardWhite,
+          color: AppColors.surfaceLight,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(color: const Color(0xFFE8E4DF)),
         ),
         child: Icon(icon, color: color, size: 28),
       ),

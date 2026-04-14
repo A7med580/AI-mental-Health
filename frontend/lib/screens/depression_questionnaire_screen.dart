@@ -8,6 +8,7 @@ import 'package:mindful/screens/video_preview_screen.dart';
 import 'package:mindful/screens/processing_screen.dart';
 import 'package:mindful/widgets/glass_container.dart';
 import 'package:mindful/widgets/page_transitions.dart';
+import 'package:mindful/theme/module_themes.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:camera/camera.dart';
 import 'package:path_provider/path_provider.dart';
@@ -55,49 +56,49 @@ class _DepressionQuestionnaireScreenState
   final List<DepressionQuestion> _depressionQuestions = [
     DepressionQuestion(
       text:
-          "How have you been feeling lately? Can you describe your general mood over the past few weeks?",
+          "How has your mood been lately?",
       category: "affect",
       requiresVideo: true,
     ),
     DepressionQuestion(
       text:
-          "Over the past two weeks, how often have you had little interest or pleasure in doing things you usually enjoy?",
+          "Do you enjoy things less now?",
       category: "interest",
       requiresVideo: false,
     ),
     DepressionQuestion(
       text:
-          "Have you been feeling down, hopeless, or empty recently? Can you describe what that's been like for you?",
+          "Have you felt sad or empty lately?",
       category: "mood",
       requiresVideo: true,
     ),
     DepressionQuestion(
       text:
-          "Have you noticed changes in your sleep — sleeping much more than usual, or struggling to sleep?",
+          "Has your sleep changed lately?",
       category: "sleep",
       requiresVideo: false,
     ),
     DepressionQuestion(
       text:
-          "How has your energy been? Do you often feel fatigued or that even small tasks feel exhausting?",
+          "Do you feel tired doing small tasks?",
       category: "energy",
       requiresVideo: false,
     ),
     DepressionQuestion(
       text:
-          "Have you been feeling bad about yourself — like you've let people down, or that you're a failure?",
+          "Have you felt like a failure lately?",
       category: "self-worth",
       requiresVideo: false,
     ),
     DepressionQuestion(
       text:
-          "Have you found it harder than usual to concentrate on things like reading, watching TV, or making decisions?",
+          "Is it harder to focus or make choices?",
       category: "concentration",
       requiresVideo: false,
     ),
     DepressionQuestion(
       text:
-          "Is there anything else you'd like to share about how you've been feeling?",
+          "Is there anything else you want to share?",
       category: "open",
       requiresVideo: true,
     ),
@@ -114,11 +115,7 @@ class _DepressionQuestionnaireScreenState
 
   Future<void> _initializeChat() async {
     _addSystemMessage(
-      "Hi, I'm here with you. Based on your earlier responses, I'd like "
-      "to understand more about how you've been feeling lately.\n\n"
-      "There are no right or wrong answers — just share what feels true for you. "
-      "Some questions will ask you to record a short video so we can better "
-      "understand your experience. This is a confidential screening tool, not a medical diagnosis.",
+      "Answer questions about your feelings. Some need video. This is not a diagnosis.",
     );
 
     await Future.delayed(const Duration(milliseconds: 500));
@@ -154,17 +151,13 @@ class _DepressionQuestionnaireScreenState
 
       if (!mounted) return;
 
-      _addSystemMessage(
-          "Camera access granted. You can now record your response.");
+      _addSystemMessage("Camera ready. You can use video now.");
       await Future.delayed(const Duration(milliseconds: 200));
       _askNextQuestion();
     } catch (e) {
       if (!mounted) return;
 
-      _addSystemMessage(
-        "I couldn't access the camera. We'll continue with text-only responses. "
-        "If you want to enable camera later, go to iPhone Settings → Privacy & Security.",
-      );
+      _addSystemMessage("No camera found. Using text only.");
 
       setState(() {
         _cameraPermissionGranted = false;
@@ -242,12 +235,11 @@ class _DepressionQuestionnaireScreenState
     if (question.requiresVideo && !_cameraPermissionGranted) {
       if (!_cameraPermissionRequested) {
         _addSystemMessage(
-          "For the next question, it would be helpful to record a short video response. "
-          "Tap the button below to allow camera access (you can still continue with text if you prefer).",
+          "This question needs video. Allow camera or use text.",
         );
       } else {
         _addSystemMessage(question.text);
-        _addSystemMessage("Please answer in text (camera not available).");
+        _addSystemMessage("Use text. No camera found.");
       }
       return;
     }
@@ -255,9 +247,7 @@ class _DepressionQuestionnaireScreenState
     _addSystemMessage(question.text);
 
     if (question.requiresVideo) {
-      _addSystemMessage(
-        "Please record a short video (30–60 seconds). Speak naturally and be yourself.",
-      );
+      _addSystemMessage("Record a short video (30-60 seconds).");
     }
   }
 
@@ -400,8 +390,7 @@ class _DepressionQuestionnaireScreenState
   }
 
   Future<void> _completeScreening() async {
-    _addSystemMessage(
-        "Thank you for sharing that. Preparing your report now...");
+    _addSystemMessage("Done! Preparing your report...");
 
     setState(() => _isProcessing = true);
 
@@ -424,9 +413,7 @@ class _DepressionQuestionnaireScreenState
         ..sort((a, b) => a.key.compareTo(b.key));
 
       if (recorded.isEmpty) {
-        _addSystemMessage(
-          "No video recorded. We'll continue with text-only screening.",
-        );
+        _addSystemMessage("No video found. Using text only.");
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
@@ -491,27 +478,17 @@ class _DepressionQuestionnaireScreenState
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFEEF0FF),
-              Color(0xFFE3E8FF),
-              Color(0xFFF2EEFF),
-              Color(0xFFE8E3FF),
-            ],
-            stops: [0.0, 0.3, 0.6, 1.0],
-          ),
+        decoration: BoxDecoration(
+          color: depressionTheme.backgroundColor,
         ),
         child: SafeArea(
           child: Column(
             children: [
               // ── Header ──
               Padding(
-                padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
                 child: GlassContainer(
-                  borderRadius: 16,
+                  borderRadius: 12,
                   padding: const EdgeInsets.symmetric(
                       horizontal: 14, vertical: 10),
                   child: Row(
@@ -523,7 +500,7 @@ class _DepressionQuestionnaireScreenState
                           height: 36,
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.3),
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(Icons.arrow_back,
                               size: 20, color: AppColors.textPrimary),
@@ -534,15 +511,23 @@ class _DepressionQuestionnaireScreenState
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Depression Screening',
-                              style: GoogleFonts.inter(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary),
+                            Row(
+                              children: [
+                                Icon(depressionTheme.icon,
+                                    size: 18,
+                                    color: depressionTheme.accentColor),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Depression Check',
+                                  style: GoogleFonts.inter(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.textPrimary),
+                                ),
+                              ],
                             ),
                             Text(
-                              'DAIC-WOZ Clinical Interview',
+                              'Clinical Interview',
                               style: GoogleFonts.inter(
                                   fontSize: 11,
                                   color: AppColors.textSecondary),
@@ -554,7 +539,7 @@ class _DepressionQuestionnaireScreenState
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          gradient: AppColors.primaryGradient,
+                          gradient: LinearGradient(colors: [depressionTheme.accentColor, const Color(0xFF4878D0)]),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -587,7 +572,7 @@ class _DepressionQuestionnaireScreenState
                   height: 140,
                   margin: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                         color: AppColors.primaryPurple.withValues(alpha: 0.3),
                         width: 2),
@@ -616,7 +601,7 @@ class _DepressionQuestionnaireScreenState
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Multimodal Assessment: Video, voice, and text analysis for comprehensive depression screening.',
+                        'We use text, video, and audio for better results.',
                         style: GoogleFonts.inter(
                             fontSize: 10,
                             color: AppColors.primaryPurple,
@@ -646,7 +631,7 @@ class _DepressionQuestionnaireScreenState
                               width: double.infinity,
                               child: Container(
                                 decoration: BoxDecoration(
-                                  gradient: AppColors.primaryGradient,
+                                  gradient: LinearGradient(colors: [depressionTheme.accentColor, const Color(0xFF4878D0)]),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Material(
@@ -656,7 +641,7 @@ class _DepressionQuestionnaireScreenState
                                     onTap: _requestCameraAndMicPermission,
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(
-                                          vertical: 12),
+                                          vertical: 18),
                                       child: Row(
                                         mainAxisAlignment:
                                             MainAxisAlignment.center,
@@ -665,7 +650,7 @@ class _DepressionQuestionnaireScreenState
                                               color: Colors.white, size: 18),
                                           const SizedBox(width: 8),
                                           Text(
-                                            'Allow Camera & Microphone',
+                                            'Allow Camera',
                                             style: GoogleFonts.inter(
                                                 color: Colors.white,
                                                 fontWeight: FontWeight.w600,
@@ -688,7 +673,7 @@ class _DepressionQuestionnaireScreenState
                               width: double.infinity,
                               child: Container(
                                 decoration: BoxDecoration(
-                                  gradient: AppColors.primaryGradient,
+                                  gradient: LinearGradient(colors: [depressionTheme.accentColor, const Color(0xFF4878D0)]),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Material(
@@ -698,7 +683,7 @@ class _DepressionQuestionnaireScreenState
                                     onTap: _startVideoRecording,
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(
-                                          vertical: 12),
+                                          vertical: 18),
                                       child: Row(
                                         mainAxisAlignment:
                                             MainAxisAlignment.center,
@@ -707,7 +692,7 @@ class _DepressionQuestionnaireScreenState
                                               color: Colors.white, size: 18),
                                           const SizedBox(width: 8),
                                           Text(
-                                            'Record Video Response',
+                                            'Record Video',
                                             style: GoogleFonts.inter(
                                                 color: Colors.white,
                                                 fontWeight: FontWeight.w600,
@@ -731,7 +716,7 @@ class _DepressionQuestionnaireScreenState
                               child: ElevatedButton.icon(
                                 onPressed: _stopVideoRecording,
                                 icon: const Icon(Icons.stop, size: 18),
-                                label: Text('Stop Recording',
+                                label: Text('Stop',
                                     style: GoogleFonts.inter(
                                         fontWeight: FontWeight.w600,
                                         fontSize: 14)),
@@ -759,7 +744,7 @@ class _DepressionQuestionnaireScreenState
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
-                                  'Your answers are confidential — be honest with yourself',
+                                  'Your answers are private. Be honest.',
                                   style: GoogleFonts.inter(
                                       fontSize: 10,
                                       color: AppColors.textSecondary,
@@ -789,7 +774,7 @@ class _DepressionQuestionnaireScreenState
                                       fontSize: 14,
                                       color: AppColors.textPrimary),
                                   decoration: InputDecoration(
-                                    hintText: 'Share your thoughts...',
+                                    hintText: 'Type your answer...',
                                     hintStyle: GoogleFonts.inter(
                                         fontSize: 14,
                                         color: AppColors.textSecondary),
@@ -811,11 +796,11 @@ class _DepressionQuestionnaireScreenState
                                 width: 44,
                                 height: 44,
                                 decoration: BoxDecoration(
-                                  gradient: AppColors.primaryGradient,
+                                  gradient: LinearGradient(colors: [depressionTheme.accentColor, const Color(0xFF4878D0)]),
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: AppColors.primaryPurple
+                                      color: depressionTheme.accentColor
                                           .withValues(alpha: 0.3),
                                       blurRadius: 8,
                                       offset: const Offset(0, 2),

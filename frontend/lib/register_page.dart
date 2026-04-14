@@ -4,6 +4,17 @@ import 'package:mindful/app_colors.dart';
 import 'package:mindful/login_page.dart';
 import 'package:mindful/widgets/page_transitions.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:mindful/screens/legal/terms_of_service_screen.dart';
+import 'package:mindful/screens/legal/privacy_policy_screen.dart';
+
+class SignUpFormData {
+  String email = '';
+  String password = '';
+  String confirmPassword = '';
+  String name = '';
+  bool termsAccepted = false;
+  bool privacyAccepted = false;
+}
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -25,6 +36,8 @@ class _RegisterPageState extends State<RegisterPage> {
   bool showError = false;
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
+  
+  final SignUpFormData _formData = SignUpFormData();
 
   final TextEditingController firstnameController = TextEditingController();
   final TextEditingController lastnameController = TextEditingController();
@@ -74,6 +87,8 @@ class _RegisterPageState extends State<RegisterPage> {
         'email': email.trim(),
         'full_name': '${firstname.trim()} ${lastname.trim()}',
         'created_at': DateTime.now().toIso8601String(),
+        'termsAccepted': _formData.termsAccepted,
+        'privacyAccepted': _formData.privacyAccepted,
       });
 
       if (mounted) Navigator.pop(context);
@@ -118,7 +133,14 @@ class _RegisterPageState extends State<RegisterPage> {
                   height: 56,
                   decoration: BoxDecoration(
                     gradient: AppColors.primaryGradient,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primaryPurple.withValues(alpha: 0.15),
+                        blurRadius: 16,
+                        spreadRadius: 2,
+                      ),
+                    ],
                   ),
                   child: const Icon(Icons.psychology, color: Colors.white, size: 32),
                 ),
@@ -197,6 +219,71 @@ class _RegisterPageState extends State<RegisterPage> {
                 onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
               )),
 
+              const SizedBox(height: 20),
+
+              // Legal Agreement
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue[200]!),
+                ),
+                child: Column(
+                  children: [
+                    CheckboxListTile(
+                      value: _formData.termsAccepted,
+                      onChanged: (value) {
+                        setState(() {
+                          _formData.termsAccepted = value ?? false;
+                        });
+                      },
+                      controlAffinity: ListTileControlAffinity.leading,
+                      contentPadding: EdgeInsets.zero,
+                      title: GestureDetector(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const TermsOfServiceScreen()),
+                        ),
+                        child: RichText(
+                          text: const TextSpan(
+                            children: [
+                              TextSpan(text: 'I agree to the ', style: TextStyle(color: Colors.black87)),
+                              TextSpan(text: 'Terms of Service', style: TextStyle(color: Color(0xFF2E5C99), fontWeight: FontWeight.bold, decoration: TextDecoration.underline)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    CheckboxListTile(
+                      value: _formData.privacyAccepted,
+                      onChanged: (value) {
+                        setState(() {
+                          _formData.privacyAccepted = value ?? false;
+                        });
+                      },
+                      controlAffinity: ListTileControlAffinity.leading,
+                      contentPadding: EdgeInsets.zero,
+                      title: GestureDetector(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
+                        ),
+                        child: RichText(
+                          text: const TextSpan(
+                            children: [
+                              TextSpan(text: 'I agree to the ', style: TextStyle(color: Colors.black87)),
+                              TextSpan(text: 'Privacy Policy', style: TextStyle(color: Color(0xFF2E5C99), fontWeight: FontWeight.bold, decoration: TextDecoration.underline)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
               // Error
               if (showError) ...[
                 const SizedBox(height: 16),
@@ -231,7 +318,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primaryPurple.withValues(alpha: 0.3),
+                        color: AppColors.primaryPurple.withValues(alpha: 0.15),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -308,6 +395,16 @@ class _RegisterPageState extends State<RegisterPage> {
       setState(() { errorMessage = 'Passwords do not match'; showError = true; });
       return;
     }
+    if (!_formData.termsAccepted || !_formData.privacyAccepted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You must accept both Terms of Service and Privacy Policy'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
     await registerUser();
   }
 
@@ -319,9 +416,9 @@ class _RegisterPageState extends State<RegisterPage> {
         const SizedBox(height: 6),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.cardWhite,
+            color: AppColors.surfaceLight,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(color: const Color(0xFFE8E4DF)),
           ),
           child: TextField(
             controller: controller,

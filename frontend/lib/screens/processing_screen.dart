@@ -27,7 +27,7 @@ class _ProcessingScreenState extends State<ProcessingScreen>
   bool _isProcessing = true;
   bool _hasError = false;
 
-  String _statusText = 'Analyzing your responses…';
+  String _statusText = 'Checking your answers…';
   String _errorMessage = '';
   String? _technicalError;
 
@@ -72,18 +72,18 @@ class _ProcessingScreenState extends State<ProcessingScreen>
       // For depression, video is optional (text-only screening is valid)
       if (!_isDepression) {
         if (widget.videoFile == null) {
-          throw Exception('No video provided. Please record at least one video response.');
+          throw Exception('No video found. Please record a video.');
         }
         if (!await widget.videoFile!.exists()) {
           throw Exception('Video file not found');
         }
         final size = await widget.videoFile!.length();
         if (size < 2000) {
-          throw Exception('Video file too small/empty');
+          throw Exception('Video is too small');
         }
       }
 
-      _setStatus(_isDepression ? 'Analyzing your responses…' : 'Uploading video…');
+      _setStatus(_isDepression ? 'Checking answers…' : 'Uploading video…');
 
       String jobId;
       if (_isDepression) {
@@ -99,7 +99,7 @@ class _ProcessingScreenState extends State<ProcessingScreen>
       }
 
       _jobId = jobId;
-      _setStatus('Job submitted.\nWaiting for AI result…');
+      _setStatus('Sent.\nWaiting for result…');
 
       final result = await JobService.pollJobUntilDone(
         jobId,
@@ -108,11 +108,11 @@ class _ProcessingScreenState extends State<ProcessingScreen>
         onStatus: (status, error) {
           if (!mounted) return;
           if (status == 'queued') {
-            _setStatus('Queued…\n(waiting to start)');
+            _setStatus('Queued…\n(waiting)');
           } else if (status == 'processing') {
             _setStatus(_isDepression
-                ? 'Analyzing…\nAI is processing your responses'
-                : 'Processing…\nAI is working now');
+                ? 'Checking…\nAI is looking at your answers'
+                : 'Processing…\nAI is working');
           } else if (status == 'failed') {
             _setStatus('Failed…');
           }
@@ -124,9 +124,9 @@ class _ProcessingScreenState extends State<ProcessingScreen>
 
       if (!mounted) return;
 
-      final fused = (result['fused_result'] ?? {}) as Map<String, dynamic>;
-      final individual = (result['individual_results'] ?? []) as List<dynamic>;
-      final modalitiesUsedRaw = (result['modalities_used'] ?? []) as List<dynamic>;
+      final fused = Map<String, dynamic>.from(result['fused_result'] ?? {});
+      final individual = List<dynamic>.from(result['individual_results'] ?? []);
+      final modalitiesUsedRaw = List<dynamic>.from(result['modalities_used'] ?? []);
       final modalitiesUsed = modalitiesUsedRaw.map((e) => e.toString()).toList();
 
       if (_isDepression) {
@@ -154,11 +154,11 @@ class _ProcessingScreenState extends State<ProcessingScreen>
       }
     } on TimeoutException catch (e) {
       _fail(
-        "It's taking too long. Backend may be stuck.",
+        "It took too long.",
         "TimeoutException: $e",
       );
     } catch (e) {
-      _fail("Couldn't complete the screening. Please try again.", e.toString());
+      _fail("Could not finish. Please try again.", e.toString());
     }
   }
 
@@ -184,7 +184,7 @@ class _ProcessingScreenState extends State<ProcessingScreen>
       _errorMessage = '';
       _technicalError = null;
       _jobId = null;
-      _statusText = 'Analyzing your responses…';
+      _statusText = 'Checking your answers…';
     });
     _startJobFlow();
   }
@@ -244,7 +244,7 @@ class _ProcessingScreenState extends State<ProcessingScreen>
             const SizedBox(height: 32),
 
             Text(
-              'Processing Your Screening',
+              'Processing',
               style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
               textAlign: TextAlign.center,
             ),
@@ -275,7 +275,7 @@ class _ProcessingScreenState extends State<ProcessingScreen>
             const SizedBox(height: 16),
 
             Text(
-              'This may take a few minutes. Please do not close the app.',
+              'This may take time. Please do not close.',
               style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
@@ -335,15 +335,15 @@ class _ProcessingScreenState extends State<ProcessingScreen>
               child: Container(
                 decoration: BoxDecoration(
                   gradient: AppColors.primaryGradient,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(12),
                     onTap: _retry,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(vertical: 18),
                       child: Center(
                         child: Text('Retry', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
                       ),
@@ -361,9 +361,9 @@ class _ProcessingScreenState extends State<ProcessingScreen>
                 onPressed: _goBackToHome,
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.primaryPurple,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  padding: const EdgeInsets.symmetric(vertical: 18),
                   side: const BorderSide(color: AppColors.primaryPurple, width: 2),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: Text('Back to Home', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
               ),

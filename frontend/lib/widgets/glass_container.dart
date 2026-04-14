@@ -1,8 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
-/// A reusable frosted-glass container inspired by iOS liquid glass.
-/// Uses [BackdropFilter] + [ClipRRect] for the blur effect.
+/// A reusable frosted-glass container with a soft, warm finish.
+/// Uses [BackdropFilter] + [ClipRRect] for a subtle blur effect.
 class GlassContainer extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
@@ -19,9 +19,9 @@ class GlassContainer extends StatelessWidget {
     this.padding,
     this.margin,
     this.borderRadius = 20,
-    this.blur = 16,
+    this.blur = 8,
     this.backgroundColor,
-    this.opacity = 0.65,
+    this.opacity = 0.82,
     this.border,
   }) : super(key: key);
 
@@ -40,12 +40,12 @@ class GlassContainer extends StatelessWidget {
               borderRadius: BorderRadius.circular(borderRadius),
               border: border ??
                   Border.all(
-                    color: Colors.white.withValues(alpha: 0.3),
+                    color: const Color(0xFFE8E4DF).withValues(alpha: 0.5),
                     width: 1,
                   ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
+                  color: const Color(0xFF1A1510).withValues(alpha: 0.04),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -59,7 +59,7 @@ class GlassContainer extends StatelessWidget {
   }
 }
 
-/// Glass-styled bottom navigation bar.
+/// Soft-frosted bottom navigation bar.
 class GlassBottomNav extends StatelessWidget {
   final List<Widget> items;
 
@@ -69,12 +69,12 @@ class GlassBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipRRect(
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.72),
+            color: Colors.white.withValues(alpha: 0.88),
             border: Border(
-              top: BorderSide(color: Colors.white.withValues(alpha: 0.4), width: 0.5),
+              top: BorderSide(color: const Color(0xFFE8E4DF).withValues(alpha: 0.6), width: 0.5),
             ),
           ),
           padding: const EdgeInsets.symmetric(vertical: 8),
