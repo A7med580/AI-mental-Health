@@ -54,7 +54,7 @@ class TermsOfServiceScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'MindCare AI Terms',
+                    'Mindful AI Terms',
                     style: GoogleFonts.inter(
                       fontSize: 26,
                       fontWeight: FontWeight.bold,
@@ -82,12 +82,12 @@ class TermsOfServiceScreen extends StatelessWidget {
                 children: [
                   _buildSectionCard(
                     '1. Introduction',
-                    'Welcome to MindCare AI, an AI-powered mental health pre-screening platform ("Service"). These Terms of Service ("Terms") constitute a legally binding agreement between you ("User" or "you") and MindCare AI ("Company," "we," or "us"). By accessing, downloading, or using the MindCare AI application or website, you agree to be bound by these Terms. If you do not agree to any part of these Terms, you must not use the Service.',
+                    'Welcome to Mindful AI, an AI-powered mental health pre-screening platform ("Service"). These Terms of Service ("Terms") constitute a legally binding agreement between you ("User" or "you") and Mindful AI ("Company," "we," or "us"). By accessing, downloading, or using the Mindful AI application or website, you agree to be bound by these Terms. If you do not agree to any part of these Terms, you must not use the Service.',
                     Icons.info_outline,
                   ),
                   _buildSectionCard(
                     '2. Medical Disclaimer',
-                    'MindCare AI is a pre-screening tool designed to provide general information and risk assessment for depression, ADHD, and autism spectrum disorder (ASD). The results and analysis provided by this Service are NOT medical diagnoses and should NOT be used as a substitute for professional medical advice, clinical assessment, or treatment by a licensed healthcare provider.\n\nUsers must not rely solely on results from MindCare AI to make medical decisions. If you are experiencing mental health concerns, thoughts of self-harm, or any emergency, please contact a mental health professional, call your local emergency services, or use the National Suicide Prevention Lifeline.',
+                    'Mindful AI is a pre-screening tool designed to provide general information and risk assessment for depression, ADHD, and autism spectrum disorder (ASD). The results and analysis provided by this Service are NOT medical diagnoses and should NOT be used as a substitute for professional medical advice, clinical assessment, or treatment by a licensed healthcare provider.\n\nUsers must not rely solely on results from Mindful AI to make medical decisions. If you are experiencing mental health concerns, thoughts of self-harm, or any emergency, please contact a mental health professional, call your local emergency services, or use the National Suicide Prevention Lifeline.',
                     Icons.warning_amber_rounded,
                     isCritical: true,
                   ),
@@ -98,22 +98,22 @@ class TermsOfServiceScreen extends StatelessWidget {
                   ),
                   _buildSectionCard(
                     '4. Intellectual Property Rights',
-                    'All content, features, and functionality of MindCare AI, including but not limited to the design, layout, algorithms, and materials, are owned by the Company or its licensors. You are granted a limited, non-exclusive, non-transferable license to use the Service for personal, non-commercial purposes. You may not reproduce, distribute, modify, or use any part of the Service for commercial purposes without explicit written consent from the Company.',
+                    'All content, features, and functionality of Mindful AI, including but not limited to the design, layout, algorithms, and materials, are owned by the Company or its licensors. You are granted a limited, non-exclusive, non-transferable license to use the Service for personal, non-commercial purposes. You may not reproduce, distribute, modify, or use any part of the Service for commercial purposes without explicit written consent from the Company.',
                     Icons.copyright_outlined,
                   ),
                   _buildSectionCard(
                     '5. Data and Privacy',
-                    'Your use of personal information is governed by our separate Privacy Policy. By using MindCare AI, you consent to the collection, processing, and use of your data as outlined in our Privacy Policy. Data security is a priority, and we implement industry-standard encryption and security measures. However, no method of transmission over the internet is entirely secure, and we cannot guarantee absolute security.',
+                    'Your use of personal information is governed by our separate Privacy Policy. By using Mindful AI, you consent to the collection, processing, and use of your data as outlined in our Privacy Policy. Data security is a priority, and we implement industry-standard encryption and security measures. However, no method of transmission over the internet is entirely secure, and we cannot guarantee absolute security.',
                     Icons.lock_outline,
                   ),
                   _buildSectionCard(
                     '6. Limitation of Liability',
-                    'TO THE MAXIMUM EXTENT PERMITTED BY LAW, MindCare AI AND ITS OFFICERS, DIRECTORS, EMPLOYEES, AND AGENTS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING FROM YOUR USE OF OR INABILITY TO USE THE SERVICE, INCLUDING BUT NOT LIMITED TO DAMAGES FOR LOST PROFITS, DATA LOSS, OR BUSINESS INTERRUPTION, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.',
+                    'TO THE MAXIMUM EXTENT PERMITTED BY LAW, Mindful AI AND ITS OFFICERS, DIRECTORS, EMPLOYEES, AND AGENTS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING FROM YOUR USE OF OR INABILITY TO USE THE SERVICE, INCLUDING BUT NOT LIMITED TO DAMAGES FOR LOST PROFITS, DATA LOSS, OR BUSINESS INTERRUPTION, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.',
                     Icons.gavel_outlined,
                   ),
                   _buildSectionCard(
                     '7. Disclaimer of Warranties',
-                    'THE SERVICE IS PROVIDED ON AN "AS-IS" AND "AS-AVAILABLE" BASIS WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED. THE COMPANY DISCLAIMS ALL WARRANTIES, INCLUDING MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. MindCare AI DOES NOT WARRANT THAT THE SERVICE WILL BE UNINTERRUPTED, ERROR-FREE, OR FREE OF VIRUSES OR HARMFUL COMPONENTS.',
+                    'THE SERVICE IS PROVIDED ON AN "AS-IS" AND "AS-AVAILABLE" BASIS WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED. THE COMPANY DISCLAIMS ALL WARRANTIES, INCLUDING MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. Mindful AI DOES NOT WARRANT THAT THE SERVICE WILL BE UNINTERRUPTED, ERROR-FREE, OR FREE OF VIRUSES OR HARMFUL COMPONENTS.',
                     Icons.shield_outlined,
                   ),
                   _buildSectionCard(
@@ -133,7 +133,7 @@ class TermsOfServiceScreen extends StatelessWidget {
                   ),
                   _buildSectionCard(
                     '11. Contact Information',
-                    'If you have questions about these Terms of Service, please contact us at:\n\nMindCare AI\nPharos University\nAlexandria, Egypt',
+                    'If you have questions about these Terms of Service, please contact us at:\n\nMindful AI\nPharos University\nAlexandria, Egypt',
                     Icons.contact_support_outlined,
                   ),
                   const SizedBox(height: 40),

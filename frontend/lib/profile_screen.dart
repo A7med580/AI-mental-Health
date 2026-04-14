@@ -38,6 +38,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _moodReminders = true;
   bool _weeklyReports = true;
 
+  List<dynamic> _assessmentHistory = [];
+
   // Editable controllers
   late TextEditingController _nameController;
   late TextEditingController _emailController;
@@ -71,6 +73,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
             .select()
             .eq('id', user.id)
             .maybeSingle();
+
+        try {
+          final historyData = await supabase
+              .from('assessments')
+              .select()
+              .eq('user_id', user.id)
+              .order('created_at', ascending: false)
+              .limit(10);
+          setState(() {
+            _assessmentHistory = historyData;
+          });
+        } catch (e) {
+          print('History fetch error: \$e');
+        }
 
         if (data != null) {
           setState(() {
@@ -275,13 +291,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                           const SizedBox(height: 20),
 
-                          // ── Stats Grid ──
-                          _buildStatsGrid(),
-
-                          const SizedBox(height: 20),
-
-                          // ── Goals Progress ──
-                          _buildGoalsProgress(),
+                          // ── Assessment History ──
+                          _buildAssessmentHistory(),
 
                           const SizedBox(height: 20),
 
@@ -581,71 +592,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ── Stats Grid ────────────────────────────────────────────────────
+  // ── Assessment History ──────────────────────────────────────────────────
 
-  Widget _buildStatsGrid() {
-    final stats = [
-      {'label': 'Days Active', 'value': '47', 'icon': Icons.calendar_today_outlined},
-      {'label': 'Mood Logs', 'value': '145', 'icon': Icons.person_outline},
-      {'label': 'Meditation Min', 'value': '380', 'icon': Icons.visibility_outlined},
-      {'label': 'Chats', 'value': '23', 'icon': Icons.email_outlined},
-    ];
-
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
-      childAspectRatio: 1.4,
-      children: stats.map((stat) {
-        return Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: AppColors.cardWhite,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.15)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Icon(stat['icon'] as IconData, size: 20, color: AppColors.primaryPurple),
-              Text(
-                stat['value'] as String,
-                style: GoogleFonts.inter(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primaryPurple,
-                ),
-              ),
-              Text(
-                stat['label'] as String,
-                style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  // ── Goals Progress ────────────────────────────────────────────────
-
-  Widget _buildGoalsProgress() {
-    final goals = [
-      {'title': 'Mood Check', 'progress': 0.85, 'color': const Color(0xFF8B5CF6)},
-      {'title': 'Meditation', 'progress': 0.60, 'color': const Color(0xFFEC4899)},
-      {'title': 'Reading', 'progress': 0.40, 'color': const Color(0xFF3B82F6)},
-    ];
-
+  Widget _buildAssessmentHistory() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -665,44 +614,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Your Goals',
+            'Assessment History',
             style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
           ),
           const SizedBox(height: 20),
-          ...goals.map((goal) {
-            final progress = goal['progress'] as double;
-            final color = goal['color'] as Color;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        goal['title'] as String,
-                        style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary),
-                      ),
-                      Text(
-                        '${(progress * 100).toInt()}%',
-                        style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      minHeight: 10,
-                      backgroundColor: const Color(0xFFE8E4DF),
-                      valueColor: AlwaysStoppedAnimation<Color>(color),
+          if (_assessmentHistory.isEmpty)
+             Text('No assessment history found.', style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13))
+          else
+            ..._assessmentHistory.map((assessment) {
+              final String type = assessment['type'] ?? 'General Screening';
+              final String date = _formatDate(assessment['created_at']);
+              final double score = (assessment['score'] ?? 0.0).toDouble();
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          type,
+                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary),
+                        ),
+                        Text(
+                          '\${(score * 100).toInt()}% Risk',
+                          style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-            );
-          }),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: LinearProgressIndicator(
+                        value: score,
+                        minHeight: 10,
+                        backgroundColor: const Color(0xFFE8E4DF),
+                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF8B5CF6)),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
         ],
       ),
     );

@@ -30,7 +30,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'MindCare AI',
+      title: 'Mindful AI',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
 

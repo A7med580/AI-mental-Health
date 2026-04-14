@@ -164,7 +164,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: const Icon(Icons.psychology, color: Colors.white, size: 20),
           ),
           const SizedBox(width: 8),
-          Text('MindCare AI', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+          Text('Mindful AI', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
           const Spacer(),
           Stack(
             children: [
@@ -406,6 +406,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
       opacity: 0.82,
       blur: 8,
       padding: EdgeInsets.zero,
+      gradient: LinearGradient(
+        colors: [
+           color.withValues(alpha: 0.15),
+           Colors.white.withValues(alpha: 0.82),
+        ],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
       border: Border.all(color: const Color(0xFFE8E4DF).withValues(alpha: 0.5)),
       child: Material(
         color: Colors.transparent,

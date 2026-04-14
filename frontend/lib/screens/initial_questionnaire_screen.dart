@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mindful/app_colors.dart';
+import 'package:mindful/widgets/animated_scale_button.dart';
 import 'package:mindful/screens/adhd_chat_screen.dart';
 import 'package:mindful/screens/autism_questionnaire_screen.dart';
 import 'package:mindful/screens/depression_questionnaire_screen.dart';
+import 'package:mindful/screens/depression_chatbot_screen.dart';
+import 'package:mindful/screens/adhd_chatbot_screen.dart';
+import 'package:mindful/screens/asd_chatbot_screen.dart';
 
 
 import 'package:mindful/widgets/page_transitions.dart';
@@ -127,8 +131,8 @@ class _InitialQuestionnaireScreenState
 
     if (_currentQuestionIndex < _questions.length - 1) {
       _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOutCubic,
       );
     } else {
       _calculateProbabilities();
@@ -138,8 +142,8 @@ class _InitialQuestionnaireScreenState
   void _goToPreviousQuestion() {
     if (_currentQuestionIndex > 0) {
       _pageController.previousPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOutCubic,
       );
     } else {
       Navigator.pop(context);
@@ -233,36 +237,73 @@ class _InitialQuestionnaireScreenState
 
     switch (condition) {
       case 'autism':
-        Navigator.pushReplacement(
-          context,
-          AppPageRoute(page: const AutismQuestionnaireScreen()),
-        );
+        bool useChatbotMode = false;
+        if (useChatbotMode) {
+          Navigator.pushReplacement(
+            context,
+            AppPageRoute(
+              page: AsdChatbotScreen(
+                questionnaireAnswers: _answers.map((k, v) => MapEntry(k.toString(), v)),
+              ),
+            ),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            AppPageRoute(page: const AutismQuestionnaireScreen()),
+          );
+        }
         break;
 
       case 'depression':
-        Navigator.pushReplacement(
-          context,
-          AppPageRoute(
-            page: DepressionQuestionnaireScreen(
-              questionnaireAnswers: answersAsStrings,
+        bool useChatbotMode = false;
+        if (useChatbotMode) {
+          Navigator.pushReplacement(
+            context,
+            AppPageRoute(
+              page: DepressionChatbotScreen(
+                questionnaireAnswers: _answers.map((k, v) => MapEntry(k.toString(), v)),
+              ),
             ),
-          ),
-        );
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            AppPageRoute(
+              page: DepressionQuestionnaireScreen(
+                questionnaireAnswers: answersAsStrings,
+              ),
+            ),
+          );
+        }
         break;
 
 
 
       case 'adhd':
       default:
-        Navigator.pushReplacement(
-          context,
-          AppPageRoute(
-            page: ADHDChatScreen(
-              questionnaireAnswers: _answers,
-              initialProbability: 0.5,
+        bool useChatbotMode = false;
+        if (useChatbotMode) {
+          Navigator.pushReplacement(
+            context,
+            AppPageRoute(
+              page: AdhdChatbotScreen(
+                questionnaireAnswers: _answers,
+                initialProbability: 0.5,
+              ),
             ),
-          ),
-        );
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            AppPageRoute(
+              page: ADHDChatScreen(
+                questionnaireAnswers: _answers,
+                initialProbability: 0.5,
+              ),
+            ),
+          );
+        }
         break;
     }
   }
@@ -515,21 +556,18 @@ class _InitialQuestionnaireScreenState
               const SizedBox(width: 16),
               Expanded(
                 flex: 2,
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient:
-                        hasAnswer ? AppColors.primaryGradient : null,
-                    color: hasAnswer ? null : const Color(0xFFE8E4DF),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: hasAnswer ? _goToNextQuestion : null,
+                child: AnimatedScaleButton(
+                  onPressed: hasAnswer ? _goToNextQuestion : null,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOutCubic,
+                    decoration: BoxDecoration(
+                      gradient: hasAnswer ? AppColors.primaryGradient : null,
+                      color: hasAnswer ? null : const Color(0xFFE8E4DF),
                       borderRadius: BorderRadius.circular(12),
-                      child: Padding(
-                        padding:
-                            const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                         child: Row(
                           mainAxisAlignment:
                               MainAxisAlignment.center,
@@ -560,7 +598,6 @@ class _InitialQuestionnaireScreenState
                     ),
                   ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 12),

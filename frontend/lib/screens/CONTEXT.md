@@ -9,7 +9,7 @@ This directory contains the core UI screens of the Mindful application. It speci
 * **`adhd_chat_screen.dart`**: A specialized chat interface for ADHD screening, capturing text and audio data to send to the backend.
 * **`adhd_result_screen.dart`**: Displays the ADHD likelihood score and broken-down metrics (Response Time, Text Complexity, etc.).
 * **`autism_questionnaire_screen.dart`**: Implements the textual AQ-10 assessment combined with optional webcam facial feature extraction.
-* **`screening_chat_screen.dart`**: General purpose Gemini 2.0 interface for standard MindCare companion chats, pulling from `GeminiService`.
+* **`screening_chat_screen.dart`**: General purpose Gemini 2.0 interface for standard Mindful companion chats, pulling from `GeminiService`.
 * **`processing_screen.dart`**: An intermediate loading screen that polls the backend `JobService` while machine learning pipelines generate results.
 * **`player_screen.dart`**: A dedicated UI for the Wellness/Meditation hub for streaming `audio_waveforms` tracks.
 * **`video_preview_screen.dart`**: A utility screen allowing users to review video recordings (e.g., from the depression questionnaire) before submission.

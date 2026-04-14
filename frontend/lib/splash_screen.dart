@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mindful/login_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mindful/screens/onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -35,11 +37,14 @@ class _SplashScreenState extends State<SplashScreen>
 
     Future.delayed(
       const Duration(seconds: 3),
-      () {
+      () async {
+        final prefs = await SharedPreferences.getInstance();
+        final onboardingDone = prefs.getBool('onboarding_completed') ?? false;
+
         if (mounted) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const LoginPage()),
+            MaterialPageRoute(builder: (_) => onboardingDone ? const LoginPage() : const OnboardingScreen()),
           );
         }
       },
@@ -102,7 +107,7 @@ class _SplashScreenState extends State<SplashScreen>
                   const SizedBox(height: 24),
                   // App name
                   Text(
-                    'MindCare AI',
+                    'Mindful AI',
                     style: GoogleFonts.inter(
                       fontSize: 36,
                       fontWeight: FontWeight.bold,

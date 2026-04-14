@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mindful/app_colors.dart';
@@ -22,9 +23,23 @@ class _LoginPageState extends State<LoginPage> {
   String errorMessage = '';
   bool showError = false;
   bool _obscurePassword = true;
+  StreamSubscription<AuthState>? _authStateSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _authStateSubscription = supabase.auth.onAuthStateChange.listen((data) {
+      final AuthChangeEvent event = data.event;
+      final Session? session = data.session;
+      if (mounted && event == AuthChangeEvent.signedIn && session != null) {
+        Navigator.pushReplacementNamed(context, '/chat');
+      }
+    });
+  }
 
   @override
   void dispose() {
+    _authStateSubscription?.cancel();
     emailController.dispose();
     passwordController.dispose();
     super.dispose();
@@ -91,7 +106,7 @@ class _LoginPageState extends State<LoginPage> {
 
               Center(
                 child: Text(
-                  'Sign in to your MindCare AI account',
+                  'Sign in to your Mindful AI account',
                   style: GoogleFonts.inter(
                     fontSize: 15,
                     color: AppColors.textSecondary,
@@ -263,12 +278,26 @@ class _LoginPageState extends State<LoginPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildSocialButton(Icons.facebook, const Color(0xFF1877F2), () {
-                    _showErrorSnackBar('Facebook login coming soon!');
+                  _buildSocialButton(Icons.apple, Colors.black, () async {
+                    try {
+                      await supabase.auth.signInWithOAuth(
+                        OAuthProvider.apple,
+                        redirectTo: 'io.supabase.mindful://login-callback/',
+                      );
+                    } catch (e) {
+                      if (mounted) _showErrorSnackBar('Apple login failed');
+                    }
                   }),
                   const SizedBox(width: 16),
-                  _buildSocialButton(Icons.g_mobiledata, const Color(0xFFEA4335), () {
-                    _showErrorSnackBar('Google login coming soon!');
+                  _buildSocialButton(Icons.g_mobiledata, const Color(0xFFEA4335), () async {
+                    try {
+                      await supabase.auth.signInWithOAuth(
+                        OAuthProvider.google,
+                        redirectTo: 'io.supabase.mindful://login-callback/',
+                      );
+                    } catch (e) {
+                      if (mounted) _showErrorSnackBar('Google login failed');
+                    }
                   }),
                 ],
               ),
