@@ -30,6 +30,7 @@ dependencies:
   audio_waveforms: ^2.0.2
   flutter_dotenv: ^5.2.1
   flutter_animate: ^4.5.2
+  provider: ^6.1.0
   just_audio: ^0.9.40
   youtube_explode_dart: ^2.3.3
 

@@ -2,11 +2,13 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:mindful/app_colors.dart';
 import 'package:mindful/dashboard_screen.dart';
 import 'package:mindful/face_detection.dart';
 import 'package:mindful/resource_screen.dart';
 import 'package:mindful/widgets/page_transitions.dart';
+import 'package:mindful/services/theme_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mindful/screens/legal/terms_of_service_screen.dart';
 import 'package:mindful/screens/legal/privacy_policy_screen.dart';
@@ -253,7 +255,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.bg(context),
       body: SafeArea(
         child: Column(
           children: [
@@ -275,13 +277,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             style: GoogleFonts.inter(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
+                              color: AppColors.txtPrimary(context),
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'Manage your account',
-                            style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
+                            style: GoogleFonts.inter(fontSize: 14, color: AppColors.txtSecondary(context)),
                           ),
 
                           const SizedBox(height: 24),
@@ -298,6 +300,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                           // ── Notification Preferences ──
                           _buildNotificationPreferences(),
+
+                          const SizedBox(height: 20),
+
+                          // ── Appearance (Theme) ──
+                          _buildAppearanceSection(),
 
                           const SizedBox(height: 20),
 
@@ -328,7 +335,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.cardWhite,
+        color: AppColors.card(context),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.15)),
         boxShadow: [
@@ -380,7 +387,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       style: GoogleFonts.inter(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                        color: AppColors.txtPrimary(context),
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -388,7 +395,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       memberSince.isNotEmpty
                           ? 'Joined $memberSince'
                           : 'Member',
-                      style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
+                      style: GoogleFonts.inter(fontSize: 13, color: AppColors.txtSecondary(context)),
                     ),
                     const SizedBox(height: 8),
                     Wrap(
@@ -415,7 +422,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF3E8FF),
+                  color: AppColors.fieldBg(context),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -445,9 +452,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // Change Password
           Row(
             children: [
-              const Icon(Icons.lock_outline, size: 16, color: AppColors.textSecondary),
+              Icon(Icons.lock_outline, size: 16, color: AppColors.txtSecondary(context)),
               const SizedBox(width: 8),
-              Text('Password', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.textSecondary)),
+              Text('Password', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.txtSecondary(context))),
             ],
           ),
           const SizedBox(height: 6),
@@ -461,13 +468,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
-                color: AppColors.background,
+                color: AppColors.bg(context),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE8E4DF)),
+                border: Border.all(color: AppColors.border(context)),
               ),
               child: Text(
                 'Change Password',
-                style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
+                style: GoogleFonts.inter(fontSize: 14, color: AppColors.txtSecondary(context)),
               ),
             ),
           ),
@@ -533,14 +540,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildFormField(IconData icon, String label, TextEditingController? controller, {String? value, TextInputType? keyboardType, TextInputAction? textInputAction, bool autocorrect = true}) {
+    final borderColor = AppColors.border(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Icon(icon, size: 16, color: AppColors.textSecondary),
+            Icon(icon, size: 16, color: AppColors.txtSecondary(context)),
             const SizedBox(width: 8),
-            Text(label, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.textSecondary)),
+            Text(label, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.txtSecondary(context))),
           ],
         ),
         const SizedBox(height: 6),
@@ -551,18 +559,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
             keyboardType: keyboardType,
             textInputAction: textInputAction,
             autocorrect: autocorrect,
-            style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary),
+            style: GoogleFonts.inter(fontSize: 14, color: AppColors.txtPrimary(context)),
             decoration: InputDecoration(
               filled: true,
-              fillColor: _isEditing ? Colors.white : AppColors.background,
+              fillColor: _isEditing ? AppColors.card(context) : AppColors.bg(context),
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: const Color(0xFFE8E4DF)),
+                borderSide: BorderSide(color: borderColor),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: const Color(0xFFE8E4DF)),
+                borderSide: BorderSide(color: borderColor),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -570,7 +578,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               disabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: const Color(0xFFE8E4DF)),
+                borderSide: BorderSide(color: borderColor),
               ),
             ),
           )
@@ -579,13 +587,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: AppColors.background,
+              color: AppColors.bg(context),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE8E4DF)),
+              border: Border.all(color: borderColor),
             ),
             child: Text(
               value ?? '',
-              style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary),
+              style: GoogleFonts.inter(fontSize: 14, color: AppColors.txtPrimary(context)),
             ),
           ),
       ],
@@ -599,7 +607,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.cardWhite,
+        color: AppColors.card(context),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.15)),
         boxShadow: [
@@ -615,11 +623,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           Text(
             'Assessment History',
-            style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+            style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.txtPrimary(context)),
           ),
           const SizedBox(height: 20),
           if (_assessmentHistory.isEmpty)
-             Text('No assessment history found.', style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13))
+             Text('No assessment history found.', style: GoogleFonts.inter(color: AppColors.txtSecondary(context), fontSize: 13))
           else
             ..._assessmentHistory.map((assessment) {
               final String type = assessment['type'] ?? 'General Screening';
@@ -635,11 +643,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         Text(
                           type,
-                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary),
+                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.txtPrimary(context)),
                         ),
                         Text(
                           '\${(score * 100).toInt()}% Risk',
-                          style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
+                          style: GoogleFonts.inter(fontSize: 13, color: AppColors.txtSecondary(context)),
                         ),
                       ],
                     ),
@@ -669,7 +677,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.cardWhite,
+        color: AppColors.card(context),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.15)),
         boxShadow: [
@@ -689,7 +697,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(width: 10),
               Text(
                 'Alerts',
-                style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.txtPrimary(context)),
               ),
             ],
           ),
@@ -710,7 +718,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAF5FF),
+        color: AppColors.fieldBg(context),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -719,9 +727,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
+                Text(title, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.txtPrimary(context))),
                 const SizedBox(height: 2),
-                Text(description, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+                Text(description, style: GoogleFonts.inter(fontSize: 12, color: AppColors.txtSecondary(context))),
               ],
             ),
           ),
@@ -733,7 +741,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               width: 50,
               height: 28,
               decoration: BoxDecoration(
-                color: value ? AppColors.primaryPurple : const Color(0xFFE8E4DF),
+                color: value ? AppColors.primaryPurple : AppColors.border(context),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: AnimatedAlign(
@@ -846,7 +854,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.cardWhite,
+        color: AppColors.card(context),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.15)),
         boxShadow: [
@@ -862,10 +870,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           Text(
             'Account',
-            style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+            style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.txtPrimary(context)),
           ),
           const SizedBox(height: 14),
-          _buildActionRow('Get My Data', const Color(0xFFFAF5FF), AppColors.textPrimary, AppColors.primaryPurple, _downloadMyData),
+          _buildActionRow('Get My Data', AppColors.fieldBg(context), AppColors.txtPrimary(context), AppColors.primaryPurple, _downloadMyData),
           const SizedBox(height: 10),
           _buildActionRow('Sign Out', const Color(0xFFFEF2F2), AppColors.error, AppColors.error, _logout, icon: Icons.logout),
         ],
@@ -901,13 +909,149 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // ── Appearance (Theme Selector) ──────────────────────────────────
+
+  Widget _buildAppearanceSection() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.card(context),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.15)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(isDark ? Icons.dark_mode : Icons.light_mode,
+                  size: 22, color: AppColors.primaryPurple),
+              const SizedBox(width: 10),
+              Text(
+                'Appearance',
+                style: GoogleFonts.inter(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.txtPrimary(context),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Choose your theme',
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              color: AppColors.txtSecondary(context),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.fieldBg(context),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            padding: const EdgeInsets.all(4),
+            child: Row(
+              children: [
+                _buildThemeOption(
+                  icon: Icons.light_mode_outlined,
+                  label: 'Light',
+                  isSelected: themeProvider.themeMode == ThemeMode.light,
+                  onTap: () => themeProvider.setThemeMode(ThemeMode.light),
+                ),
+                const SizedBox(width: 4),
+                _buildThemeOption(
+                  icon: Icons.dark_mode_outlined,
+                  label: 'Dark',
+                  isSelected: themeProvider.themeMode == ThemeMode.dark,
+                  onTap: () => themeProvider.setThemeMode(ThemeMode.dark),
+                ),
+                const SizedBox(width: 4),
+                _buildThemeOption(
+                  icon: Icons.phone_android_outlined,
+                  label: 'System',
+                  isSelected: themeProvider.themeMode == ThemeMode.system,
+                  onTap: () => themeProvider.setThemeMode(ThemeMode.system),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildThemeOption({
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primaryPurple : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: AppColors.primaryPurple.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : [],
+          ),
+          child: Column(
+            children: [
+              Icon(
+                icon,
+                size: 20,
+                color: isSelected
+                    ? Colors.white
+                    : AppColors.txtSecondary(context),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  color: isSelected
+                      ? Colors.white
+                      : AppColors.txtSecondary(context),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   // ── Bottom Nav ────────────────────────────────────────────────────
 
   Widget _buildBottomNav() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: const Color(0xFFE8E4DF))),
+        color: AppColors.card(context),
+        border: Border(top: BorderSide(color: AppColors.border(context))),
       ),
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -948,14 +1092,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     borderRadius: BorderRadius.circular(10),
                   )
                 : null,
-            child: Icon(icon, color: isSelected ? Colors.white : AppColors.textSecondary, size: 22),
+            child: Icon(icon, color: isSelected ? Colors.white : AppColors.txtSecondary(context), size: 22),
           ),
           const SizedBox(height: 4),
           Text(
             label,
             style: GoogleFonts.inter(
               fontSize: 11,
-              color: isSelected ? AppColors.primaryPurple : AppColors.textSecondary,
+              color: isSelected ? AppColors.primaryPurple : AppColors.txtSecondary(context),
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
             ),
           ),
