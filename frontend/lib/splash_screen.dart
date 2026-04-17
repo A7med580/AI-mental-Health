@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:mindful/login_page.dart';
 import 'package:mindful/dashboard_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mindful/screens/onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -38,17 +40,20 @@ class _SplashScreenState extends State<SplashScreen>
     // After the splash animation, check for existing auth session
     Future.delayed(
       const Duration(seconds: 3),
-      () {
+      () async {
+        final prefs = await SharedPreferences.getInstance();
+        final onboardingDone = prefs.getBool('onboarding_completed') ?? false;
+
         if (mounted) {
-          _navigateBasedOnSession();
+          _navigateBasedOnSession(onboardingDone);
         }
       },
     );
   }
 
   /// Check if user has an active Supabase session.
-  /// If yes → go to Dashboard. If no → go to Login.
-  void _navigateBasedOnSession() {
+  /// If yes → go to Dashboard. If no → go to Login or Onboarding.
+  void _navigateBasedOnSession(bool onboardingDone) {
     final session = Supabase.instance.client.auth.currentSession;
 
     if (session != null) {
@@ -58,10 +63,10 @@ class _SplashScreenState extends State<SplashScreen>
         MaterialPageRoute(builder: (_) => const DashboardScreen()),
       );
     } else {
-      // No session — show login page
+      // No session — show login page or onboarding
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const LoginPage()),
+        MaterialPageRoute(builder: (_) => onboardingDone ? const LoginPage() : const OnboardingScreen()),
       );
     }
   }
@@ -122,7 +127,7 @@ class _SplashScreenState extends State<SplashScreen>
                   const SizedBox(height: 24),
                   // App name
                   Text(
-                    'MindCare AI',
+                    'Mindful AI',
                     style: GoogleFonts.inter(
                       fontSize: 36,
                       fontWeight: FontWeight.bold,

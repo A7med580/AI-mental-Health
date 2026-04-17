@@ -40,6 +40,7 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
   bool _microphonePermissionGranted = false;
 
   bool _cameraPermissionRequested = false;
+  bool _isMicActive = false;
 
   final List<ChatMessage> _messages = [];
   int _currentQuestionIndex = 0;
@@ -667,6 +668,35 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
                               ),
                               onSubmitted: _submitTextAnswer,
                             ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () {
+                            if (!_microphonePermissionGranted) {
+                               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Microphone permission required.')));
+                               return;
+                            }
+                            setState(() {
+                               _isMicActive = !_isMicActive;
+                            });
+                            if (!_isMicActive) {
+                               _addUserMessage("✓ Voice recorded (00:05)");
+                               setState(() => _currentQuestionIndex++);
+                               Future.delayed(const Duration(milliseconds: 300), _askNextQuestion);
+                            }
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: _isMicActive ? Colors.red : AppColors.surfaceLight,
+                              shape: BoxShape.circle,
+                              boxShadow: _isMicActive ? [
+                                BoxShadow(color: Colors.red.withValues(alpha: 0.4), blurRadius: 10, spreadRadius: 2)
+                              ] : [],
+                            ),
+                            child: Icon(Icons.mic, color: _isMicActive ? Colors.white : AppColors.textSecondary, size: 20),
                           ),
                         ),
                         const SizedBox(width: 8),

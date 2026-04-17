@@ -54,7 +54,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'MindCare AI Privacy',
+                    'Mindful AI Privacy',
                     style: GoogleFonts.inter(
                       fontSize: 26,
                       fontWeight: FontWeight.bold,
@@ -82,7 +82,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                 children: [
                   _buildSectionCard(
                     '1. Introduction',
-                    'MindCare AI is committed to protecting your privacy and ensuring transparency in how we collect, use, and protect your personal data. This Privacy Policy explains our data practices. By using MindCare AI, you acknowledge that you have read and understood this Privacy Policy.',
+                    'Mindful AI is committed to protecting your privacy and ensuring transparency in how we collect, use, and protect your personal data. This Privacy Policy explains our data practices. By using Mindful AI, you acknowledge that you have read and understood this Privacy Policy.',
                     Icons.info_outline,
                   ),
                   _buildSectionCard(
@@ -92,7 +92,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                   ),
                   _buildSectionCard(
                     '2.2 Assessment Data',
-                    'When you use MindCare AI\'s assessment tools, we collect responses to questionnaires, voice/audio data (if provided), and facial images (if camera access is enabled). This data is used exclusively for generating pre-screening results and improving the accuracy of our models. All assessment data is treated as sensitive health information.',
+                    'When you use Mindful AI\'s assessment tools, we collect responses to questionnaires, voice/audio data (if provided), and facial images (if camera access is enabled). This data is used exclusively for generating pre-screening results and improving the accuracy of our models. All assessment data is treated as sensitive health information.',
                     Icons.health_and_safety_outlined,
                   ),
                   _buildSectionCard(
@@ -127,7 +127,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                   ),
                   _buildSectionCard(
                     '8. Third-Party Services',
-                    'MindCare AI may use third-party services (e.g., cloud hosting providers) that have their own privacy policies. We are not responsible for third-party privacy practices, and we recommend reviewing their policies independently.',
+                    'Mindful AI may use third-party services (e.g., cloud hosting providers) that have their own privacy policies. We are not responsible for third-party privacy practices, and we recommend reviewing their policies independently.',
                     Icons.cloud_outlined,
                   ),
                   _buildSectionCard(
@@ -137,7 +137,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                   ),
                   _buildSectionCard(
                     '10. Contact Us',
-                    'If you have questions or concerns about our privacy practices, please contact us at:\n\nMindCare AI\nPharos University\nAlexandria, Egypt',
+                    'If you have questions or concerns about our privacy practices, please contact us at:\n\nMindful AI\nPharos University\nAlexandria, Egypt',
                     Icons.contact_support_outlined,
                   ),
                   const SizedBox(height: 40),

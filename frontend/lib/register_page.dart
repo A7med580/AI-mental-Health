@@ -159,7 +159,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
               Center(
                 child: Text(
-                  'Create your MindCare AI account',
+                  'Create your Mindful AI account',
                   style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
                 ),
               ),
@@ -187,7 +187,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
               const SizedBox(height: 16),
 
-              _buildField('Phone Number', phoneNumberController, Icons.phone_outlined, (v) {
+              _buildField('Phone Number (Optional)', phoneNumberController, Icons.phone_outlined, (v) {
                 phoneNumber = v;
                 if (showError) setState(() => showError = false);
               }),
@@ -379,10 +379,7 @@ class _RegisterPageState extends State<RegisterPage> {
       setState(() { errorMessage = 'Please enter your last name'; showError = true; });
       return;
     }
-    if (phoneNumber.isEmpty) {
-      setState(() { errorMessage = 'Please enter your phone number'; showError = true; });
-      return;
-    }
+
     if (email.isEmpty) {
       setState(() { errorMessage = 'Please enter your email'; showError = true; });
       return;

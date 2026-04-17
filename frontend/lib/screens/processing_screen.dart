@@ -22,6 +22,79 @@ class ProcessingScreen extends StatefulWidget {
   State<ProcessingScreen> createState() => _ProcessingScreenState();
 }
 
+class _SkeletonShimmer extends StatefulWidget {
+  final double width;
+  final double height;
+  final BorderRadiusGeometry? borderRadius;
+
+  const _SkeletonShimmer({
+    Key? key,
+    required this.width,
+    required this.height,
+    this.borderRadius,
+  }) : super(key: key);
+
+  @override
+  State<_SkeletonShimmer> createState() => _SkeletonShimmerState();
+}
+
+class _SkeletonShimmerState extends State<_SkeletonShimmer>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _shimmerController;
+  late Animation<double> _shimmerAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
+
+    _shimmerAnim = Tween<double>(begin: -1.0, end: 2.0).animate(
+      CurvedAnimation(parent: _shimmerController, curve: Curves.easeInOutSine),
+    );
+  }
+
+  @override
+  void dispose() {
+    _shimmerController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _shimmerAnim,
+      builder: (context, child) {
+        return ShaderMask(
+          blendMode: BlendMode.srcATop,
+          shaderCallback: (bounds) {
+            return LinearGradient(
+              colors: [
+                Colors.grey.shade300,
+                Colors.white.withOpacity(0.8),
+                Colors.grey.shade300,
+              ],
+              stops: const [0.1, 0.5, 0.9],
+              begin: Alignment(-1.0 + _shimmerAnim.value, -0.3),
+              end: Alignment(1.0 + _shimmerAnim.value, 0.3),
+            ).createShader(bounds);
+          },
+          child: Container(
+            width: widget.width,
+            height: widget.height,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: widget.borderRadius ?? BorderRadius.circular(12),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 class _ProcessingScreenState extends State<ProcessingScreen>
     with SingleTickerProviderStateMixin {
   bool _isProcessing = true;
@@ -211,73 +284,65 @@ class _ProcessingScreenState extends State<ProcessingScreen>
   Widget _buildProcessingView() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Animated icon
-            AnimatedBuilder(
-              animation: _pulseAnim,
-              builder: (context, child) {
-                return Transform.scale(
-                  scale: _pulseAnim.value,
-                  child: Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      gradient: AppColors.primaryGradient,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primaryPurple.withValues(alpha: 0.3),
-                          blurRadius: 24,
-                          spreadRadius: 4,
-                        ),
-                      ],
-                    ),
-                    child: const Icon(Icons.psychology, color: Colors.white, size: 44),
-                  ),
-                );
-              },
-            ),
-
-            const SizedBox(height: 32),
-
             Text(
-              'Processing',
-              style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-              textAlign: TextAlign.center,
+              'Processing Data',
+              style: GoogleFonts.inter(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
             ),
-
-            const SizedBox(height: 12),
-
+            const SizedBox(height: 8),
             Text(
               _jobId == null ? _statusText : '$_statusText\n\nJob: $_jobId',
               style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary, height: 1.5),
               textAlign: TextAlign.center,
             ),
-
             const SizedBox(height: 32),
 
-            // Progress bar (indeterminate)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: LinearProgressIndicator(
-                  minHeight: 6,
-                  backgroundColor: Colors.grey[200],
-                  valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryPurple),
-                ),
+            // Skeleton Card
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+              decoration: BoxDecoration(
+                color: AppColors.cardWhite,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
-            ),
-
-            const SizedBox(height: 16),
-
-            Text(
-              'This may take time. Please do not close.',
-              style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
-              textAlign: TextAlign.center,
+              child: Column(
+                children: [
+                  // Circle
+                  _SkeletonShimmer(
+                    width: 140,
+                    height: 140,
+                    borderRadius: BorderRadius.circular(70),
+                  ),
+                  const SizedBox(height: 32),
+                  // Title
+                  _SkeletonShimmer(
+                    width: 200,
+                    height: 24,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  const SizedBox(height: 16),
+                  // Subtitle
+                  _SkeletonShimmer(
+                    width: 150,
+                    height: 16,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

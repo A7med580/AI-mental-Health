@@ -112,7 +112,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Container(
-        decoration: const BoxDecoration(gradient: AppColors.meshBackground),
+        decoration: BoxDecoration(gradient: AppColors.mesh(context)),
         child: SafeArea(
           child: Column(
             children: [
@@ -164,12 +164,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: const Icon(Icons.psychology, color: Colors.white, size: 20),
           ),
           const SizedBox(width: 8),
-          Text('MindCare AI', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+          Text('Mindful AI', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.txtPrimary(context))),
           const Spacer(),
           Stack(
             children: [
               IconButton(
-                icon: const Icon(Icons.notifications_outlined, color: AppColors.textPrimary, size: 24),
+                icon: Icon(Icons.notifications_outlined, color: AppColors.txtPrimary(context), size: 24),
                 onPressed: () async {
                   await Navigator.push(context, AppPageRoute(page: const NotificationsScreen()));
                   _loadNotificationCount();
@@ -203,13 +203,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Welcome Back!', style: GoogleFonts.inter(fontSize: 26, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+        Text('Welcome Back!', style: GoogleFonts.inter(fontSize: 26, fontWeight: FontWeight.bold, color: AppColors.txtPrimary(context))),
         const SizedBox(height: 4),
         Row(
           children: [
-            const Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.textSecondary),
+            Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.txtSecondary(context)),
             const SizedBox(width: 6),
-            Text(dateStr, style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+            Text(dateStr, style: GoogleFonts.inter(fontSize: 13, color: AppColors.txtSecondary(context))),
           ],
         ),
       ],
@@ -360,14 +360,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Flexible(child: Text(title, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary), overflow: TextOverflow.ellipsis)),
+              Flexible(child: Text(title, style: GoogleFonts.inter(fontSize: 12, color: AppColors.txtSecondary(context)), overflow: TextOverflow.ellipsis)),
               Icon(icon, color: iconColor, size: 18),
             ],
           ),
           const SizedBox(height: 6),
-          Text(value, style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+          Text(value, style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.txtPrimary(context))),
           const SizedBox(height: 2),
-          Text(subtitle, style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary)),
+          Text(subtitle, style: GoogleFonts.inter(fontSize: 11, color: AppColors.txtSecondary(context))),
         ],
       ),
     );
@@ -379,7 +379,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Quick Actions', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+        Text('Quick Actions', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.txtPrimary(context))),
         const SizedBox(height: 12),
         Row(
           children: [
@@ -406,6 +406,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
       opacity: 0.82,
       blur: 8,
       padding: EdgeInsets.zero,
+      gradient: LinearGradient(
+        colors: [
+           color.withValues(alpha: 0.15),
+           Colors.white.withValues(alpha: 0.82),
+        ],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
       border: Border.all(color: const Color(0xFFE8E4DF).withValues(alpha: 0.5)),
       child: Material(
         color: Colors.transparent,
@@ -420,9 +428,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(label, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                      Text(label, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.txtPrimary(context))),
                       const SizedBox(height: 4),
-                      const Icon(Icons.arrow_forward, size: 14, color: AppColors.textSecondary),
+                      Icon(Icons.arrow_forward, size: 14, color: AppColors.txtSecondary(context)),
                     ],
                   ),
                 ),
@@ -515,9 +523,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(isSelected ? activeIcon : icon, color: isSelected ? AppColors.primaryPurple : AppColors.textSecondary, size: 24),
+          Icon(isSelected ? activeIcon : icon, color: isSelected ? AppColors.primaryPurple : AppColors.txtSecondary(context), size: 24),
           const SizedBox(height: 4),
-          Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500, color: isSelected ? AppColors.primaryPurple : AppColors.textSecondary)),
+          Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500, color: isSelected ? AppColors.primaryPurple : AppColors.txtSecondary(context))),
         ],
       ),
     );

@@ -21,6 +21,7 @@ By leveraging Computer Vision, Voice Stress Analysis, and NLP, Mindful provides 
 *   **🤖 MindCare AI Companion**: High-empathy supportive chatbot powered by **Gemini 2.0 Flash** for general mental health support, emotional navigation, and grounding.
 *   **🧘 Wellness & Meditation Hub**: In-app audio streaming of clinically-validated meditations (MBSR/MBCT protocols) with external continuity for Spotify and YouTube.
 *   **📊 Interactive Mood Monitoring**: Daily mood logging with Glassmorphism-styled metrics, trend analysis, and detailed weekly overviews.
+*   **🌓 Adaptive Dark Mode**: Premium, accessibility-focused interface with persistent support for Light, Dark, and System (OS-level) theme preferences.
 *   **🎙️ Voice Stress Analysis**: MFCC-based emotion and impulsivity detection from audio recordings.
 *   **👁️ Gaze & Facial Tracking**: Heuristic-based eye movement analysis for behavioral biomarker extraction and facial emotion recognition (AQ-10 integration).
 *   **📱 Liquid Glass Design**: Premium mobile experience with smooth iOS-style transitions leveraging modern Flutter components.
@@ -120,6 +121,9 @@ graph TD
 ---
 
 ## 🏁 Setup Instructions
+
+> [!IMPORTANT]
+> For a comprehensive, step-by-step guide on running this project on **Windows** and **macOS**, please refer to the [**Detailed Running Manual**](HOW_TO_RUN.md).
 
 ### 1. 🧠 AI Models & Weight Setup
 

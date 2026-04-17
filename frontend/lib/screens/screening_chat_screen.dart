@@ -27,6 +27,7 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
   CameraController? _cameraController;
   bool _isRecording = false;
   bool _isProcessing = false;
+  bool _isMicActive = false;
   String? _recordedVideoPath;
   final List<String> _messages = [];
   int _currentConditionIndex = 0;
@@ -343,6 +344,43 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
                   )
                 else
                   const CircularProgressIndicator(),
+                const SizedBox(width: 16),
+                GestureDetector(
+                  onTap: () {
+                    if (!_availableModalities.contains('audio')) {
+                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Microphone permission required.')));
+                       return;
+                    }
+                    setState(() {
+                       _isMicActive = !_isMicActive;
+                    });
+                    if (!_isMicActive) {
+                       setState(() {
+                           _messages.add('user: ✓ Voice recorded (00:05)');
+                           _messages.add('system: Processing voice input...');
+                       });
+                       Future.delayed(const Duration(seconds: 1), () {
+                           setState(() {
+                               _messages.add('system: Next...');
+                               _currentConditionIndex++;
+                           });
+                           _processNextCondition();
+                       });
+                    }
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: _isMicActive ? Colors.red : Colors.grey[200],
+                      shape: BoxShape.circle,
+                      boxShadow: _isMicActive ? [
+                         BoxShadow(color: Colors.red.withValues(alpha: 0.4), blurRadius: 10, spreadRadius: 2)
+                      ] : [],
+                    ),
+                    child: Icon(Icons.mic, color: _isMicActive ? Colors.white : Colors.black54, size: 24),
+                  ),
+                ),
               ],
             ),
           ),

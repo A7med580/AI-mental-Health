@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mindful/app_colors.dart';
 import 'package:mindful/theme/module_themes.dart';
+import 'package:mindful/widgets/animated_gauge.dart';
+import 'package:mindful/widgets/animated_scale_button.dart';
 
 /// ADHD-specific result screen with proper disclaimers and next steps
 class ADHDResultScreen extends StatelessWidget {
@@ -109,72 +111,28 @@ class ADHDResultScreen extends StatelessWidget {
                       ),
                       child: Column(
                         children: [
-                          Container(
-                            width: 80,
-                            height: 80,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: thresholdMet
-                                  ? const Color(0xFFFFF7ED)
-                                  : const Color(0xFFF0FDF4),
-                            ),
-                            child: Icon(
-                              thresholdMet ? Icons.info_outline : Icons.check_circle_outline,
-                              size: 40,
-                              color: thresholdMet
-                                  ? const Color(0xFFC2410C)
-                                  : const Color(0xFF16A34A),
-                            ),
+                          AnimatedGauge(
+                            score: fusedConfidence is double ? fusedConfidence : fusedConfidence.toDouble(),
                           ),
 
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 24),
 
                           Text(
-                            thresholdMet ? 'ADHD' : 'Not ADHD',
+                            thresholdMet ? 'Signs Found' : 'No Strong Signs',
                             style: GoogleFonts.inter(
-                              fontSize: 30,
+                              fontSize: 24,
                               fontWeight: FontWeight.bold,
                               color: thresholdMet ? const Color(0xFFC2410C) : const Color(0xFF16A34A),
                             ),
                           ),
 
-                          const SizedBox(height: 16),
-
-                          // Confidence badge
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: _getConfidenceColor(confidenceLevel).withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: _getConfidenceColor(confidenceLevel), width: 2),
-                            ),
-                            child: Text(
-                              '$confidenceLevel Confidence',
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: _getConfidenceColor(confidenceLevel),
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          Text(
-                            'Confidence: ${(fusedConfidence * 100).toStringAsFixed(1)}%',
-                            style: GoogleFonts.inter(fontSize: 16, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
-                          ),
-
                           const SizedBox(height: 8),
-
-                          // Confidence bar
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(6),
-                            child: LinearProgressIndicator(
-                              value: fusedConfidence is double ? fusedConfidence : 0.0,
-                              minHeight: 8,
-                              backgroundColor: const Color(0xFFE8E4DF),
-                              valueColor: AlwaysStoppedAnimation<Color>(_getConfidenceColor(confidenceLevel)),
+                          Text(
+                            'Based on your screening answers.',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              color: AppColors.textSecondary,
                             ),
                           ),
 
@@ -243,24 +201,22 @@ class ADHDResultScreen extends StatelessWidget {
 
                     const SizedBox(height: 24),
 
-                    SizedBox(
-                      width: double.infinity,
+                    AnimatedScaleButton(
+                      onPressed: () => Navigator.popUntil(context, (route) => route.isFirst),
                       child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 18),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(colors: [adhdTheme.accentColor, const Color(0xFFD98C1A)]),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(12),
-                            onTap: () => Navigator.popUntil(context, (route) => route.isFirst),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 18),
-                              child: Center(
-                                child: Text('Done', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
-                              ),
-                            ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          'Done',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
                           ),
                         ),
                       ),

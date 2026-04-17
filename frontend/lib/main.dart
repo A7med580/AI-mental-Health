@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:mindful/app_theme.dart';
 import 'package:mindful/resource_screen.dart';
 import 'package:mindful/splash_screen.dart';
@@ -10,6 +11,7 @@ import 'package:mindful/meditation_screen.dart';
 import 'package:mindful/face_detection.dart';
 import 'package:mindful/results_screen.dart';
 import 'package:mindful/screens/notifications_screen.dart';
+import 'package:mindful/services/theme_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -21,7 +23,12 @@ void main() async {
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
 
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeProvider(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -29,10 +36,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     return MaterialApp(
-      title: 'MindCare AI',
+      title: 'Mindful AI',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeProvider.themeMode,
 
       initialRoute: '/splash',
 

@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:mindful/app_colors.dart';
 
 /// A reusable frosted-glass container with a soft, warm finish.
 /// Uses [BackdropFilter] + [ClipRRect] for a subtle blur effect.
@@ -12,6 +13,7 @@ class GlassContainer extends StatelessWidget {
   final Color? backgroundColor;
   final double opacity;
   final Border? border;
+  final Gradient? gradient;
 
   const GlassContainer({
     Key? key,
@@ -23,10 +25,16 @@ class GlassContainer extends StatelessWidget {
     this.backgroundColor,
     this.opacity = 0.82,
     this.border,
+    this.gradient,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final defaultBg = isDark ? AppColors.darkGlassWhite : Colors.white;
+    final defaultBorder = isDark ? AppColors.darkGlassBorder : const Color(0xFFE8E4DF).withValues(alpha: 0.5);
+    final shadowColor = isDark ? const Color(0x0A000000) : const Color(0xFF1A1510).withValues(alpha: 0.04);
+
     return Container(
       margin: margin,
       child: ClipRRect(
@@ -36,16 +44,17 @@ class GlassContainer extends StatelessWidget {
           child: Container(
             padding: padding ?? const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: (backgroundColor ?? Colors.white).withValues(alpha: opacity),
+              color: gradient == null ? (backgroundColor ?? defaultBg).withValues(alpha: opacity) : null,
+              gradient: gradient,
               borderRadius: BorderRadius.circular(borderRadius),
               border: border ??
                   Border.all(
-                    color: const Color(0xFFE8E4DF).withValues(alpha: 0.5),
+                    color: defaultBorder,
                     width: 1,
                   ),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF1A1510).withValues(alpha: 0.04),
+                  color: shadowColor,
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -67,14 +76,23 @@ class GlassBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return ClipRRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.88),
+            color: isDark
+                ? AppColors.darkCardColor.withValues(alpha: 0.92)
+                : Colors.white.withValues(alpha: 0.88),
             border: Border(
-              top: BorderSide(color: const Color(0xFFE8E4DF).withValues(alpha: 0.6), width: 0.5),
+              top: BorderSide(
+                color: isDark
+                    ? AppColors.darkGlassBorder
+                    : const Color(0xFFE8E4DF).withValues(alpha: 0.6),
+                width: 0.5,
+              ),
             ),
           ),
           padding: const EdgeInsets.symmetric(vertical: 8),

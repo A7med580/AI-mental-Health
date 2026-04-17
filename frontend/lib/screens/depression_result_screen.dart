@@ -4,6 +4,8 @@ import 'package:mindful/app_colors.dart';
 import 'package:mindful/theme/module_themes.dart';
 import 'package:mindful/widgets/glass_container.dart';
 import 'package:mindful/widgets/page_transitions.dart';
+import 'package:mindful/widgets/animated_gauge.dart';
+import 'package:mindful/widgets/animated_scale_button.dart';
 
 class DepressionResultScreen extends StatelessWidget {
   final Map<String, dynamic> screeningResult;
@@ -48,81 +50,51 @@ class DepressionResultScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // ── Diagnostic Header ──
-              Center(
-                child: Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: isDepression
-                        ? AppColors.error.withValues(alpha: 0.1)
-                        : Colors.green.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    isDepression ? Icons.warning_amber_rounded : Icons.check_circle_outline,
-                    size: 40,
-                    color: isDepression ? AppColors.error : Colors.green,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(depressionTheme.icon,
-                      size: 22, color: depressionTheme.accentColor),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Done',
-                    style: GoogleFonts.inter(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+              // ── Main Result Card ──
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+                decoration: BoxDecoration(
+                  color: AppColors.cardWhite,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                isDepression
-                    ? 'Signs of depression found.'
-                    : 'No signs of depression found.',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  color: AppColors.textSecondary,
+                  ],
                 ),
-              ),
-              const SizedBox(height: 32),
-
-              // ── Overall Confidence ──
-              GlassContainer(
-                borderRadius: 16,
-                padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
+                    AnimatedGauge(
+                      score: fusedConfidence is double ? fusedConfidence : fusedConfidence.toDouble(),
+                    ),
+                    const SizedBox(height: 24),
                     Text(
-                      'Confidence',
+                      isDepression
+                          ? 'Signs of depression found.'
+                          : 'No strong signs found.',
+                      textAlign: TextAlign.center,
                       style: GoogleFonts.inter(
-                        fontSize: 14,
+                        fontSize: 18,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
                     Text(
-                      '${(fusedConfidence * 100).toStringAsFixed(1)}%',
+                      'Based on your screening answers.',
+                      textAlign: TextAlign.center,
                       style: GoogleFonts.inter(
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primaryPurple,
+                        fontSize: 14,
+                        color: AppColors.textSecondary,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
 
               // ── Breakdown ──
               Text(
@@ -158,24 +130,25 @@ class DepressionResultScreen extends StatelessWidget {
               const SizedBox(height: 40),
 
               // ── Actions ──
-              ElevatedButton(
+              AnimatedScaleButton(
                 onPressed: () {
                   Navigator.popUntil(context, (route) => route.isFirst);
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: depressionTheme.accentColor,
-                  foregroundColor: Colors.white,
+                child: Container(
+                  width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 18),
-                  shape: RoundedRectangleBorder(
+                  decoration: BoxDecoration(
+                    color: depressionTheme.accentColor,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  elevation: 0,
-                ),
-                child: Text(
-                  'Home',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                  alignment: Alignment.center,
+                  child: Text(
+                    'Home',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),

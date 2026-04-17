@@ -8,6 +8,7 @@ import 'package:mindful/theme/module_themes.dart';
 import 'package:mindful/services/model_service.dart';
 import 'package:mindful/results_screen.dart';
 import 'package:mindful/face_detection.dart';
+import 'package:mindful/widgets/animated_scale_button.dart';
 
 class AutismQuestionnaireScreen extends StatefulWidget {
   const AutismQuestionnaireScreen({super.key});
@@ -49,7 +50,7 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
     });
 
     if (_currentQuestionIndex < _questions.length - 1) {
-      _pageController.nextPage(duration: const Duration(milliseconds: 250), curve: Curves.easeInOut);
+      _pageController.nextPage(duration: const Duration(milliseconds: 400), curve: Curves.easeInOutCubic);
     } else {
       _submitQuestionnaire();
     }
@@ -208,8 +209,8 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
                           onTap: () {
                             if (_currentQuestionIndex > 0) {
                               _pageController.previousPage(
-                                duration: const Duration(milliseconds: 250),
-                                curve: Curves.easeInOut,
+                                duration: const Duration(milliseconds: 400),
+                                curve: Curves.easeInOutCubic,
                               );
                             } else {
                               Navigator.pop(context);
@@ -400,8 +401,9 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
   }
 
   Widget _buildAnswerCard(bool value, String label, bool isSelected) {
-    return GestureDetector(
-      onTap: () => _answerQuestion(value),
+    return AnimatedScaleButton(
+      onPressed: () => _answerQuestion(value),
+      shrinkScale: 0.96,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 32),

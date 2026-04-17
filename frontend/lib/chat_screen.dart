@@ -286,7 +286,7 @@ class _MindfulAIScreenState extends State<MindfulAIScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('MindCare AI', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                Text('Mindful AI', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                 const SizedBox(height: 2),
                 Row(
                   children: [
@@ -362,7 +362,7 @@ class _MindfulAIScreenState extends State<MindfulAIScreen> {
                     children: [
                       Icon(Icons.psychology, size: 14, color: msg.isError ? Colors.red : AppColors.primaryPurple),
                       const SizedBox(width: 4),
-                      Text('MindCare AI', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: msg.isError ? Colors.red : AppColors.primaryPurple)),
+                      Text('Mindful AI', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: msg.isError ? Colors.red : AppColors.primaryPurple)),
                     ],
                   ),
                 ),
