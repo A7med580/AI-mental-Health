@@ -13,6 +13,9 @@ from fastapi import UploadFile
 from services.model_loader import ModelLoader
 from services.feature_extractor import FeatureExtractor
 from config.model_config import ModelConfig
+from services.depression_inference import DepressionTextInference, DepressionAudioInference, DepressionFacialInference
+from services.depression_fusion import DepressionFusion
+from services.adhd_inference import ADHDFacialSequenceInference
 
 
 class ModelRouter:
@@ -69,7 +72,18 @@ class ModelRouter:
                 continue
 
         if not loaded_models:
-            raise RuntimeError("No ASD text models could be loaded. Check model paths in ModelConfig.")
+            print("[ASD/text] Warning: No models loaded. Using scoring fallback.")
+            total_score = sum(answers)
+            is_autism = (total_score >= 6)
+            prediction = "Autism" if is_autism else "Non-Autism"
+            confidence = 1.0 if is_autism else 0.0 
+            return {
+                "prediction": prediction,
+                "confidence": confidence,
+                "threshold": 0.5,
+                "details": {"error": "No models loaded, using score fallback", "score": total_score},
+                "models_used": []
+            }
 
         preds: List[int] = []
         probs: List[float] = []
@@ -147,31 +161,44 @@ class ModelRouter:
 
         print("Loading keras model...", flush=True)
         # 2) Load TF model correctly (keras, not joblib)
-        model = self.model_loader.load_model(model_path, "keras")
-        print("Keras model loaded!", flush=True)
-        class_indices = self.model_loader.load_json(class_indices_path)
-        class_names = {v: k for k, v in class_indices.items()}
+        try:
+            model = self.model_loader.load_model(model_path, "keras")
+            print("Keras model loaded!", flush=True)
+            class_indices = self.model_loader.load_json(class_indices_path)
+            class_names = {v: k for k, v in class_indices.items()}
 
-        # 3) Predict
-        x = np.expand_dims(face_rgb.astype("float32") / 255.0, axis=0)
-        preds = model.predict(x, verbose=0)[0]
-        pred_idx = int(np.argmax(preds))
-        pred_conf = float(preds[pred_idx])
-        predicted_class = class_names.get(pred_idx, "unknown")
+            # 3) Predict
+            x = np.expand_dims(face_rgb.astype("float32") / 255.0, axis=0)
+            preds = model.predict(x, verbose=0)[0]
+            pred_idx = int(np.argmax(preds))
+            pred_conf = float(preds[pred_idx])
+            predicted_class = class_names.get(pred_idx, "unknown")
 
-        # Convert to autism probability
-        autism_prob = pred_conf if predicted_class == "autistic" else (1.0 - pred_conf)
-        label = "Autism" if autism_prob >= threshold else "Non-Autism"
+            # Convert to autism probability
+            autism_prob = pred_conf if predicted_class == "autistic" else (1.0 - pred_conf)
+            label = "Autism" if autism_prob >= threshold else "Non-Autism"
 
-        return {
-            "prediction": label,
-            "confidence": round(float(autism_prob), 3),
-            "face_detected": True,
-            "faces_count": int(fx.get("faces_count", 1)),
-            "bbox": fx.get("bbox"),
-            "threshold": threshold,
-            "class": predicted_class,
-        }
+            return {
+                "prediction": label,
+                "confidence": round(float(autism_prob), 3),
+                "face_detected": True,
+                "faces_count": int(fx.get("faces_count", 1)),
+                "bbox": fx.get("bbox"),
+                "threshold": threshold,
+                "class": predicted_class,
+            }
+        except Exception as e:
+            print(f"[Router] WARNING: ASD face model error: {e}", flush=True)
+            # Graceful fallback: report as non-autism but flag the error in detail
+            return {
+                "prediction": "Non-Autism",
+                "confidence": 0.0,
+                "face_detected": True,
+                "faces_count": int(fx.get("faces_count", 1)),
+                "bbox": fx.get("bbox"),
+                "error": f"Model error: {str(e)}",
+                "is_fallback": True
+            }
 
 
     # -----------------------------
@@ -367,17 +394,12 @@ class ModelRouter:
             model = adhd_bundle["behavior_model"]
             feature_names = adhd_bundle["behavior_feature_names"]
 
-            # feature_names may be list, np array, or dict wrapper
-            if isinstance(feature_names, dict):
-                if "features" in feature_names:
-                    feature_names = feature_names["features"]
-                else:
-                    feature_names = list(feature_names.values())
+            if not model:
+                return {"prediction": 0, "confidence": 0.0, "details": {"error": "Behavior model not loaded"}}
 
-            feature_names = list(feature_names)
-
-            row = {name: features.get(name, 0.0) for name in feature_names}
-            X = pd.DataFrame([row], columns=feature_names)
+            # Map incoming questionnaire data to clinical feature set
+            mapped_row = self._map_behavioral_features(features, list(feature_names))
+            X = pd.DataFrame([mapped_row], columns=feature_names)
 
             if hasattr(model, "predict_proba"):
                 proba = float(model.predict_proba(X)[0][1])
@@ -395,6 +417,37 @@ class ModelRouter:
         except Exception as e:
             raise Exception(f"ADHD behavior prediction failed: {e}")
 
+    def _map_behavioral_features(self, raw_features: Dict[str, Any], feature_names: List[str]) -> Dict[str, float]:
+        """
+        Heuristic mapping from raw questionnaire data/text to clinical model features.
+        """
+        def text_to_score(text: str) -> float:
+            if not text: return 0.0
+            low = text.lower()
+            if any(w in low for w in ["never", "rarely", "none"]): return 0.0
+            if any(w in low for w in ["sometimes", "occasionally"]): return 1.0
+            if any(w in low for w in ["often", "usually"]): return 3.0
+            if any(w in low for w in ["always", "constantly", "very often"]): return 4.0
+            return 2.0 # Neutral
+
+        mapped = {}
+        for name in feature_names:
+            if "score" in name:
+                # chat_q_n_score
+                q_idx = name.split("_")[2]
+                text_key = f"chat_q_{q_idx}_text"
+                mapped[name] = text_to_score(str(raw_features.get(text_key, "")))
+            elif "initial_q" in name:
+                # initial_q_n
+                val = raw_features.get(name, 0)
+                mapped[name] = float(val) / 2.0 if int(val) > 5 else float(val) # handle scale diffs
+            elif name == "age":
+                mapped[name] = float(raw_features.get("age", 25.0))
+            else:
+                mapped[name] = float(raw_features.get(name, 0.0))
+        
+        return mapped
+
     # -----------------------------
     # ADHD: Eye (video -> eye_features -> model)
     # -----------------------------
@@ -402,10 +455,11 @@ class ModelRouter:
         try:
             eye_features = await self.feature_extractor.extract_eye_features_from_path(video_path)
 
-            adhd_bundle = self._get_adhd_bundle()
-            model = adhd_bundle["eye_model"]
+            # Use the centralized model path from ModelConfig (supports env-var override)
+            model_path = ModelConfig.ADHD_EYE_MODEL
+            model = self.model_loader.load_model(model_path, "joblib")
 
-            # IMPORTANT: ensure exact 10 columns order expected by the model
+            # IMPORTANT: ensure exact columns order expected by the model
             feature_cols = [
                 "mean_fixation_duration_ms",
                 "fixation_count",
@@ -419,7 +473,14 @@ class ModelRouter:
                 "reaction_time_std_ms",
             ]
 
-            X = pd.DataFrame([[float(eye_features.get(c, 0.0)) for c in feature_cols]], columns=feature_cols)
+            if not model:
+                return {"prediction": 0, "confidence": 0.0, "details": {"error": "Eye model not loaded"}}
+
+            vals = []
+            for c in feature_cols:
+                vals.append(float(eye_features.get(c, 0.0)))
+            
+            X = pd.DataFrame([vals], columns=feature_cols)
 
             if hasattr(model, "predict_proba"):
                 proba = float(model.predict_proba(X)[0][1])
@@ -431,7 +492,7 @@ class ModelRouter:
 
             pred = int(proba >= 0.5)
 
-            print(f"[ADHD/eye] proba={proba:.4f} pred={pred}")
+            print(f"[ADHD/eye] proba={proba:.4f} pred={pred} (Iris Enhanced)")
             return {"prediction": pred, "confidence": proba, "probability": proba, "eye_features": eye_features}
 
         except Exception as e:
@@ -462,42 +523,54 @@ class ModelRouter:
             Xs = scaler.transform(X)
 
             # ---- SVM probability ----
-            if hasattr(svm, "predict_proba"):
-                svm_proba = float(svm.predict_proba(Xs)[0][1])
-                svm_pred = int(svm_proba >= 0.5)
+            svm_proba = 0.5
+            svm_pred = 0
+            if svm:
+                if hasattr(svm, "predict_proba"):
+                    svm_proba = float(svm.predict_proba(Xs)[0][1])
+                    svm_pred = int(svm_proba >= 0.5)
+                else:
+                    raw_pred = int(svm.predict(Xs)[0])
+                    svm_pred = 1 if raw_pred > 0 else 0
+                    svm_proba = 0.85 if svm_pred == 1 else 0.15
             else:
-                raw_pred = int(svm.predict(Xs)[0])
-                svm_pred = 1 if raw_pred > 0 else 0
-                # If no proba available, assign a synthetic probability based on the binary class
-                svm_proba = 0.85 if svm_pred == 1 else 0.15
+                print("[ADHD/voice] Warning: SVM model not found")
 
             # ---- CNN probability ----
-            Xcnn = np.expand_dims(Xs, axis=2)  # (1, features, 1)
-            out = cnn.predict(Xcnn, verbose=0)[0]
-            out = np.array(out)
+            cnn_proba = 0.5
+            cnn_pred = 0
+            if cnn:
+                Xcnn = np.expand_dims(Xs, axis=2)  # (1, features, 1)
+                out = cnn.predict(Xcnn, verbose=0)[0]
+                out = np.array(out)
 
-            if out.ndim == 0:
-                cnn_proba = float(out)
-            elif out.size == 1:
-                # sigmoid
-                cnn_proba = float(out[0])
-            elif out.size == 2:
-                # 2-class softmax
-                cnn_proba = float(out[1])
-            else:
-                # multi-class (e.g., 8 emotions): fallback proxy
-                top_idx = int(np.argmax(out))
-                top_prob = float(out[top_idx])
-                # RAVDESS commonly has 0=neutral, 1=calm
-                if top_idx in [0, 1]:
-                    cnn_proba = 0.15
+                if out.ndim == 0:
+                    cnn_proba = float(out)
+                elif out.size == 1:
+                    cnn_proba = float(out[0])
+                elif out.size == 2:
+                    cnn_proba = float(out[1])
                 else:
-                    cnn_proba = min(0.90, top_prob * 0.6 + 0.2)
-
-            cnn_pred = int(cnn_proba >= 0.5)
+                    top_idx = int(np.argmax(out))
+                    top_prob = float(out[top_idx])
+                    if top_idx in [0, 1]:
+                        cnn_proba = 0.15
+                    else:
+                        cnn_proba = min(0.90, top_prob * 0.6 + 0.2)
+                cnn_pred = int(cnn_proba >= 0.5)
+            else:
+                print("[ADHD/voice] Warning: CNN model not found")
 
             # ---- Fuse voice ----
-            avg_proba = (svm_proba + cnn_proba) / 2.0
+            if svm and cnn:
+                avg_proba = (svm_proba + cnn_proba) / 2.0
+            elif svm:
+                avg_proba = svm_proba
+            elif cnn:
+                avg_proba = cnn_proba
+            else:
+                return {"prediction": 0, "confidence": 0.0, "details": {"error": "Voice models not loaded"}}
+
             pred = int(avg_proba >= 0.5)
 
             print(f"[ADHD/voice] svm={svm_proba:.4f} cnn={cnn_proba:.4f} avg={avg_proba:.4f} pred={pred}")
@@ -509,7 +582,7 @@ class ModelRouter:
                 "svm_probability": float(svm_proba),
                 "cnn_prediction": cnn_pred,
                 "cnn_probability": float(cnn_proba),
-                "cnn_output_dim": int(out.size),
+                "cnn_output_dim": int(out.size) if cnn else 0,
             }
 
         except Exception as e:
@@ -520,41 +593,203 @@ class ModelRouter:
     # -----------------------------
     async def predict_adhd_facial_from_video(self, video_path: str) -> Dict[str, Any]:
         """
-        NOTE: this uses emotion model as proxy.
+        NEW: Sequence-based temporal facial analysis for ADHD.
+        Transitioned from single-frame ResNet50 proxy to BiLSTM AU sequence modeling.
         """
         try:
-            face_frame = await self.feature_extractor.extract_first_face_frame_from_path(video_path)
-            if face_frame is None:
-                raise Exception("No face detected in video")
+            # 1. Extract AU Sequence (temporal features)
+            au_sequence = await self.feature_extractor.extract_facial_aus_sequence(video_path, max_frames=300)
+            
+            if not au_sequence:
+                raise Exception("No facial sequence detected in video")
 
-            import cv2
-
-            face_rgb = cv2.cvtColor(face_frame, cv2.COLOR_BGR2RGB)
-            face_resized = cv2.resize(face_rgb, (224, 224))
-            X = np.expand_dims(face_resized / 255.0, axis=0).astype(np.float32)
-
+            # 2. Get ADHD Sequence Model bundle
             adhd_bundle = self._get_adhd_bundle()
-            model = adhd_bundle["emotion_model"]
-            preds = model.predict(X, verbose=0)[0]
-            preds = np.array(preds)
-            # proxy mapping based on dominant emotion
-            top_idx = int(np.argmax(preds))
-            max_prob = float(np.max(preds))
-            # AffectNet commonly uses 0=Neutral, 1=Happy
-            if top_idx in [0, 1]:
-                adhd_prob = 0.15
-            else:
-                adhd_prob = min(0.90, max_prob * 0.6 + 0.2)
-                
-            pred = int(adhd_prob >= 0.5)
+            seq_bundle = adhd_bundle.get("sequence_model")
+            
+            if not seq_bundle or not seq_bundle.get("model"):
+                # Fallback to single-frame emotion model if sequence model is missing
+                print("[ADHD/facial] Warning: Sequence model missing, falling back to emotion proxy")
+                return await self._predict_adhd_facial_fallback(video_path)
 
-            print(f"[ADHD/facial] max_emotion={max_prob:.4f} adhd_prob={adhd_prob:.4f} pred={pred}")
+            # 3. Create Inference instance
+            inference = ADHDFacialSequenceInference(
+                model=seq_bundle["model"],
+                device=seq_bundle["device"],
+                n_aus=17,
+                seq_len=300
+            )
 
+            # 4. Predict
+            result = await inference.predict(au_sequence)
+            
+            print(f"[ADHD/facial] sequence_proba={result['confidence']:.4f} pred={result['prediction']} (Temporal Enhanced)")
             return {
-                "prediction": pred,
-                "confidence": float(adhd_prob),
-                "emotion_probabilities": preds.tolist(),
+                "prediction": result["prediction"],
+                "confidence": result["confidence"],
+                "details": result["details"],
+                "model_version": "v2_temporal"
             }
 
         except Exception as e:
             raise Exception(f"ADHD facial prediction failed: {e}")
+
+    async def _predict_adhd_facial_fallback(self, video_path: str) -> Dict[str, Any]:
+        """
+        Fallback implementation for ADHD facial using single-frame emotion proxy.
+        """
+        try:
+            face_frame = await self.feature_extractor.extract_first_face_frame_from_path(video_path)
+            if face_frame is None:
+                raise Exception("No face detected for fallback")
+
+            import cv2
+            face_resized = cv2.resize(cv2.cvtColor(face_frame, cv2.COLOR_BGR2RGB), (224, 224))
+            X = np.expand_dims(face_resized / 255.0, axis=0).astype(np.float32)
+
+            model = self._get_adhd_bundle().get("emotion_model")
+            if not model:
+                return {"prediction": 0, "confidence": 0.0, "details": {"error": "Fallback model missing"}}
+            
+            preds = model.predict(X, verbose=0)[0]
+            max_prob = float(np.max(preds))
+            top_idx = int(np.argmax(preds))
+            
+            # proxy mapping
+            adhd_prob = 0.15 if top_idx in [0, 1] else min(0.90, max_prob * 0.6 + 0.2)
+            return {"prediction": int(adhd_prob >= 0.5), "confidence": adhd_prob, "is_fallback": True}
+        except Exception:
+            return {"prediction": 0, "confidence": 0.0, "details": {"error": "Fallback failed"}}
+
+    # =========================================================
+    # DEPRESSION (DAIC-WOZ DAIC-WOZ)
+    # =========================================================
+    async def execute_depression_screening(
+        self,
+        video_path: Optional[str],
+        questionnaire_data: Optional[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """
+        Executes the multimodal DAIC-WOZ depression screening using new services.
+        """
+        import torch
+
+        # 1. LOAD BUNDLE
+        bundle = self.model_loader.load_depression_bundle()
+        device = bundle["device"]
+
+        # Initialize inference workers
+        text_inf = DepressionTextInference(bundle["text_tokenizer"], bundle["text_model"], device) if bundle["text_model"] else None
+        audio_inf = DepressionAudioInference(bundle["audio_model"], bundle["audio_scaler"]) if bundle["audio_model"] else None
+        visual_inf = DepressionFacialInference(bundle["visual_model"], device, bundle["n_aus"], bundle["seq_len"]) if bundle["visual_model"] else None
+
+        individual_results = []
+        modalities_used = []
+
+        # 2. TEXT MODALITY
+        if questionnaire_data and text_inf:
+            try:
+                res = text_inf.predict(questionnaire_data)
+                res["model_type"] = "text"
+                individual_results.append(res)
+                modalities_used.append("text")
+            except Exception as e:
+                print(f"[Depression/Text] Inference error: {e}")
+
+        # 3. VIDEO-BASED MODALITIES (Audio/Facial)
+        if video_path and os.path.exists(video_path):
+            # Extract Audio features
+            if audio_inf:
+                try:
+                    # ffmpeg extraction (handled by feature_extractor)
+                    audio_feats = await self.feature_extractor.extract_audio_from_video_path(video_path)
+                    res = await audio_inf.predict(audio_feats)
+                    res["model_type"] = "audio"
+                    individual_results.append(res)
+                    modalities_used.append("audio")
+                except Exception as e:
+                    print(f"[Depression/Audio] Inference error: {e}")
+            
+            # Extract Facial features
+            if visual_inf:
+                try:
+                    au_seq = await self.feature_extractor.extract_facial_aus_sequence(video_path, max_frames=bundle["seq_len"])
+                    res = await visual_inf.predict(au_seq)
+                    res["model_type"] = "facial" # Frontend expects "facial"
+                    individual_results.append(res)
+                    modalities_used.append("video") # Frontend expects "video" in modalities_used
+                except Exception as e:
+                    print(f"[Depression/Visual] Inference error: {e}")
+
+        # 4. FUSION / FALLBACK
+        if not individual_results:
+            if questionnaire_data:
+                print("[Depression] No models available. Using questionnaire fallback.")
+                total_q_score = 0
+                valid_qs = 0
+                for i in range(8):
+                    val = questionnaire_data.get(f"depression_q_{i}")
+                    if val is not None and isinstance(val, (int, float)):
+                        total_q_score += int(val)
+                        valid_qs += 1
+                
+                if valid_qs == 0:
+                    for i in range(6, 10):
+                        val = questionnaire_data.get(f"initial_q_{i}")
+                        if val is not None:
+                            try:
+                                total_q_score += int(val)
+                                valid_qs += 1
+                            except: pass
+                
+                max_possible = valid_qs * 4 if valid_qs > 0 else 1
+                phq8_equivalent = int(round((total_q_score / max_possible) * 24)) if valid_qs > 0 else 0
+                
+                fused_confidence = float(phq8_equivalent / 24.0)
+                fused_prediction = 1 if phq8_equivalent >= 10 else 0
+                
+                if phq8_equivalent <= 4: severity = "Minimal"
+                elif phq8_equivalent <= 9: severity = "Mild"
+                elif phq8_equivalent <= 14: severity = "Moderate"
+                elif phq8_equivalent <= 19: severity = "Moderately Severe"
+                else: severity = "Severe"
+
+                return {
+                    "success": True,
+                    "condition": "Depression",
+                    "fused_result": {
+                        "fused_prediction": fused_prediction,
+                        "fused_confidence": round(fused_confidence, 3),
+                        "phq8_score": phq8_equivalent,
+                        "severity": severity,
+                        "message": "Result based on questionnaire fallback (models missing)."
+                    },
+                    "individual_results": [],
+                    "modalities_used": ["questionnaire"]
+                }
+            
+            return {
+                "success": False,
+                "condition": "Depression",
+                "message": "Insufficient data/models to complete depression screening.",
+                "fused_result": None,
+                "individual_results": [],
+                "modalities_used": []
+            }
+
+        fused = DepressionFusion.fuse_results(individual_results)
+        
+        # 5. ASSEMBLE FRONTEND RESPONSE
+        return {
+            "success": True,
+            "condition": "Depression",
+            "fused_result": {
+                "fused_prediction": fused["fused_prediction"],
+                "fused_confidence": fused["fused_confidence"],
+                "phq8_score": fused["phq8_score"],
+                "severity": fused["severity"],
+                "message": fused["message"] # Optional helper
+            },
+            "individual_results": individual_results,
+            "modalities_used": modalities_used
+        }

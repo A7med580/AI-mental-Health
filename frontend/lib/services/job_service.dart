@@ -55,6 +55,54 @@ class JobService {
     }
   }
 
+  static Future<String> submitDepressionJob({
+    File? videoFile,
+    required Map<String, dynamic> questionnaireData,
+  }) async {
+    try {
+      final uri = Uri.parse(ApiConfig.getUrl('jobs/depression'));
+      final request = http.MultipartRequest('POST', uri);
+      request.headers['Accept'] = 'application/json';
+
+      if (videoFile != null) {
+        request.files.add(
+          await http.MultipartFile.fromPath('video_file', videoFile.path),
+        );
+      }
+
+      request.fields['questionnaire_data'] = json.encode(questionnaireData);
+
+      final streamed = await request.send().timeout(
+        _submitTimeout,
+        onTimeout: () => throw TimeoutException('Submit /jobs/depression timed out'),
+      );
+
+      final body = await streamed.stream.bytesToString().timeout(
+        const Duration(seconds: 60),
+        onTimeout: () => throw TimeoutException('Submit response read timed out'),
+      );
+
+      if (streamed.statusCode == 200 || streamed.statusCode == 201) {
+        final jsonResponse = json.decode(body) as Map<String, dynamic>;
+        final jobId = jsonResponse['job_id']?.toString();
+        if (jobId == null || jobId.isEmpty) {
+          throw Exception('Backend did not return job_id. Body=$body');
+        }
+        return jobId;
+      } else {
+        throw Exception('Failed to submit depression job: ${streamed.statusCode} - $body');
+      }
+    } catch (e) {
+      final s = e.toString();
+      if (s.contains('Connection refused') || s.contains('Failed host lookup')) {
+        throw Exception(
+          'Server not connected. Check same Wi-Fi + backend running on your PC.',
+        );
+      }
+      rethrow;
+    }
+  }
+
   static Future<Map<String, dynamic>> getJobStatus(String jobId) async {
     try {
       final uri = Uri.parse(ApiConfig.getUrl('jobs/$jobId'));

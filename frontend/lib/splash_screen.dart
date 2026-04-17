@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mindful/login_page.dart';
+import 'package:mindful/dashboard_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mindful/screens/onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -33,17 +37,38 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
+    // After the splash animation, check for existing auth session
     Future.delayed(
       const Duration(seconds: 3),
-      () {
+      () async {
+        final prefs = await SharedPreferences.getInstance();
+        final onboardingDone = prefs.getBool('onboarding_completed') ?? false;
+
         if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const LoginPage()),
-          );
+          _navigateBasedOnSession(onboardingDone);
         }
       },
     );
+  }
+
+  /// Check if user has an active Supabase session.
+  /// If yes → go to Dashboard. If no → go to Login or Onboarding.
+  void _navigateBasedOnSession(bool onboardingDone) {
+    final session = Supabase.instance.client.auth.currentSession;
+
+    if (session != null) {
+      // User is already logged in — skip login page
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+      );
+    } else {
+      // No session — show login page or onboarding
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => onboardingDone ? const LoginPage() : const OnboardingScreen()),
+      );
+    }
   }
 
   @override
@@ -60,13 +85,14 @@ class _SplashScreenState extends State<SplashScreen>
         height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF7C3AED),
-              Color(0xFF9333EA),
-              Color(0xFFDB2777),
+              Color(0xFF8B7EC8),  // muted lavender
+              Color(0xFFA8B8D8),  // soft sky
+              Color(0xFFD4A97A),  // warm gold accent
             ],
+            stops: [0.0, 0.6, 1.0],
           ),
         ),
         child: SafeArea(
@@ -82,8 +108,15 @@ class _SplashScreenState extends State<SplashScreen>
                     width: 100,
                     height: 100,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(24),
+                      color: Colors.white.withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(28),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF8B7EC8).withValues(alpha: 0.3),
+                          blurRadius: 24,
+                          spreadRadius: 4,
+                        ),
+                      ],
                     ),
                     child: const Icon(
                       Icons.psychology,
@@ -94,7 +127,7 @@ class _SplashScreenState extends State<SplashScreen>
                   const SizedBox(height: 24),
                   // App name
                   Text(
-                    'MindCare AI',
+                    'Mindful AI',
                     style: GoogleFonts.inter(
                       fontSize: 36,
                       fontWeight: FontWeight.bold,
@@ -105,11 +138,11 @@ class _SplashScreenState extends State<SplashScreen>
                   const SizedBox(height: 12),
                   // Tagline
                   Text(
-                    'Your mental wellness companion,\nalways here to listen.',
+                    'Always here to listen.',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.inter(
                       fontSize: 16,
-                      color: Colors.white.withValues(alpha: 0.85),
+                      color: Colors.white.withValues(alpha: 0.9),
                       height: 1.5,
                     ),
                   ),
@@ -121,7 +154,7 @@ class _SplashScreenState extends State<SplashScreen>
                     child: CircularProgressIndicator(
                       strokeWidth: 2.5,
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        Colors.white.withValues(alpha: 0.7),
+                        Colors.white.withValues(alpha: 0.75),
                       ),
                     ),
                   ),

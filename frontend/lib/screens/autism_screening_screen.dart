@@ -24,12 +24,12 @@ class AutismScreeningScreen extends StatelessWidget {
             const Icon(Icons.psychology_alt, size: 64, color: Colors.blue),
             const SizedBox(height: 16),
             Text(
-              'Autism Screening Flow',
+              'Autism Screening',
               style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
-              'This module is under development.',
+              'Coming soon.',
               style: GoogleFonts.inter(color: Colors.grey[600]),
             ),
           ],

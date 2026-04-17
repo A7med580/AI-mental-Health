@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:mindful/app_theme.dart';
 import 'package:mindful/resource_screen.dart';
 import 'package:mindful/splash_screen.dart';
@@ -10,16 +11,24 @@ import 'package:mindful/meditation_screen.dart';
 import 'package:mindful/face_detection.dart';
 import 'package:mindful/results_screen.dart';
 import 'package:mindful/screens/notifications_screen.dart';
+import 'package:mindful/services/theme_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: '.env');
   await Supabase.initialize(
-    url: 'https://lerzabsngwcxgmbvfsyp.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxlcnphYnNuZ3djeGdtYnZmc3lwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NDczMjMsImV4cCI6MjA4MDQyMzMyM30.LbIA8bwu5P63aGxi-k5IDByKjzuEgRF6Z8cytAPtoLE',               // your Supabase anon/public key
+    url: dotenv.env['SUPABASE_URL']!,
+    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
 
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeProvider(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -27,10 +36,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     return MaterialApp(
-      title: 'MindCare AI',
+      title: 'Mindful AI',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeProvider.themeMode,
 
       initialRoute: '/splash',
 

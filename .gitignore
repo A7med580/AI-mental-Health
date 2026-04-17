@@ -2,7 +2,13 @@
 .env
 backend/.venv/
 .venv/
+**/venv/
+**/.venv/
 venv/
+venv_mac/
+env/
+.env/
+node_modules/
 
 # Python caching
 __pycache__/
@@ -21,6 +27,14 @@ frontend/.pub/
 
 # Backend Output
 backend/results/
+
+# Large Model Files & Data
+backend/Models/
+**/datasets/
+**/data/
+**/processed/
+**/results/*.json
+.cache/
 
 # Serialized Model Files (Large files)
 *.h5

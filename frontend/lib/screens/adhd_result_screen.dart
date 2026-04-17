@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mindful/app_colors.dart';
+import 'package:mindful/theme/module_themes.dart';
+import 'package:mindful/widgets/animated_gauge.dart';
+import 'package:mindful/widgets/animated_scale_button.dart';
 
 /// ADHD-specific result screen with proper disclaimers and next steps
 class ADHDResultScreen extends StatelessWidget {
@@ -24,13 +27,13 @@ class ADHDResultScreen extends StatelessWidget {
     final contributions = screeningResult['model_contributions'] ?? [];
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: adhdTheme.backgroundColor,
       body: SafeArea(
         child: Column(
           children: [
             // ── Header ──
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
               child: Row(
                 children: [
                   GestureDetector(
@@ -41,15 +44,17 @@ class ADHDResultScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: AppColors.cardWhite,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[300]!),
+                        border: Border.all(color: const Color(0xFFE8E4DF)),
                       ),
                       child: const Icon(Icons.arrow_back, size: 20, color: AppColors.textPrimary),
                     ),
                   ),
                   const SizedBox(width: 12),
+                  Icon(adhdTheme.icon, size: 20, color: adhdTheme.accentColor),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Your ADHD Screening Result',
+                      'Your Result',
                       style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                     ),
                   ),
@@ -79,7 +84,7 @@ class ADHDResultScreen extends StatelessWidget {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              'This is a screening tool, NOT a medical diagnosis. Please consult a qualified healthcare professional.',
+                              'This is not a medical diagnosis. Please see a doctor.',
                               style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF9A3412), fontWeight: FontWeight.w600, height: 1.4),
                             ),
                           ),
@@ -106,72 +111,28 @@ class ADHDResultScreen extends StatelessWidget {
                       ),
                       child: Column(
                         children: [
-                          Container(
-                            width: 80,
-                            height: 80,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: thresholdMet
-                                  ? const Color(0xFFFFF7ED)
-                                  : const Color(0xFFF0FDF4),
-                            ),
-                            child: Icon(
-                              thresholdMet ? Icons.info_outline : Icons.check_circle_outline,
-                              size: 40,
-                              color: thresholdMet
-                                  ? const Color(0xFFC2410C)
-                                  : const Color(0xFF16A34A),
-                            ),
+                          AnimatedGauge(
+                            score: fusedConfidence is double ? fusedConfidence : fusedConfidence.toDouble(),
                           ),
 
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 24),
 
                           Text(
-                            thresholdMet ? 'ADHD' : 'Not ADHD',
+                            thresholdMet ? 'Signs Found' : 'No Strong Signs',
                             style: GoogleFonts.inter(
-                              fontSize: 30,
+                              fontSize: 24,
                               fontWeight: FontWeight.bold,
                               color: thresholdMet ? const Color(0xFFC2410C) : const Color(0xFF16A34A),
                             ),
                           ),
 
-                          const SizedBox(height: 16),
-
-                          // Confidence badge
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: _getConfidenceColor(confidenceLevel).withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: _getConfidenceColor(confidenceLevel), width: 2),
-                            ),
-                            child: Text(
-                              '$confidenceLevel Confidence',
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: _getConfidenceColor(confidenceLevel),
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          Text(
-                            'Confidence: ${(fusedConfidence * 100).toStringAsFixed(1)}%',
-                            style: GoogleFonts.inter(fontSize: 16, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
-                          ),
-
                           const SizedBox(height: 8),
-
-                          // Confidence bar
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(6),
-                            child: LinearProgressIndicator(
-                              value: fusedConfidence is double ? fusedConfidence : 0.0,
-                              minHeight: 8,
-                              backgroundColor: Colors.grey[200],
-                              valueColor: AlwaysStoppedAnimation<Color>(_getConfidenceColor(confidenceLevel)),
+                          Text(
+                            'Based on your screening answers.',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              color: AppColors.textSecondary,
                             ),
                           ),
 
@@ -198,7 +159,7 @@ class ADHDResultScreen extends StatelessWidget {
                     // Model Contributions
                     if (contributions.isNotEmpty) ...[
                       Text(
-                        'Assessment Methods Used',
+                        'How We Checked',
                         style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                       ),
                       const SizedBox(height: 12),
@@ -212,7 +173,7 @@ class ADHDResultScreen extends StatelessWidget {
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: AppColors.primaryPurple.withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.2)),
                       ),
                       child: Column(
@@ -223,41 +184,39 @@ class ADHDResultScreen extends StatelessWidget {
                               const Icon(Icons.lightbulb_outline, color: AppColors.primaryPurple),
                               const SizedBox(width: 8),
                               Text(
-                                'Recommended Next Steps',
+                                'Next Steps',
                                 style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryPurple),
                               ),
                             ],
                           ),
                           const SizedBox(height: 16),
-                          _buildNextStepItem('Consult a healthcare professional', 'A qualified professional can provide proper evaluation and diagnosis.'),
+                          _buildNextStepItem('See a doctor', 'A doctor can give you a true check-up.'),
                           const SizedBox(height: 12),
-                          _buildNextStepItem('Keep a symptom journal', 'Track patterns in attention, focus, and daily activities.'),
+                          _buildNextStepItem('Keep a journal', 'Write down when you lose focus during the day.'),
                           const SizedBox(height: 12),
-                          _buildNextStepItem('Explore coping strategies', 'Learn about time management, organization, and focus techniques.'),
+                          _buildNextStepItem('Learn new skills', 'Read about how to manage your time and focus better.'),
                         ],
                       ),
                     ),
 
                     const SizedBox(height: 24),
 
-                    SizedBox(
-                      width: double.infinity,
+                    AnimatedScaleButton(
+                      onPressed: () => Navigator.popUntil(context, (route) => route.isFirst),
                       child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 18),
                         decoration: BoxDecoration(
-                          gradient: AppColors.primaryGradient,
-                          borderRadius: BorderRadius.circular(14),
+                          gradient: LinearGradient(colors: [adhdTheme.accentColor, const Color(0xFFD98C1A)]),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(14),
-                            onTap: () => Navigator.popUntil(context, (route) => route.isFirst),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              child: Center(
-                                child: Text('Done', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
-                              ),
-                            ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          'Done',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
                           ),
                         ),
                       ),
@@ -285,7 +244,7 @@ class ADHDResultScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.cardWhite,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(color: const Color(0xFFE8E4DF)),
       ),
       child: Row(
         children: [
@@ -358,20 +317,20 @@ class ADHDResultScreen extends StatelessWidget {
       case 'low':
         return AppColors.primaryPurple;
       default:
-        return Colors.grey;
+        return AppColors.textSecondary;
     }
   }
 
   String _getModelTypeLabel(String type) {
     switch (type) {
       case 'behavior':
-        return 'Questionnaire Analysis';
+        return 'Questions';
       case 'eye':
-        return 'Eye-Tracking Analysis';
+        return 'Eye Tracking';
       case 'voice':
-        return 'Voice Pattern Analysis';
+        return 'Voice Analysis';
       case 'facial':
-        return 'Facial Expression Analysis';
+        return 'Expression Analysis';
       default:
         return type;
     }

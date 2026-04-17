@@ -21,6 +21,7 @@ By leveraging Computer Vision, Voice Stress Analysis, and NLP, Mindful provides 
 *   **🤖 MindCare AI Companion**: High-empathy supportive chatbot powered by **Gemini 2.0 Flash** for general mental health support, emotional navigation, and grounding.
 *   **🧘 Wellness & Meditation Hub**: In-app audio streaming of clinically-validated meditations (MBSR/MBCT protocols) with external continuity for Spotify and YouTube.
 *   **📊 Interactive Mood Monitoring**: Daily mood logging with Glassmorphism-styled metrics, trend analysis, and detailed weekly overviews.
+*   **🌓 Adaptive Dark Mode**: Premium, accessibility-focused interface with persistent support for Light, Dark, and System (OS-level) theme preferences.
 *   **🎙️ Voice Stress Analysis**: MFCC-based emotion and impulsivity detection from audio recordings.
 *   **👁️ Gaze & Facial Tracking**: Heuristic-based eye movement analysis for behavioral biomarker extraction and facial emotion recognition (AQ-10 integration).
 *   **📱 Liquid Glass Design**: Premium mobile experience with smooth iOS-style transitions leveraging modern Flutter components.
@@ -56,6 +57,8 @@ sequenceDiagram
 
 ### AI Fusion Engine — Internal Architecture
 
+Mindful employs a multimodal late-fusion strategy to combine signals from different behavioral domains.
+
 ```mermaid
 graph TD
     subgraph Input Modalities
@@ -65,24 +68,29 @@ graph TD
         Text[Questionnaire / Text]
     end
 
-    subgraph Feature Extraction & Modeling
+    subgraph ADHD & ASD Feature Modeling
         Face --> ResNet["ResNet50 (Facial Emotion)"]
-        Voice --> MFCC["MFCC / CNN (Voice Stress)"]
-        Gaze --> MP["MediaPipe / RF (Eye Gaze)"]
+        Voice --> CNN["CNN (Voice Stress)"]
+        Gaze --> EyeGaze["MediaPipe (Eye Gaze)"]
         Text --> CatBoost["CatBoost (Behavioral NLP)"]
     end
-    
-    ResNet --> FV1[Feature Vector]
-    MFCC --> FV2[Feature Vector]
-    MP --> FV3[Feature Vector]
-    CatBoost --> FV4[Feature Vector]
-    
-    subgraph Late Fusion
-        FV1 & FV2 & FV3 & FV4 --> WPA[Weighted Probability Aggregator]
+
+    subgraph Depression (DAIC-WOZ) Modeling
+        Text --> DistilBERT["DistilBERT (NLP)"]
+        Voice --> LIGHTGBM["LightGBM (COVAREP Acoustics)"]
+        Face --> BILSTM["BiLSTM + Attention (Action Units)"]
     end
     
-    WPA --> Result["Final Screening Result<br/>(ADHD / ASD / Depression / Social Anxiety)"]
+    ResNet & CNN & EyeGaze & CatBoost --> ADHD_FUSION[Weighted Prob Aggregator]
+    DistilBERT & LIGHTGBM & BILSTM --> DEP_FUSION[Logistic Regression Meta-Learner]
+    
+    ADHD_FUSION --> Result1["ADHD / ASD Result"]
+    DEP_FUSION --> Result2["Depression Screening Result"]
 ```
+
+### 💽 Development Environment (macOS Fix)
+> [!IMPORTANT]
+> Since standard external drives (ExFAT) do not support the symlinks required by Flutter/Dart, this project is optimized to run inside an **APFS Sparse Disk Image** located at `/Volumes/Mindful_Dev`. If building from source, ensure the project is mounted to a symlink-compatible filesystem.
 
 ### App Screen Flow
 
@@ -114,7 +122,26 @@ graph TD
 
 ## 🏁 Setup Instructions
 
-### 1. Backend Setup (FastAPI + AI Models)
+> [!IMPORTANT]
+> For a comprehensive, step-by-step guide on running this project on **Windows** and **macOS**, please refer to the [**Detailed Running Manual**](HOW_TO_RUN.md).
+
+### 1. 🧠 AI Models & Weight Setup
+
+Due to their large size, pre-trained model weights are not included in this repository. You must download them separately and place them in the correct directories.
+
+1.  **Download Models**: [Mindful AI Models (Google Drive)](https://drive.google.com/drive/folders/1DlIcp-XBuJwFHGiEiisUnSHuxXqU59ZW?usp=sharing)
+2.  **Placement**: Extract and copy the folders/files into `backend/Models/` following this structure:
+    ```text
+    backend/Models/
+    ├── adhd/          # Place ADHD .pkl and .keras files here
+    ├── asd/           # Place ASD .joblib and face/ models here
+    └── depression/    # Place DAIC-WOZ .pt, .joblib and text_model_dir here
+    ```
+
+> [!TIP]
+> The backend includes **Robust Loading Architecture**. If a specific model weight is missing, the server will log a warning and continue to operate using available models (fallback mode) rather than crashing.
+
+### 2. Backend Setup (FastAPI + AI Models)
 
 The backend handles heavy ML workloads natively.
 
@@ -125,7 +152,7 @@ The backend handles heavy ML workloads natively.
 2. Create and activate a Virtual Environment:
    ```bash
    python -m venv .venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   source .venv/bin/activate  # On macOS: source ../venv_mac/bin/activate
    ```
 3. Install dependencies:
    ```bash
@@ -134,11 +161,11 @@ The backend handles heavy ML workloads natively.
 4. Set up environment variables (see `.env` Configuration below).
 5. Start the server:
    ```bash
-   python main.py
+   uvicorn main:app --host 0.0.0.0 --port 8000
    ```
-   *The Swagger UI will be available at `http://localhost:8000/docs`.*
+   *The Swagger UI will be available at `http://localhost:8000/docs` or `http://127.0.0.1:8000/docs`.*
 
-### 2. Frontend Setup (Flutter App)
+### 3. Frontend Setup (Flutter App)
 
 1. Navigate to the `frontend/` directory:
    ```bash

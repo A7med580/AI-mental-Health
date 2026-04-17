@@ -77,7 +77,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       ),
                       const SizedBox(height: 20),
                       Text(
-                        'Screening Complete',
+                        'Screening Done',
                         style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                       ),
                       const SizedBox(height: 12),
@@ -142,7 +142,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       decoration: BoxDecoration(
                         color: AppColors.cardWhite,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[300]!),
+                        border: Border.all(color: const Color(0xFFE8E4DF)),
                       ),
                       child: const Icon(Icons.arrow_back, size: 20, color: AppColors.textPrimary),
                     ),
@@ -157,7 +157,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     GestureDetector(
                       onTap: _markAllAsRead,
                       child: Text(
-                        'Mark all read',
+                        'Read all',
                         style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primaryPurple),
                       ),
                     ),
@@ -190,7 +190,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                 child: const Icon(Icons.notifications_none, size: 40, color: AppColors.primaryPurple),
                               ),
                               const SizedBox(height: 16),
-                              Text('No notifications', style: GoogleFonts.inter(fontSize: 16, color: AppColors.textSecondary)),
+                              Text('No alerts', style: GoogleFonts.inter(fontSize: 16, color: AppColors.textSecondary)),
                             ],
                           ),
                         )
@@ -237,7 +237,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           color: isUnread ? AppColors.primaryPurple.withValues(alpha: 0.05) : AppColors.cardWhite,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isUnread ? AppColors.primaryPurple.withValues(alpha: 0.2) : Colors.grey[200]!,
+            color: isUnread ? AppColors.primaryPurple.withValues(alpha: 0.2) : const Color(0xFFE8E4DF),
           ),
         ),
         child: Material(
@@ -254,7 +254,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: isUnread ? AppColors.primaryPurple : Colors.grey[300],
+                      color: isUnread ? AppColors.primaryPurple : const Color(0xFFE8E4DF),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(

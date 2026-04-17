@@ -1,1 +1,0 @@
-{"success": true, "condition": "ADHD", "fused_result": {"fused_confidence": 0.0, "fused_prediction": 0, "confidence_level": "Low", "model_contributions": [], "modalities_used": [], "explanation": "No ADHD models were able to process the available data.", "threshold_met": false}, "individual_results": [], "modalities_used": ["questionnaire", "video", "audio"]}

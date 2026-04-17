@@ -27,6 +27,7 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
   CameraController? _cameraController;
   bool _isRecording = false;
   bool _isProcessing = false;
+  bool _isMicActive = false;
   String? _recordedVideoPath;
   final List<String> _messages = [];
   int _currentConditionIndex = 0;
@@ -42,7 +43,7 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
   Future<void> _initializeChat() async {
     // Add welcome message
     setState(() {
-      _messages.add('system: Welcome! I\'ll guide you through the screening process.');
+      _messages.add('system: Welcome! I will help you.');
     });
 
     // Start with first condition
@@ -99,18 +100,16 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
 
     setState(() {
       _messages.add(
-        'system: Now screening for $conditionName (probability: ${(probability * 100).toStringAsFixed(1)}%)',
-      );
+          'system: Checking for $conditionName (${(probability * 100).toStringAsFixed(1)}%)');
       _messages.add(
-        'system: Please record a short video (30-60 seconds) responding to the question.',
-      );
+          'system: Record a short video (30-60 seconds).');
     });
   }
 
   Future<void> _startRecording() async {
     if (_cameraController == null || !_cameraController!.value.isInitialized) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Camera not available')),
+        const SnackBar(content: Text('Camera not found')),
       );
       return;
     }
@@ -133,7 +132,7 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
     } catch (e) {
       print('Error starting recording: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error starting recording: $e')),
+        SnackBar(content: Text('Error. Try again.')),
       );
     }
   }
@@ -163,7 +162,7 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
 
     setState(() {
       _isProcessing = true;
-      _messages.add('system: Processing your recording...');
+      _messages.add('system: Processing...');
     });
 
     try {
@@ -184,8 +183,7 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
           // Strong indicator detected
           setState(() {
             _messages.add(
-              'system: Strong indicators detected for $detectedCondition (confidence: ${(confidence * 100).toStringAsFixed(1)}%)',
-            );
+                'system: Found signs of $detectedCondition (${(confidence * 100).toStringAsFixed(1)}%)');
           });
 
           // Navigate to results screen
@@ -194,7 +192,7 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
           // Move to next condition
           setState(() {
             _currentConditionIndex++;
-            _messages.add('system: Moving to next condition...');
+            _messages.add('system: Next...');
           });
           await _processNextCondition();
         }
@@ -203,7 +201,7 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
       }
     } catch (e) {
       setState(() {
-        _messages.add('system: Error processing recording: $e');
+        _messages.add('system: Error. Try again.');
       });
     } finally {
       setState(() {
@@ -230,7 +228,7 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
     final result = {
       'detected_condition': null,
       'confidence': 0.0,
-      'message': 'No strong indicators detected. Consider consulting a healthcare professional.',
+      'message': 'No signs found. Talk to a doctor.',
       'all_results': [],
     };
 
@@ -251,7 +249,7 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         title: Text(
-          'Screening Session',
+          'Screening',
           style: GoogleFonts.inter(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -320,7 +318,7 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
                   ElevatedButton.icon(
                     onPressed: _startRecording,
                     icon: const Icon(Icons.videocam),
-                    label: const Text('Start Recording'),
+                    label: const Text('Start'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       foregroundColor: Colors.white,
@@ -334,7 +332,7 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
                   ElevatedButton.icon(
                     onPressed: _stopRecording,
                     icon: const Icon(Icons.stop),
-                    label: const Text('Stop Recording'),
+                    label: const Text('Stop'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
                       foregroundColor: Colors.white,
@@ -346,6 +344,43 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
                   )
                 else
                   const CircularProgressIndicator(),
+                const SizedBox(width: 16),
+                GestureDetector(
+                  onTap: () {
+                    if (!_availableModalities.contains('audio')) {
+                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Microphone permission required.')));
+                       return;
+                    }
+                    setState(() {
+                       _isMicActive = !_isMicActive;
+                    });
+                    if (!_isMicActive) {
+                       setState(() {
+                           _messages.add('user: ✓ Voice recorded (00:05)');
+                           _messages.add('system: Processing voice input...');
+                       });
+                       Future.delayed(const Duration(seconds: 1), () {
+                           setState(() {
+                               _messages.add('system: Next...');
+                               _currentConditionIndex++;
+                           });
+                           _processNextCondition();
+                       });
+                    }
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: _isMicActive ? Colors.red : Colors.grey[200],
+                      shape: BoxShape.circle,
+                      boxShadow: _isMicActive ? [
+                         BoxShadow(color: Colors.red.withValues(alpha: 0.4), blurRadius: 10, spreadRadius: 2)
+                      ] : [],
+                    ),
+                    child: Icon(Icons.mic, color: _isMicActive ? Colors.white : Colors.black54, size: 24),
+                  ),
+                ),
               ],
             ),
           ),

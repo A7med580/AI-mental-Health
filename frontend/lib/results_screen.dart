@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mindful/app_colors.dart';
+import 'package:mindful/widgets/animated_gauge.dart';
+import 'package:mindful/widgets/animated_scale_button.dart';
 
 class ResultsScreen extends StatelessWidget {
   final Map<String, dynamic> screeningResult;
@@ -37,14 +39,14 @@ class ResultsScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: AppColors.cardWhite,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[300]!),
+                        border: Border.all(color: const Color(0xFFE8E4DF)),
                       ),
                       child: const Icon(Icons.arrow_back, size: 20, color: AppColors.textPrimary),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    'Screening Results',
+                    'Test Results',
                     style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                   ),
                 ],
@@ -73,7 +75,7 @@ class ResultsScreen extends StatelessWidget {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              'This is a screening tool, not a medical diagnosis. Please consult a healthcare professional.',
+                              'This is a test, not an official diagnosis. Please see a doctor.',
                               style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF9A3412), fontWeight: FontWeight.w500),
                             ),
                           ),
@@ -100,33 +102,16 @@ class ResultsScreen extends StatelessWidget {
                       ),
                       child: Column(
                         children: [
-                          // Result Icon
-                          Container(
-                            width: 80,
-                            height: 80,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: detectedCondition != null
-                                  ? const Color(0xFFFFF7ED)
-                                  : const Color(0xFFF0FDF4),
-                            ),
-                            child: Icon(
-                              detectedCondition != null
-                                  ? Icons.flag_outlined
-                                  : Icons.check_circle_outline,
-                              size: 40,
-                              color: detectedCondition != null
-                                  ? const Color(0xFFC2410C)
-                                  : const Color(0xFF16A34A),
-                            ),
+                          AnimatedGauge(
+                            score: confidence is double ? confidence : confidence.toDouble(),
                           ),
 
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 24),
 
                           Text(
                             detectedCondition != null
-                                ? 'Indicators Detected'
-                                : 'No Strong Indicators',
+                                ? 'Signs Found'
+                                : 'No Strong Signs',
                             style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                           ),
 
@@ -148,29 +133,6 @@ class ResultsScreen extends StatelessWidget {
                             const SizedBox(height: 16),
                           ],
 
-                          if (confidence > 0) ...[
-                            // Confidence bar
-                            Column(
-                              children: [
-                                Text(
-                                  'Confidence: ${(confidence * 100).toStringAsFixed(1)}%',
-                                  style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
-                                ),
-                                const SizedBox(height: 8),
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(6),
-                                  child: LinearProgressIndicator(
-                                    value: confidence is double ? confidence : 0.0,
-                                    minHeight: 8,
-                                    backgroundColor: Colors.grey[200],
-                                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryPurple),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                          ],
-
                           if (modelType.isNotEmpty) ...[
                             Text(
                               'Model: $modelType',
@@ -184,6 +146,32 @@ class ResultsScreen extends StatelessWidget {
                             textAlign: TextAlign.center,
                             style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary, height: 1.5),
                           ),
+
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: AppColors.background,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: const Color(0xFFE8E4DF)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('What This Means', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                                const SizedBox(height: 8),
+                                Text(
+                                  (confidence is double ? confidence : confidence.toDouble()) > 0.7
+                                      ? "High Risk: We strongly recommend scheduling a consultation with a certified mental health professional to discuss these results."
+                                      : (confidence is double ? confidence : confidence.toDouble()) > 0.4
+                                          ? "Medium Risk: Consider monitoring your symptoms and exploring the resources provided below. Reach out to a professional if things do not improve."
+                                          : "Low Risk: Keep practicing healthy habits. Re-take the assessment if you start feeling overwhelmed or if your symptoms change.",
+                                  style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -195,7 +183,7 @@ class ResultsScreen extends StatelessWidget {
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          'Detailed Results',
+                          'Details',
                           style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                         ),
                       ),
@@ -205,25 +193,22 @@ class ResultsScreen extends StatelessWidget {
 
                     const SizedBox(height: 24),
 
-                    // Buttons
-                    SizedBox(
-                      width: double.infinity,
+                    AnimatedScaleButton(
+                      onPressed: () => Navigator.popUntil(context, (route) => route.isFirst),
                       child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                         decoration: BoxDecoration(
                           gradient: AppColors.primaryGradient,
                           borderRadius: BorderRadius.circular(14),
                         ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(14),
-                            onTap: () => Navigator.popUntil(context, (route) => route.isFirst),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              child: Center(
-                                child: Text('Return to Home', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
-                              ),
-                            ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          'Go Home',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
                           ),
                         ),
                       ),
@@ -231,17 +216,25 @@ class ResultsScreen extends StatelessWidget {
 
                     const SizedBox(height: 12),
 
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pushNamed(context, '/resources'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.primaryPurple,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          side: const BorderSide(color: AppColors.primaryPurple, width: 2),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    AnimatedScaleButton(
+                      onPressed: () => Navigator.pushNamed(context, '/resources'),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppColors.primaryPurple, width: 2),
                         ),
-                        child: Text('View Resources', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+                        alignment: Alignment.center,
+                        child: Text(
+                          'View Resources',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primaryPurple,
+                          ),
+                        ),
                       ),
                     ),
 
@@ -270,7 +263,7 @@ class ResultsScreen extends StatelessWidget {
         color: AppColors.cardWhite,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: metThreshold ? AppColors.primaryPurple.withValues(alpha: 0.4) : Colors.grey[300]!,
+          color: metThreshold ? AppColors.primaryPurple.withValues(alpha: 0.4) : const Color(0xFFE8E4DF),
           width: metThreshold ? 2 : 1,
         ),
       ),
