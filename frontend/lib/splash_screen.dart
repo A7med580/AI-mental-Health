@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mindful/login_page.dart';
+import 'package:mindful/dashboard_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -33,17 +35,35 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
+    // After the splash animation, check for existing auth session
     Future.delayed(
       const Duration(seconds: 3),
       () {
         if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const LoginPage()),
-          );
+          _navigateBasedOnSession();
         }
       },
     );
+  }
+
+  /// Check if user has an active Supabase session.
+  /// If yes → go to Dashboard. If no → go to Login.
+  void _navigateBasedOnSession() {
+    final session = Supabase.instance.client.auth.currentSession;
+
+    if (session != null) {
+      // User is already logged in — skip login page
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+      );
+    } else {
+      // No session — show login page
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginPage()),
+      );
+    }
   }
 
   @override

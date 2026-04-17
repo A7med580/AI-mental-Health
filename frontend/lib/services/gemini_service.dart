@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:mindful/services/chat_storage_service.dart';
 
 class GeminiService {
   static final GeminiService _instance = GeminiService._internal();
@@ -17,8 +18,50 @@ class GeminiService {
   final String _apiKey = "AIzaSyAChhohhZY6icUBjdXYULU4WT0ZnijZ5es";
   final String _apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent";
 
+  /// Whether the conversation has been initialized (system prompt sent).
+  bool get hasHistory => _history.isNotEmpty;
+
   void resetConversation() {
     _history.clear();
+  }
+
+  /// Rebuild the Gemini API _history from a list of persisted ChatMessages.
+  /// This allows the AI to retain context from previous sessions.
+  void restoreFromHistory(List<ChatMessage> messages) {
+    _history.clear();
+
+    // Filter out error messages — they aren't real conversation turns
+    final validMessages = messages.where((m) => !m.isError).toList();
+    if (validMessages.isEmpty) return;
+
+    // Add system prompt pair first
+    final systemPrompt = "You are MindCare AI, a warm, supportive, and empathetic friend in a mental health application. The user is talking to you about their feelings, mental health, or general life. Listen actively, offer gentle, uplifting advice, and be observational. DO NOT act like a strict clinical diagnostician or a rigid form. Be conversational. Keep responses concise and natural. Use encouraging words.";
+    _history.add({
+      "role": "user",
+      "parts": [{"text": systemPrompt}],
+    });
+    _history.add({
+      "role": "model",
+      "parts": [{"text": "Understood. I will act as a warm and compassionate companion."}],
+    });
+
+    // Rebuild conversation turns from saved messages
+    // Skip the initial bot greeting (first bot message) since the system prompt covers it
+    for (final msg in validMessages) {
+      if (msg.isBot) {
+        // Skip the initial welcome message (it's already handled by system prompt)
+        if (msg.text == "Hello! I am MindCare AI. I am here to listen to you.") continue;
+        _history.add({
+          "role": "model",
+          "parts": [{"text": msg.text}],
+        });
+      } else {
+        _history.add({
+          "role": "user",
+          "parts": [{"text": msg.text}],
+        });
+      }
+    }
   }
 
   Future<String> sendMessage(String userMessage) async {

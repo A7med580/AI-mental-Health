@@ -340,7 +340,7 @@ class _LoginPageState extends State<LoginPage> {
       if (mounted) Navigator.pop(context);
 
       if (response.user != null) {
-        if (mounted) Navigator.pushNamed(context, '/chat');
+        if (mounted) Navigator.pushNamedAndRemoveUntil(context, '/chat', (route) => false);
       }
     } on AuthException catch (e) {
       if (mounted) Navigator.pop(context);

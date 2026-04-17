@@ -12,6 +12,7 @@ import 'package:mindful/profile_screen.dart';
 import 'package:mindful/services/chat_session_service.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:mindful/services/gemini_service.dart';
+import 'package:mindful/services/chat_storage_service.dart';
 
 class MindfulAIScreen extends StatefulWidget {
   const MindfulAIScreen({Key? key}) : super(key: key);
@@ -26,19 +27,68 @@ class _MindfulAIScreenState extends State<MindfulAIScreen> {
   final FocusNode _focusNode = FocusNode();
 
   bool _isWaitingForResponse = false;
-  final List<_ChatBubble> _messages = [
-    _ChatBubble(
-      text: "Hello! I am MindCare AI. I am here to listen to you.",
-      isBot: true,
-    ),
-  ];
+  bool _isLoadingHistory = true;
+
+  /// The welcome message shown at the start of every conversation.
+  static const String _welcomeText =
+      "Hello! I am MindCare AI. I am here to listen to you.";
+
+  List<ChatMessage> _messages = [];
 
   @override
   void initState() {
     super.initState();
     ChatSessionService.logSession();
-    // Reset conversation on open so it's a fresh chat every time
+    _loadChatHistory();
+  }
+
+  /// Load saved chat history from local storage.
+  /// If no history exists, show the welcome message and start fresh.
+  Future<void> _loadChatHistory() async {
+    final saved = await ChatStorageService.loadChatHistory();
+
+    if (saved.isNotEmpty) {
+      // Restore messages and rebuild Gemini context
+      setState(() {
+        _messages = saved;
+        _isLoadingHistory = false;
+      });
+      GeminiService().restoreFromHistory(saved);
+    } else {
+      // Fresh conversation
+      setState(() {
+        _messages = [
+          ChatMessage(
+            text: _welcomeText,
+            isBot: true,
+            timestamp: DateTime.now(),
+          ),
+        ];
+        _isLoadingHistory = false;
+      });
+      GeminiService().resetConversation();
+    }
+
+    _scrollToBottom();
+  }
+
+  /// Start a brand new conversation — clear history and reset AI context.
+  Future<void> _startNewChat() async {
+    await ChatStorageService.clearChatHistory();
     GeminiService().resetConversation();
+
+    setState(() {
+      _messages = [
+        ChatMessage(
+          text: _welcomeText,
+          isBot: true,
+          timestamp: DateTime.now(),
+        ),
+      ];
+      _isWaitingForResponse = false;
+    });
+
+    _scrollToBottom();
   }
 
   @override
@@ -53,8 +103,15 @@ class _MindfulAIScreenState extends State<MindfulAIScreen> {
     if (text.trim().isEmpty || _isWaitingForResponse) return;
 
     _messageController.clear();
+
+    final userMsg = ChatMessage(
+      text: text,
+      isBot: false,
+      timestamp: DateTime.now(),
+    );
+
     setState(() {
-      _messages.add(_ChatBubble(text: text, isBot: false));
+      _messages.add(userMsg);
       _isWaitingForResponse = true;
     });
     _scrollToBottom();
@@ -62,16 +119,38 @@ class _MindfulAIScreenState extends State<MindfulAIScreen> {
 
     try {
       final response = await GeminiService().sendMessage(text);
+
+      final botMsg = ChatMessage(
+        text: response,
+        isBot: true,
+        timestamp: DateTime.now(),
+      );
+
       setState(() {
         _isWaitingForResponse = false;
-        _messages.add(_ChatBubble(text: response, isBot: true));
+        _messages.add(botMsg);
       });
+
+      // Persist after every successful exchange
+      await ChatStorageService.saveChatHistory(_messages);
+
       _scrollToBottom();
     } catch (e) {
+      final errorMsg = ChatMessage(
+        text: 'Error connecting. Please try again.',
+        isBot: true,
+        isError: true,
+        timestamp: DateTime.now(),
+      );
+
       setState(() {
         _isWaitingForResponse = false;
-        _messages.add(_ChatBubble(text: 'Error connecting. Please try again.', isBot: true, isError: true));
+        _messages.add(errorMsg);
       });
+
+      // Save even with errors so the user sees their history
+      await ChatStorageService.saveChatHistory(_messages);
+
       _scrollToBottom();
     }
   }
@@ -88,6 +167,67 @@ class _MindfulAIScreenState extends State<MindfulAIScreen> {
     });
   }
 
+  /// Show confirmation dialog before clearing chat history.
+  void _confirmNewChat() {
+    // If there's only the welcome message, just reset without asking
+    if (_messages.length <= 1) {
+      _startNewChat();
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.cardWhite,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'Start New Chat?',
+          style: GoogleFonts.inter(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        content: Text(
+          'This will clear your current conversation history. This action cannot be undone.',
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            color: AppColors.textSecondary,
+            height: 1.5,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.inter(color: AppColors.textSecondary),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _startNewChat();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryPurple,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text(
+              'New Chat',
+              style: GoogleFonts.inter(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -99,14 +239,22 @@ class _MindfulAIScreenState extends State<MindfulAIScreen> {
             children: [
               _buildHeader(),
               Expanded(
-                child: ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                  itemCount: _messages.length,
-                  itemBuilder: (context, index) {
-                    return _buildMessageBubble(_messages[index]);
-                  },
-                ),
+                child: _isLoadingHistory
+                    ? Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation(
+                            AppColors.primaryPurple,
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                        itemCount: _messages.length,
+                        itemBuilder: (context, index) {
+                          return _buildMessageBubble(_messages[index]);
+                        },
+                      ),
               ),
               if (_isWaitingForResponse) _buildTypingIndicator(),
               _buildDisclaimer(),
@@ -150,12 +298,45 @@ class _MindfulAIScreenState extends State<MindfulAIScreen> {
               ],
             ),
           ),
+          // New Chat button
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: _confirmNewChat,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryPurple.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.primaryPurple.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.add_comment_outlined, size: 16, color: AppColors.primaryPurple),
+                    const SizedBox(width: 4),
+                    Text(
+                      'New',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primaryPurple,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildMessageBubble(_ChatBubble msg) {
+  Widget _buildMessageBubble(ChatMessage msg) {
     return Align(
       alignment: msg.isBot ? Alignment.centerLeft : Alignment.centerRight,
       child: GlassContainer(
@@ -360,11 +541,4 @@ class _MindfulAIScreenState extends State<MindfulAIScreen> {
       ),
     );
   }
-}
-
-class _ChatBubble {
-  final String text;
-  final bool isBot;
-  final bool isError;
-  const _ChatBubble({required this.text, required this.isBot, this.isError = false});
 }
