@@ -17,6 +17,7 @@ import 'package:mindful/screens/initial_questionnaire_screen.dart';
 import 'package:mindful/screens/notifications_screen.dart';
 import 'package:mindful/services/notification_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:mindful/widgets/backend_status_indicator.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -165,6 +166,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           const SizedBox(width: 8),
           Text('Mindful AI', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.txtPrimary(context))),
+          const SizedBox(width: 10),
+          const BackendStatusIndicator(),
           const Spacer(),
           Stack(
             children: [

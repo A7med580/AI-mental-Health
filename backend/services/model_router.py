@@ -57,6 +57,7 @@ class ModelRouter:
         if not isinstance(answers, (list, tuple)) or len(answers) != 10:
             raise ValueError("AQ-10 answers must be a list of length 10.")
 
+        print(f"[ASD/text] Predicting for answers: {answers}", flush=True)
         X = np.array(answers, dtype=np.float32).reshape(1, -1)
 
         loaded_models: List[tuple[str, Any]] = []
@@ -67,16 +68,18 @@ class ModelRouter:
             try:
                 model = self.model_loader.load_model(model_path, "joblib")
                 loaded_models.append((model_name, model))
-            except Exception:
-                # ignore missing/broken models so deployment can still work with remaining ones
+                print(f"[ASD/text] Loaded model: {model_name}", flush=True)
+            except Exception as e:
+                print(f"[ASD/text] WARNING: Failed to load {model_name} from {model_path}: {e}", flush=True)
                 continue
 
         if not loaded_models:
-            print("[ASD/text] Warning: No models loaded. Using scoring fallback.")
+            print("[ASD/text] Warning: No models loaded. Using scoring fallback.", flush=True)
             total_score = sum(answers)
             is_autism = (total_score >= 6)
             prediction = "Autism" if is_autism else "Non-Autism"
-            confidence = 1.0 if is_autism else 0.0 
+            # Proportional confidence based on score (0-10 scale)
+            confidence = round(total_score / 10.0, 3)
             return {
                 "prediction": prediction,
                 "confidence": confidence,
@@ -104,11 +107,13 @@ class ModelRouter:
         final_prediction_int = 1 if sum(preds) >= (len(preds) / 2.0) else 0
         final_confidence = float(sum(probs) / len(probs))
 
-        return {
+        result = {
             "prediction": "Autism" if final_prediction_int == 1 else "Non-Autism",
             "confidence": round(final_confidence, 3),
             "models_used": [n for n, _ in loaded_models],
         }
+        print(f"[ASD/text] Final Result: {result}", flush=True)
+        return result
 
     # =========================================================
     # ASD FACE from IMAGE URL
@@ -121,49 +126,62 @@ class ModelRouter:
           - class_indices: path to class_indices.json
           - confidence_threshold (optional, default 0.5)
         """
-        # Optional TensorFlow/Keras Check
         try:
-            from tensorflow import keras
-            TF_AVAILABLE = True
-        except ImportError:
-            TF_AVAILABLE = False
-            keras = None
+            # Optional TensorFlow/Keras Check
+            try:
+                from tensorflow import keras
+                TF_AVAILABLE = True
+            except ImportError:
+                TF_AVAILABLE = False
+                keras = None
 
-        if not TF_AVAILABLE:
-            raise RuntimeError("TensorFlow is not available, cannot run ASD TF face model.")
+            if not TF_AVAILABLE:
+                return {
+                    "prediction": "Non-Autism",
+                    "confidence": 0.0,
+                    "error": "TensorFlow is not available on this server.",
+                    "is_fallback": True
+                }
 
-        print("Starting predict_asd_face...", flush=True)
+            print(f"Starting predict_asd_face for {image_url}...", flush=True)
 
-        model_path = config.get("model_path")
-        class_indices_path = config.get("class_indices")
+            model_path = config.get("model_path")
+            class_indices_path = config.get("class_indices")
 
-        if not model_path or not class_indices_path:
-            raise ValueError("ASD face_url config must include model_path (.h5) and class_indices (.json).")
+            if not model_path or not class_indices_path:
+                raise ValueError("ASD face_url config must include model_path (.h5) and class_indices (.json).")
 
-        threshold = float(config.get("confidence_threshold", 0.5))
+            print("Calling feature extractor...", flush=True)
+            # 1) Get face crop (224x224 RGB) + bbox
+            fx = self.feature_extractor.extract_face_crop_224_from_url(image_url)
+            print("Feature extractor returned.", flush=True)
 
-        print("Calling feature extractor...", flush=True)
-        # 1) Get face crop (224x224 RGB) + bbox
-        fx = self.feature_extractor.extract_face_crop_224_from_url(image_url)
-        print("Feature extractor returned.", flush=True)
+            if fx.get("face_rgb") is None:
+                return {
+                    "prediction": "Non-Autism",
+                    "confidence": 0.0,
+                    "face_detected": False,
+                    "faces_count": int(fx.get("faces_count", 0)),
+                    "bbox": fx.get("bbox"),
+                    "error": fx.get("error", "No face detected"),
+                }
 
-        if fx.get("face_rgb") is None:
-            return {
-                "prediction": "Non-Autism",
-                "confidence": 0.0,
-                "face_detected": False,
-                "faces_count": int(fx.get("faces_count", 0)),
-                "bbox": fx.get("bbox"),
-                "error": fx.get("error", "No face detected"),
-            }
+            face_rgb = fx["face_rgb"]  # np.ndarray (224,224,3) RGB
 
-        face_rgb = fx["face_rgb"]  # np.ndarray (224,224,3) RGB
+            if not os.path.exists(model_path):
+                return {
+                    "prediction": "Non-Autism",
+                    "confidence": 0.0,
+                    "face_detected": True,
+                    "error": f"Model file missing: {os.path.basename(model_path)}",
+                    "is_fallback": True
+                }
 
-        print("Loading keras model...", flush=True)
-        # 2) Load TF model correctly (keras, not joblib)
-        try:
+            print(f"Loading keras model from {model_path}...", flush=True)
+            # 2) Load TF model correctly (keras, not joblib)
             model = self.model_loader.load_model(model_path, "keras")
             print("Keras model loaded!", flush=True)
+            
             class_indices = self.model_loader.load_json(class_indices_path)
             class_names = {v: k for k, v in class_indices.items()}
 
@@ -175,10 +193,11 @@ class ModelRouter:
             predicted_class = class_names.get(pred_idx, "unknown")
 
             # Convert to autism probability
+            threshold = float(config.get("confidence_threshold", 0.5))
             autism_prob = pred_conf if predicted_class == "autistic" else (1.0 - pred_conf)
             label = "Autism" if autism_prob >= threshold else "Non-Autism"
 
-            return {
+            result = {
                 "prediction": label,
                 "confidence": round(float(autism_prob), 3),
                 "face_detected": True,
@@ -187,16 +206,14 @@ class ModelRouter:
                 "threshold": threshold,
                 "class": predicted_class,
             }
+            print(f"[ASD/face] Final Result: {result}", flush=True)
+            return result
         except Exception as e:
-            print(f"[Router] WARNING: ASD face model error: {e}", flush=True)
-            # Graceful fallback: report as non-autism but flag the error in detail
+            print(f"[Router] ASD face model fatal error: {e}", flush=True)
             return {
                 "prediction": "Non-Autism",
                 "confidence": 0.0,
-                "face_detected": True,
-                "faces_count": int(fx.get("faces_count", 1)),
-                "bbox": fx.get("bbox"),
-                "error": f"Model error: {str(e)}",
+                "error": f"Internal error: {str(e)}",
                 "is_fallback": True
             }
 

@@ -14,3 +14,5 @@ transformers>=4.35.0
 lightgbm>=4.0.0
 soundfile>=0.12.1
 librosa>=0.10.1
+xgboost>=2.0.0
+tensorflow>=2.15.0

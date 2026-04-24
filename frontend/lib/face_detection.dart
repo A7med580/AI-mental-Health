@@ -12,9 +12,13 @@ import 'package:google_fonts/google_fonts.dart';
 class EmotionDetectionScreen extends StatefulWidget {
   final bool isAutismScreening;
 
+  /// The text-model result from the questionnaire step (carried forward).
+  final Map<String, dynamic>? textPrediction;
+
   const EmotionDetectionScreen({
     Key? key,
     this.isAutismScreening = false,
+    this.textPrediction,
   }) : super(key: key);
 
   @override
@@ -96,14 +100,54 @@ class _EmotionDetectionScreenState extends State<EmotionDetectionScreen> {
         setState(() {
           _isProcessing = false;
         });
+        print("[Frontend] ASD Face Response: $response");
 
         final predictionData = response['prediction'] ?? response;
-        final predictionValue = predictionData['prediction'] ?? 0;
-        final predictedClass = predictionData['class'] ?? '';
-        final confidence = predictionData['confidence'] ?? 0.0;
+        final isFallback = predictionData['is_fallback'] == true;
+        final faceError = predictionData['error']?.toString();
 
-        final isAutismDetected = (predictionValue == 1 ||
-            predictedClass.toString().toLowerCase().contains('autistic'));
+        // Retrieve text prediction passed from the questionnaire step
+        final textResult = widget.textPrediction;
+        final double textConfidence = (textResult != null && textResult['confidence'] is num)
+            ? (textResult['confidence'] as num).toDouble()
+            : 0.0;
+        final String textLabel = (textResult?['prediction'] ?? '').toString();
+
+        double finalConfidence;
+        bool isAutismDetected;
+        String analysisNote;
+
+        // Face detection results
+        final double faceConfidence = (predictionData['confidence'] is num)
+            ? (predictionData['confidence'] as num).toDouble()
+            : 0.0;
+        final predictedClass = (predictionData['class'] ?? '').toString();
+        final faceIsAutism = predictedClass.toLowerCase().contains('autistic') &&
+            !predictedClass.toLowerCase().contains('non');
+
+        if (isFallback || (faceError != null && faceError.isNotEmpty) || (faceConfidence == 0 && !faceIsAutism)) {
+          // Face model unavailable or returned zero — use text result only
+          finalConfidence = textConfidence;
+          isAutismDetected = textLabel.toLowerCase() == 'autism' && textConfidence >= 0.5;
+          
+          String reason = isFallback ? "unavailable" : (faceConfidence == 0 ? "inconclusive" : "error");
+          analysisNote = 'Face analysis was $reason. '
+              'Result is based on your questionnaire answers (${(textConfidence * 100).toInt()}% confidence). ';
+        } else {
+          // Face model worked — combine text + face
+          // Weighted average: text 40%, face 60%
+          finalConfidence = (textConfidence * 0.4) + (faceConfidence * 0.6);
+          
+          // If the weighted result is 0 but text was high, don't show 0
+          if (finalConfidence == 0 && textConfidence > 0) {
+            finalConfidence = textConfidence;
+          }
+
+          isAutismDetected = faceIsAutism || (textLabel.toLowerCase() == 'autism' && finalConfidence >= 0.5);
+          analysisNote = 'Result combines questionnaire (${(textConfidence * 100).toStringAsFixed(0)}%) '
+              'and facial analysis (${(faceConfidence * 100).toStringAsFixed(0)}%). ';
+        }
+
 
         Navigator.pushReplacement(
           context,
@@ -111,13 +155,12 @@ class _EmotionDetectionScreenState extends State<EmotionDetectionScreen> {
             builder: (context) => ResultsScreen(
               screeningResult: {
                 'detected_condition': isAutismDetected ? 'Autism' : null,
-                'confidence': confidence,
-                'message': 'Face detection analysis completed. '
-                    'Based on the questionnaire and face analysis, '
-                    '${isAutismDetected ? "indicators of autism were detected" : "no strong indicators of autism were detected"}. '
+                'confidence': finalConfidence,
+                'message': '$analysisNote'
+                    '${isAutismDetected ? "Indicators of autism were detected" : "No strong indicators of autism were detected"}. '
                     'However, this is a screening tool and not a medical diagnosis. '
                     'Please consult a healthcare professional for proper evaluation.',
-                'model_type': 'ASD Text + Face Model',
+                'model_type': 'ASD Screening (Text + Face)',
               },
             ),
           ),
@@ -128,6 +171,34 @@ class _EmotionDetectionScreenState extends State<EmotionDetectionScreen> {
         setState(() {
           _isProcessing = false;
         });
+
+        // On total failure, still use text result if available
+        final textResult = widget.textPrediction;
+        if (textResult != null) {
+          final double textConfidence = (textResult['confidence'] is num)
+              ? (textResult['confidence'] as num).toDouble()
+              : 0.0;
+          final String textLabel = (textResult['prediction'] ?? '').toString();
+          final bool isAutismDetected = textLabel.toLowerCase() == 'autism' && textConfidence >= 0.5;
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ResultsScreen(
+                screeningResult: {
+                  'detected_condition': isAutismDetected ? 'Autism' : null,
+                  'confidence': textConfidence,
+                  'message': 'Face analysis encountered an error. '
+                      'Result is based on your questionnaire answers only. '
+                      '${isAutismDetected ? "Indicators of autism were detected" : "No strong indicators of autism were detected"}. '
+                      'Please consult a healthcare professional.',
+                  'model_type': 'ASD Text Model (AQ-10)',
+                },
+              ),
+            ),
+          );
+          return;
+        }
 
         showDialog(
           context: context,
@@ -152,6 +223,7 @@ class _EmotionDetectionScreenState extends State<EmotionDetectionScreen> {
       }
     }
   }
+
 
   // ─── UI (NEW FIGMA DESIGN) ──────────────────────────────────────────
 

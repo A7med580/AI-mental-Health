@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 
 class ApiConfig {
   // Put your Mac LAN IP here for REAL iPhone
-  static const String PHYSICAL_DEVICE_IP = 'http://192.168.1.142:8000';
+  static const String PHYSICAL_DEVICE_IP = 'http://192.168.1.2:8000';
 
   static const String ANDROID_EMULATOR_URL = 'http://10.0.2.2:8000';
   static const String IOS_SIMULATOR_URL = 'http://127.0.0.1:8000';
@@ -53,3 +53,5 @@ class ApiConfig {
     }
   }
 }
+
+

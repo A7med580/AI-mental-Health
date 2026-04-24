@@ -82,6 +82,7 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
 
       if (!mounted) return;
       setState(() => _isSubmitting = false);
+      print("[Frontend] ASD Text Response: $response");
 
       final predictionObj = (response['prediction'] is Map)
           ? Map<String, dynamic>.from(response['prediction'] as Map)
@@ -102,7 +103,10 @@ class _AutismQuestionnaireScreenState extends State<AutismQuestionnaireScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => const EmotionDetectionScreen(isAutismScreening: true),
+            builder: (_) => EmotionDetectionScreen(
+              isAutismScreening: true,
+              textPrediction: predictionObj,
+            ),
           ),
         );
       } else {
