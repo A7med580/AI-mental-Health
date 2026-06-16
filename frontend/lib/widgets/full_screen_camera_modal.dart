@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:mindful/utils/macos_camera_helper.dart';
 
 class FullScreenCameraModal extends StatefulWidget {
   final CameraDescription camera;
@@ -54,6 +55,17 @@ class _FullScreenCameraModalState extends State<FullScreenCameraModal> with Widg
   }
 
   Future<void> _initCamera() async {
+    // macOS: camera plugin is not available
+    if (MacOSCameraHelper.isMacOS) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Camera recording is not available on macOS. Use file picker instead.')),
+        );
+      }
+      return;
+    }
+
     final controller = CameraController(
       widget.camera,
       ResolutionPreset.medium,

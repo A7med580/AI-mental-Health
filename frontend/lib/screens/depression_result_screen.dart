@@ -38,7 +38,7 @@ class DepressionResultScreen extends StatelessWidget {
         
         if (type == 'text') textConfidence = confStr;
         if (type == 'audio') audioConfidence = confStr;
-        if (type == 'visual') visualConfidence = confStr;
+        if (type == 'visual' || type == 'facial' || type == 'video') visualConfidence = confStr;
       }
     }
 
@@ -69,6 +69,7 @@ class DepressionResultScreen extends StatelessWidget {
                   children: [
                     AnimatedGauge(
                       score: fusedConfidence is double ? fusedConfidence : fusedConfidence.toDouble(),
+                      label: 'Risk Score',
                     ),
                     const SizedBox(height: 24),
                     Text(
@@ -120,7 +121,7 @@ class DepressionResultScreen extends StatelessWidget {
                   confidence: audioConfidence,
                 ),
               if (modalitiesUsed.contains('audio')) const SizedBox(height: 12),
-              if (modalitiesUsed.contains('visual'))
+              if (modalitiesUsed.contains('visual') || modalitiesUsed.contains('video') || modalitiesUsed.contains('facial'))
                 _buildModalityRow(
                   icon: Icons.face,
                   title: 'Expression Analysis',

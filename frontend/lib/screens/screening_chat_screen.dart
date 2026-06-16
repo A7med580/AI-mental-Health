@@ -7,7 +7,9 @@ import 'package:mindful/services/model_service.dart';
 import 'package:mindful/widgets/page_transitions.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:camera/camera.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:mindful/utils/macos_camera_helper.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ScreeningChatScreen extends StatefulWidget {
@@ -72,6 +74,9 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
   }
 
   Future<void> _initializeCamera() async {
+    // macOS: camera plugin is not available
+    if (MacOSCameraHelper.isMacOS) return;
+
     try {
       final cameras = await availableCameras();
       if (cameras.isNotEmpty) {
@@ -107,6 +112,21 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
   }
 
   Future<void> _startRecording() async {
+    // macOS: pick a video file from disk instead of recording
+    if (MacOSCameraHelper.isMacOS) {
+      try {
+        final picked = await MacOSCameraHelper.pickVideo();
+        if (picked == null) return;
+        setState(() {
+          _recordedVideoPath = picked.path;
+        });
+        await _processRecording();
+      } catch (e) {
+        print('Error picking video on macOS: $e');
+      }
+      return;
+    }
+
     if (_cameraController == null || !_cameraController!.value.isInitialized) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Camera not found')),
@@ -292,8 +312,8 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
             ),
           ),
 
-          // Camera Preview / Recording Controls
-          if (_cameraController != null && _cameraController!.value.isInitialized)
+          // Camera Preview / Recording Controls (not available on macOS)
+          if (!MacOSCameraHelper.isMacOS && _cameraController != null && _cameraController!.value.isInitialized)
             Container(
               height: 200,
               margin: const EdgeInsets.all(16),
@@ -345,40 +365,13 @@ class _ScreeningChatScreenState extends State<ScreeningChatScreen> {
                 else
                   const CircularProgressIndicator(),
                 const SizedBox(width: 16),
-                GestureDetector(
-                  onTap: () {
-                    if (!_availableModalities.contains('audio')) {
-                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Microphone permission required.')));
-                       return;
-                    }
-                    setState(() {
-                       _isMicActive = !_isMicActive;
-                    });
-                    if (!_isMicActive) {
-                       setState(() {
-                           _messages.add('user: ✓ Voice recorded (00:05)');
-                           _messages.add('system: Processing voice input...');
-                       });
-                       Future.delayed(const Duration(seconds: 1), () {
-                           setState(() {
-                               _messages.add('system: Next...');
-                               _currentConditionIndex++;
-                           });
-                           _processNextCondition();
-                       });
-                    }
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: _isMicActive ? Colors.red : Colors.grey[200],
-                      shape: BoxShape.circle,
-                      boxShadow: _isMicActive ? [
-                         BoxShadow(color: Colors.red.withValues(alpha: 0.4), blurRadius: 10, spreadRadius: 2)
-                      ] : [],
-                    ),
-                    child: Icon(Icons.mic, color: _isMicActive ? Colors.white : Colors.black54, size: 24),
+                // Voice analysis is not available in this version.
+                // The previous mic button faked a recording; removed.
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    'Voice analysis not available in this version.',
+                    style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                   ),
                 ),
               ],

@@ -2,7 +2,10 @@
 Depression Fusion Service
 Integrates scores from multimodal inputs and calculates PHQ-8 severity.
 """
+import logging
 from typing import List, Dict, Any
+
+logger = logging.getLogger(__name__)
 
 class DepressionFusion:
     
@@ -14,8 +17,12 @@ class DepressionFusion:
         """
         modalities = {res["model_type"]: res["confidence"] for res in individual_results}
         
-        # Default weights
-        weights = {"text": 0.45, "audio": 0.30, "visual": 0.25}
+        logger.info(f"[DepressionFusion] Modalities received: {modalities}")
+        print(f"[DepressionFusion] Modalities received: {modalities}", flush=True)
+        
+        # Default weights — "facial" and "visual" both map to the same weight
+        # so fusion works regardless of which key the upstream code uses.
+        weights = {"text": 0.45, "audio": 0.30, "visual": 0.25, "facial": 0.25}
         
         # Calculate weighted average based on available modalities
         total_weight = 0.0
@@ -27,6 +34,9 @@ class DepressionFusion:
                 weighted_sum += score * weights[mod]
                 total_weight += weights[mod]
                 used_modalities.append(mod)
+                print(f"[DepressionFusion] {mod}: score={score:.4f}, weight={weights[mod]}", flush=True)
+            else:
+                print(f"[DepressionFusion] WARNING: Unknown modality '{mod}' — skipped", flush=True)
         
         if total_weight == 0:
             return {
@@ -39,6 +49,8 @@ class DepressionFusion:
             
         fused_confidence = weighted_sum / total_weight
         fused_prediction = 1 if fused_confidence >= 0.5 else 0
+        
+        print(f"[DepressionFusion] Fused: confidence={fused_confidence:.4f}, prediction={fused_prediction}, modalities={used_modalities}", flush=True)
         
         # Map 0.0-1.0 confidence to 0-24 PHQ-8 range
         # Note: In a real app, we'd use the regressor, but based on prompt requirements:

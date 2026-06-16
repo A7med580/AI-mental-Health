@@ -128,9 +128,10 @@ class ModelLoader:
             try:
                 return self.load_model(path, mtype)
             except Exception as e:
-                print(f"[ModelLoader] Warning: Could not load {name} at {path}: {e}")
+                print(f"[ModelLoader] Warning: Could not load {name} at {path}: {e}", flush=True)
                 return None
 
+        print("[ModelLoader] Loading ADHD Bundle...", flush=True)
         bundle = {
             "behavior_model": safe_load(cfg.ADHD_BEHAVIOR_MODEL, "joblib", "behavior_model"),
             "behavior_feature_names": safe_load(cfg.ADHD_BEHAVIOR_FEATURES, "joblib", "behavior_features"),
@@ -140,37 +141,52 @@ class ModelLoader:
         }
 
         # TensorFlow models
+        # voice_cnn_model.h5 is a Git-LFS pointer stub on this branch — skip loading.
+        bundle["voice_cnn"] = None
         try:
             from tensorflow import keras
-            bundle["voice_cnn"] = safe_load(cfg.ADHD_VOICE_CNN, "h5", "voice_cnn")
             bundle["emotion_model"] = safe_load(cfg.ADHD_FACIAL_MODEL, "keras", "emotion_model")
         except ImportError:
-            print("[ModelLoader] TensorFlow not available, skipping voice_cnn/emotion models")
-            bundle["voice_cnn"] = None
+            print("[ModelLoader] TensorFlow not available, skipping emotion model", flush=True)
             bundle["emotion_model"] = None
 
         # Sequence Model (PyTorch)
         bundle["sequence_model"] = self._load_adhd_sequence_model()
 
         self._models[key] = bundle
+        print("[ModelLoader] ADHD Bundle loaded.", flush=True)
         return bundle
 
     def _load_adhd_sequence_model(self) -> Any:
-        # Implementation loads from backend/Models/adhd/adhd_facial_sequence_best.pt
-        model_path = str(Path(__file__).resolve().parent.parent / "Models" / "adhd" / "adhd_facial_sequence_best.pt")
-        device = torch.device('mps' if torch.backends.mps.is_available() else ('cuda' if torch.cuda.is_available() else 'cpu'))
+        # Try uppercase first (actual directory name), then lowercase for cross-platform compat
+        base = Path(__file__).resolve().parent.parent / "Models"
+        model_path = str(base / "ADHD" / "adhd_facial_sequence_best.pt")
+        if not os.path.exists(model_path):
+            model_path = str(base / "adhd" / "adhd_facial_sequence_best.pt")
+
+        # STABILITY FIX: Force CPU on macOS to avoid MPS Segfaults
+        import platform
+        if platform.system() == "Darwin":
+            device = torch.device('cpu')
+            print("[ModelLoader] macOS detected: Forcing CPU for ADHD Sequence stability.", flush=True)
+        else:
+            device = torch.device('mps' if torch.backends.mps.is_available() else ('cuda' if torch.cuda.is_available() else 'cpu'))
 
         try:
             model = ADHDSequenceLSTM(input_dim=17, hidden_dim=64, num_layers=2)
             if os.path.exists(model_path):
                 model.load_state_dict(torch.load(model_path, map_location=device, weights_only=True))
+                model.to(device)
+                model.eval()
+                # Verify trained weights loaded (not random init)
+                param_mean = next(model.parameters()).data.mean().item()
+                print(f"[ModelLoader] ADHD Sequence model loaded from {model_path}", flush=True)
+                return {"model": model, "device": device}
             else:
-                print(f"[ModelLoader] Warning: ADHD Sequence model file not found at {model_path}. Using uninitialized weights.")
-            model.to(device)
-            model.eval()
-            return {"model": model, "device": device}
+                print(f"[ModelLoader] ERROR: ADHD Sequence model NOT FOUND at {model_path}", flush=True)
+                return None
         except Exception as e:
-            print(f"[ModelLoader] ADHD Sequence model loading error: {e}")
+            print(f"[ModelLoader] ADHD Sequence model loading error: {e}", flush=True)
             return None
 
     # ✅ NEW: Depression (DAIC-WOZ) bundle loader
@@ -192,25 +208,34 @@ class ModelLoader:
         print("[ModelLoader] Loading Depression Bundle...", flush=True)
 
         # 1. Fusion Model & Audio (LightGBM)
+        print("[ModelLoader] Loading fusion and audio models...", flush=True)
         try:
             fusion_model = self.load_model(dep_cfg["fusion_model"], "joblib")
-        except FileNotFoundError:
-            print(f"[ModelLoader] Warning: Fusion model missing at {dep_cfg['fusion_model']}")
+        except Exception as e:
+            print(f"[ModelLoader] Warning: Fusion model missing: {e}", flush=True)
             fusion_model = None
 
         try:
             audio_model = self.load_model(dep_cfg["audio_model"], "joblib")
             audio_scaler = self.load_model(dep_cfg["audio_scaler"], "joblib")
-        except FileNotFoundError:
-            print(f"[ModelLoader] Warning: Audio model/scaler missing")
+        except Exception as e:
+            print(f"[ModelLoader] Warning: Audio model/scaler missing: {e}", flush=True)
             audio_model = None
             audio_scaler = None
 
         # 2. Visual Model (PyTorch BiLSTM)
+        print("[ModelLoader] Loading visual BiLSTM...", flush=True)
         visual_model_path = dep_cfg["visual_model"]
         visual_meta_path = dep_cfg["visual_meta"]
         
-        device = torch.device('mps' if torch.backends.mps.is_available() else ('cuda' if torch.cuda.is_available() else 'cpu'))
+        # STABILITY FIX: Force CPU on macOS
+        import platform
+        if platform.system() == "Darwin":
+            device = torch.device('cpu')
+            print("[ModelLoader] macOS detected: Forcing CPU for Depression Visual stability.", flush=True)
+        else:
+            device = torch.device('mps' if torch.backends.mps.is_available() else ('cuda' if torch.cuda.is_available() else 'cpu'))
+
         visual_model = None
         visual_meta = None
 
@@ -227,12 +252,14 @@ class ModelLoader:
                 visual_model.load_state_dict(torch.load(visual_model_path, map_location=device, weights_only=True))
                 visual_model.to(device)
                 visual_model.eval()
+                print("[ModelLoader] Visual model loaded successfully.", flush=True)
             except Exception as e:
-                print(f"[ModelLoader] Error loading visual model: {e}")
+                print(f"[ModelLoader] Error loading visual model: {e}", flush=True)
         else:
-            print(f"[ModelLoader] Warning: Visual model files missing")
+            print(f"[ModelLoader] Warning: Visual model files missing at {visual_model_path}", flush=True)
 
         # 3. Text Model (HuggingFace Transformers DistilBERT)
+        print("[ModelLoader] Loading text Transformer...", flush=True)
         text_model = None
         text_tokenizer = None
         text_dir = dep_cfg["text_dir"]
@@ -243,10 +270,11 @@ class ModelLoader:
                 text_model = AutoModelForSequenceClassification.from_pretrained(text_dir)
                 text_model.to(device)
                 text_model.eval()
+                print("[ModelLoader] Text model loaded successfully.", flush=True)
             except Exception as e:
-                print(f"[ModelLoader] Error loading text model: {e}")
+                print(f"[ModelLoader] Error loading text model: {e}", flush=True)
         else:
-            print(f"[ModelLoader] Warning: Text model directory missing: {text_dir}")
+            print(f"[ModelLoader] Warning: Text model directory missing: {text_dir}", flush=True)
 
         bundle = {
             "fusion_model": fusion_model,
@@ -261,5 +289,5 @@ class ModelLoader:
         }
 
         self._models[key] = bundle
-        print("[ModelLoader] Depression Bundle loaded successfully.", flush=True)
+        print("[ModelLoader] Depression Bundle loaded fully.", flush=True)
         return bundle

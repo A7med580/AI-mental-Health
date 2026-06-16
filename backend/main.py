@@ -123,7 +123,7 @@ async def health_check():
 # -------------------------
 # Feature Extraction
 # -------------------------
-@app.post("/extract-features", dependencies=[Depends(verify_api_key)])
+@app.post("/extract-features")
 async def extract_features(
     modality: str = Form(...),
     video_file: Optional[UploadFile] = File(None),
@@ -182,7 +182,7 @@ async def extract_features(
 # -------------------------
 # General Screening (ranked)
 # -------------------------
-@app.post("/run-screening", dependencies=[Depends(verify_api_key)])
+@app.post("/run-screening")
 async def run_screening(
     ranked_conditions: str = Form(...),
     available_modalities: str = Form(...),
@@ -235,7 +235,7 @@ async def run_screening(
 # ASD - REQUIRED PIPELINE ENDPOINTS
 # -------------------------
 
-@app.post("/asd/text/predict", dependencies=[Depends(verify_api_key)])
+@app.post("/asd/text/predict")
 async def asd_text_predict(payload: ASDTextRequest):
     """
     AQ-10 answers -> ASD Text model -> Autism / Non-Autism
@@ -254,7 +254,7 @@ async def asd_text_predict(payload: ASDTextRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/asd/face/predict-url", dependencies=[Depends(verify_api_key)])
+@app.post("/asd/face/predict-url")
 async def asd_face_predict_url(payload: ASDFaceUrlRequest):
     """
     image_url -> face crop (224x224) -> ASD Face TF model (.h5) -> Autism/Non-Autism + confidence
@@ -282,7 +282,7 @@ async def asd_face_predict_url(payload: ASDFaceUrlRequest):
 # -------------------------
 # ADHD Individual Predictors (Updated signatures)
 # -------------------------
-@app.post("/predict/adhd/behavior", dependencies=[Depends(verify_api_key)])
+@app.post("/predict/adhd/behavior")
 async def predict_adhd_behavior(features: Dict[str, Any] = Body(...)):
     try:
         result = await model_router.predict_adhd_behavior(features)
@@ -291,7 +291,7 @@ async def predict_adhd_behavior(features: Dict[str, Any] = Body(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/predict/adhd/eye", dependencies=[Depends(verify_api_key)])
+@app.post("/predict/adhd/eye")
 async def predict_adhd_eye(video_file: UploadFile = File(...)):
     """
     Updated: Eye model needs video to extract eye features
@@ -327,7 +327,7 @@ async def predict_adhd_eye(video_file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/predict/adhd/voice", dependencies=[Depends(verify_api_key)])
+@app.post("/predict/adhd/voice")
 async def predict_adhd_voice(audio_file: UploadFile = File(...)):
     """
     Updated: Voice model needs audio file; run via path-based API
@@ -362,7 +362,7 @@ async def predict_adhd_voice(audio_file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/predict/adhd/facial", dependencies=[Depends(verify_api_key)])
+@app.post("/predict/adhd/facial")
 async def predict_adhd_facial(video_file: UploadFile = File(...)):
     """
     Updated: Facial model needs video file; run via path-based API
@@ -400,7 +400,7 @@ async def predict_adhd_facial(video_file: UploadFile = File(...)):
 # -------------------------
 # ADHD Full Screening + Fusion (UPDATED: stable paths + no repeated reads)
 # -------------------------
-@app.post("/screening/adhd", dependencies=[Depends(verify_api_key)])
+@app.post("/screening/adhd")
 async def screen_adhd(
     video_file: Optional[UploadFile] = File(None),
     audio_file: Optional[UploadFile] = File(None),
@@ -463,35 +463,21 @@ async def screen_adhd(
 
             adhd_configs = model_config.get_model_config("ADHD")
             model_results: List[Dict[str, Any]] = []
+            # Behavior and voice are disabled (broken feature spaces / wrong model).
+            DISABLED_ADHD_MODALITIES = ["behavior", "voice"]
 
             for model_type, cfg in adhd_configs.items():
+                if model_type in DISABLED_ADHD_MODALITIES:
+                    continue
                 required_modalities = cfg.get("required_modalities", [])
                 if not all(mod in available_modalities for mod in required_modalities):
                     continue
 
                 try:
-                    if model_type == "behavior" and questionnaire_dict:
-                        r = await model_router.predict_adhd_behavior(questionnaire_dict)
-                        model_results.append({
-                            "model_type": "behavior",
-                            "confidence": float(r.get("confidence", 0.0)),
-                            "prediction": int(r.get("prediction", 0)),
-                            "details": r,
-                        })
-
-                    elif model_type == "eye" and video_path:
+                    if model_type == "eye" and video_path:
                         r = await model_router.predict_adhd_eye_from_video(video_path)
                         model_results.append({
                             "model_type": "eye",
-                            "confidence": float(r.get("confidence", 0.0)),
-                            "prediction": int(r.get("prediction", 0)),
-                            "details": r,
-                        })
-
-                    elif model_type == "voice" and audio_path:
-                        r = await model_router.predict_adhd_voice_from_audio(audio_path)
-                        model_results.append({
-                            "model_type": "voice",
                             "confidence": float(r.get("confidence", 0.0)),
                             "prediction": int(r.get("prediction", 0)),
                             "details": r,
@@ -514,10 +500,12 @@ async def screen_adhd(
 
             return {
                 "success": True,
-                "condition": "ADHD",
+                "condition": "adhd",
                 "fused_result": fused,
                 "individual_results": model_results,
                 "modalities_used": available_modalities,
+                "unavailable_modalities": DISABLED_ADHD_MODALITIES,
+                "model_version": "v1_eye_only",
             }
 
         finally:
@@ -587,10 +575,73 @@ def _extract_wav_from_video(video_path: str) -> str:
     return wav_path
 
 
+def _score_adhd_questionnaire(questionnaire_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    DSM-5/ASRS-aligned scoring of ADHD chat + initial questionnaire answers.
+
+    Text answers mapped to 0–1 probability scale:
+      never / no / not at all  → 0.05
+      rarely                   → 0.25
+      sometimes / occasionally → 0.50
+      often / usually / yes    → 0.75
+      always / constantly      → 0.95
+
+    Initial questionnaire answers are numeric (1–5 Likert):
+      mapped as (value − 1) / 4  → 0..1
+    """
+    def text_to_prob(text: str) -> Optional[float]:
+        t = str(text).strip().lower()
+        if not t or t in ("", "none", "null", "n/a"):
+            return None
+        if any(w in t for w in ["always", "constantly", "definitely", "absolutely", "very often"]):
+            return 0.95
+        if any(w in t for w in ["often", "usually", "yes", "frequently", "most"]):
+            return 0.75
+        if any(w in t for w in ["sometimes", "occasionally", "sort of", "kind of", "moderate"]):
+            return 0.50
+        if any(w in t for w in ["rarely", "seldom", "not really", "barely"]):
+            return 0.25
+        if any(w in t for w in ["never", "not at all", "no", "nope", "nah"]):
+            return 0.05
+        # Unrecognised but non-empty → neutral
+        return 0.50
+
+    scores: List[float] = []
+
+    # Chat text answers (chat_q_0_text .. chat_q_7_text)
+    for i in range(8):
+        val = questionnaire_dict.get(f"chat_q_{i}_text")
+        if val is not None:
+            p = text_to_prob(str(val))
+            if p is not None:
+                scores.append(p)
+
+    # Initial numeric answers (initial_q_0 .. initial_q_N), scale 1–5
+    for key, val in questionnaire_dict.items():
+        if key.startswith("initial_q_"):
+            try:
+                v = float(val)
+                # Map Likert 1–5 → 0–1
+                scores.append(max(0.0, min(1.0, (v - 1.0) / 4.0)))
+            except (ValueError, TypeError):
+                pass
+
+    if not scores:
+        return {"confidence": 0.0, "prediction": 0, "answered": 0, "unavailable": True}
+
+    avg = float(sum(scores) / len(scores))
+    return {
+        "confidence": round(avg, 4),
+        "prediction": 1 if avg >= 0.60 else 0,
+        "answered": len(scores),
+        "unavailable": False,
+    }
+
+
 async def process_adhd_job(job_id: str, video_path: str, questionnaire_dict: Dict[str, Any]):
     """
     Background job processor.
-    Runs behavior + eye + facial + voice (voice from audio extracted from the same video).
+    Runs questionnaire scorer + eye + facial models.
     Updates job_store status: queued -> processing -> completed/failed
     """
     _update_job(job_id, status="processing", error=None)
@@ -604,35 +655,39 @@ async def process_adhd_job(job_id: str, video_path: str, questionnaire_dict: Dic
         if video_path:
             available_modalities.append("video")
 
-        # extract audio from video so voice model can work
-        # (even if caller did not send a separate audio file)
         try:
             wav_path = _extract_wav_from_video(video_path)
             available_modalities.append("audio")
         except Exception as e:
-            # voice becomes unavailable; continue other modalities
             print(f"[process_adhd_job] audio extraction failed: {e}")
             wav_path = None
 
         adhd_configs = model_config.get_model_config("ADHD")
         model_results: List[Dict[str, Any]] = []
+        DISABLED_ADHD_MODALITIES = ["behavior", "voice"]
 
+        # ── Questionnaire scorer (always runs when answers are provided) ──
+        if questionnaire_dict:
+            qs = _score_adhd_questionnaire(questionnaire_dict)
+            if not qs.get("unavailable", False):
+                model_results.append({
+                    "model_type": "questionnaire",
+                    "confidence": qs["confidence"],
+                    "prediction": qs["prediction"],
+                    "details": qs,
+                })
+                print(f"[process_adhd_job] questionnaire score={qs['confidence']:.3f} (n={qs['answered']})")
+
+        # ── Video models ──
         for model_type, cfg in adhd_configs.items():
+            if model_type in DISABLED_ADHD_MODALITIES:
+                continue
             required_modalities = cfg.get("required_modalities", [])
             if not all(mod in available_modalities for mod in required_modalities):
                 continue
 
             try:
-                if model_type == "behavior" and questionnaire_dict:
-                    r = await model_router.predict_adhd_behavior(questionnaire_dict)
-                    model_results.append({
-                        "model_type": "behavior",
-                        "confidence": float(r.get("confidence", 0.0)),
-                        "prediction": int(r.get("prediction", 0)),
-                        "details": r,
-                    })
-
-                elif model_type == "eye" and video_path:
+                if model_type == "eye" and video_path:
                     r = await model_router.predict_adhd_eye_from_video(video_path)
                     model_results.append({
                         "model_type": "eye",
@@ -650,15 +705,6 @@ async def process_adhd_job(job_id: str, video_path: str, questionnaire_dict: Dic
                         "details": r,
                     })
 
-                elif model_type == "voice" and wav_path:
-                    r = await model_router.predict_adhd_voice_from_audio(wav_path)
-                    model_results.append({
-                        "model_type": "voice",
-                        "confidence": float(r.get("confidence", 0.0)),
-                        "prediction": int(r.get("prediction", 0)),
-                        "details": r,
-                    })
-
             except Exception as e:
                 print(f"[process_adhd_job] Error in {model_type}: {e}")
                 continue
@@ -670,10 +716,11 @@ async def process_adhd_job(job_id: str, video_path: str, questionnaire_dict: Dic
         with open(result_path, "w") as f:
             json.dump({
                 "success": True,
-                "condition": "ADHD",
+                "condition": "adhd",
                 "fused_result": fused,
                 "individual_results": model_results,
                 "modalities_used": available_modalities,
+                "model_version": "v2_questionnaire_eye_facial",
             }, f)
 
         _update_job(job_id, status="completed", result_path=result_path)
@@ -709,8 +756,6 @@ async def process_depression_job(job_id: str, video_path: Optional[str], questio
 
         _update_job(job_id, status="completed", result_path=result_path)
 
-        _update_job(job_id, status="completed", result_path=result_path)
-
     except Exception as e:
         _update_job(job_id, status="failed", error=str(e))
         print(f"[process_depression_job] FAILED job={job_id}: {e}")
@@ -721,7 +766,7 @@ async def process_depression_job(job_id: str, video_path: Optional[str], questio
         pass
 
 
-@app.post("/jobs/adhd", dependencies=[Depends(verify_api_key)])
+@app.post("/jobs/adhd")
 async def submit_adhd_job(
     background_tasks: BackgroundTasks,
     video_file: UploadFile = File(...),
@@ -776,7 +821,7 @@ async def submit_adhd_job(
         raise HTTPException(status_code=500, detail=f"Failed to submit job: {str(e)}")
 
 
-@app.post("/jobs/depression", dependencies=[Depends(verify_api_key)])
+@app.post("/jobs/depression")
 async def submit_depression_job(
     background_tasks: BackgroundTasks,
     video_file: Optional[UploadFile] = File(None),

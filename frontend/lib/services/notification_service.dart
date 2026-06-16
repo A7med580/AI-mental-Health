@@ -184,6 +184,31 @@ class NotificationService {
 
     await addNotification(notification);
   }
+
+  /// Create a notification for Depression screening result
+  static Future<void> createDepressionScreeningNotification({
+    required String jobId,
+    required bool isDepression,
+    required double confidence,
+  }) async {
+    final notification = AppNotification(
+      id: 'depression_$jobId',
+      title: 'Depression Screening Complete',
+      body: isDepression
+          ? 'Your depression screening indicates a higher risk score (${(confidence * 100).toStringAsFixed(0)}% risk).'
+          : 'Your depression screening indicates a low risk score (${(confidence * 100).toStringAsFixed(0)}% risk).',
+      createdAt: DateTime.now(),
+      isRead: false,
+      payload: {
+        'type': 'depression_screening',
+        'jobId': jobId,
+        'isDepression': isDepression,
+        'confidence': confidence,
+      },
+    );
+
+    await addNotification(notification);
+  }
 }
 
 

@@ -113,6 +113,7 @@ class ADHDResultScreen extends StatelessWidget {
                         children: [
                           AnimatedGauge(
                             score: fusedConfidence is double ? fusedConfidence : fusedConfidence.toDouble(),
+                            label: 'ADHD Risk Score',
                           ),
 
                           const SizedBox(height: 24),
@@ -156,15 +157,27 @@ class ADHDResultScreen extends StatelessWidget {
 
                     const SizedBox(height: 24),
 
-                    // Model Contributions
-                    if (contributions.isNotEmpty) ...[
-                      Text(
-                        'How We Checked',
-                        style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                      ),
-                      const SizedBox(height: 12),
+                    // Model Contributions & Diagnostics
+                    Text(
+                      'Diagnostic Breakdown',
+                      style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                    ),
+                    const SizedBox(height: 12),
+                    if (contributions.isEmpty)
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                        ),
+                        child: Text(
+                          'No models could analyze your submission. Check video quality or try again.',
+                          style: GoogleFonts.inter(fontSize: 13, color: Colors.orange.shade800),
+                        ),
+                      )
+                    else
                       ...contributions.map((contribution) => _buildContributionCard(contribution)),
-                    ],
 
                     const SizedBox(height: 24),
 
@@ -235,8 +248,12 @@ class ADHDResultScreen extends StatelessWidget {
 
   Widget _buildContributionCard(Map<String, dynamic> contribution) {
     final modelType = contribution['model_type'] ?? 'unknown';
-    final confidence = contribution['confidence'] ?? 0.0;
+    final confidence = (contribution['confidence'] ?? 0.0) as num;
     final weight = contribution['weight'] ?? 0.0;
+    final confAsDouble = confidence.toDouble();
+
+    // Questionnaire scoring always produces a valid score — no warning needed.
+    final hasIssue = confAsDouble < 0.001 && modelType != 'questionnaire';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -244,37 +261,63 @@ class ADHDResultScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.cardWhite,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE8E4DF)),
+        border: Border.all(color: hasIssue ? Colors.orange.shade300 : const Color(0xFFE8E4DF)),
+        boxShadow: hasIssue ? [
+          BoxShadow(color: Colors.orange.withValues(alpha: 0.1), blurRadius: 4)
+        ] : null,
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _getModelTypeLabel(modelType),
-                  style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _getModelTypeLabel(modelType),
+                      style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Confidence: ${(confAsDouble * 100).toStringAsFixed(1)}%',
+                      style: GoogleFonts.inter(fontSize: 13, color: hasIssue ? Colors.orange.shade700 : AppColors.textSecondary),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Confidence: ${(confidence * 100).toStringAsFixed(1)}%',
-                  style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryPurple.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              ],
-            ),
+                child: Text(
+                  '${(weight * 100).toStringAsFixed(0)}% weight',
+                  style: GoogleFonts.inter(fontSize: 12, color: AppColors.primaryPurple, fontWeight: FontWeight.w500),
+                ),
+              ),
+            ],
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.primaryPurple.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
+          if (hasIssue) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                modelType == 'eye'
+                  ? '⚠ Eye tracking quality too low (video may be too short, or face not clearly visible)'
+                  : modelType == 'facial'
+                  ? '⚠ Facial features could not be extracted (ensure good lighting and clear face visibility)'
+                  : '⚠ This model could not process your input',
+                style: GoogleFonts.inter(fontSize: 12, color: Colors.orange.shade800, height: 1.4),
+              ),
             ),
-            child: Text(
-              '${(weight * 100).toStringAsFixed(0)}% weight',
-              style: GoogleFonts.inter(fontSize: 12, color: AppColors.primaryPurple, fontWeight: FontWeight.w500),
-            ),
-          ),
+          ],
         ],
       ),
     );
@@ -323,6 +366,8 @@ class ADHDResultScreen extends StatelessWidget {
 
   String _getModelTypeLabel(String type) {
     switch (type) {
+      case 'questionnaire':
+        return 'Your Answers';
       case 'behavior':
         return 'Questions';
       case 'eye':

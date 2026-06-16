@@ -1,25 +1,31 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ApiConfig {
-  // Put your Mac LAN IP here for REAL iPhone
-  static const String PHYSICAL_DEVICE_IP = 'http://192.168.1.2:8000';
+  // BACKEND_HOST is loaded from .env (e.g. BACKEND_HOST=10.1.10.11).
+  // If unset, falls back to per-platform localhost detection below.
+  static String get _physicalDeviceUrl {
+    final host = dotenv.maybeGet('BACKEND_HOST') ?? '';
+    if (host.isEmpty) return '';
+    return 'http://$host:8000';
+  }
 
   static const String ANDROID_EMULATOR_URL = 'http://10.0.2.2:8000';
   static const String IOS_SIMULATOR_URL = 'http://127.0.0.1:8000';
   static const String WEB_URL = 'http://localhost:8000';
   static const String FALLBACK_URL = 'http://localhost:8000';
 
-  static const String GEMINI_API_KEY = 'AIzaSyCVUBNIQwoZ0Y1RXnUPp0ioD3PIxgYNKeQ';
-  static String getGeminiApiKey() => GEMINI_API_KEY;
+  static String getGeminiApiKey() => dotenv.maybeGet('GEMINI_API_KEY') ?? '';
 
   static bool _printed = false;
 
   static String get baseUrl {
-    // Always use physical IP if set
-    if (PHYSICAL_DEVICE_IP.isNotEmpty) {
-      _printOnce('Using physical device IP: $PHYSICAL_DEVICE_IP');
-      return PHYSICAL_DEVICE_IP;
+    // Prefer BACKEND_HOST from .env when present
+    final physicalUrl = _physicalDeviceUrl;
+    if (physicalUrl.isNotEmpty) {
+      _printOnce('Using BACKEND_HOST from .env: $physicalUrl');
+      return physicalUrl;
     }
 
     if (kIsWeb) {
@@ -30,6 +36,11 @@ class ApiConfig {
     if (Platform.isAndroid) {
       _printOnce('Android platform: $ANDROID_EMULATOR_URL');
       return ANDROID_EMULATOR_URL;
+    }
+
+    if (Platform.isMacOS) {
+      _printOnce('macOS platform: $IOS_SIMULATOR_URL');
+      return IOS_SIMULATOR_URL;
     }
 
     if (Platform.isIOS) {

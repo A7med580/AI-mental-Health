@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:mindful/app_colors.dart';
 import 'package:mindful/theme/module_themes.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mindful/utils/macos_camera_helper.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:mindful/services/model_service.dart';
@@ -37,7 +38,7 @@ class _EmotionDetectionScreenState extends State<EmotionDetectionScreen> {
   // ─── ALL LOGIC BELOW IS UNCHANGED ───────────────────────────────────
 
   Future<void> _takePhoto() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.camera);
+    final pickedFile = await MacOSCameraHelper.pickImage(picker: _picker);
 
     if (pickedFile != null) {
       setState(() {

@@ -3,13 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AnimatedGauge extends StatefulWidget {
-  final double score; // 0.0 to 1.0 confidence/score
+  final double score; // 0.0 to 1.0 — risk probability or model certainty
   final Duration duration;
+  // Subtitle under the percentage. Defaults to "Confidence" for legacy callers;
+  // result screens that show a risk probability should pass "Risk Score".
+  final String label;
 
   const AnimatedGauge({
     Key? key,
     required this.score,
     this.duration = const Duration(milliseconds: 1500),
+    this.label = 'Confidence',
   }) : super(key: key);
 
   @override
@@ -94,7 +98,7 @@ class _AnimatedGaugeState extends State<AnimatedGauge>
                   ),
                 ),
                 Text(
-                  'Confidence',
+                  widget.label,
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     color: Colors.grey.shade600,

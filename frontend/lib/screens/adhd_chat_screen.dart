@@ -9,7 +9,9 @@ import 'package:mindful/screens/video_preview_screen.dart';
 import 'package:mindful/screens/processing_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:camera/camera.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:mindful/utils/macos_camera_helper.dart';
 
 /// ADHD-specific chat interview screen
 class ADHDChatScreen extends StatefulWidget {
@@ -157,6 +159,12 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
   }
 
   Future<void> _initCameraController() async {
+    // macOS: camera plugin is not available — skip native camera init
+    if (MacOSCameraHelper.isMacOS) {
+      setState(() => _cameraPermissionGranted = true);
+      return;
+    }
+
     await _cameraController?.dispose();
     _cameraController = null;
 
@@ -251,6 +259,12 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
   }
 
   Future<void> _startVideoRecording() async {
+    // macOS: no camera plugin — pick video from gallery instead
+    if (MacOSCameraHelper.isMacOS) {
+      await _macOSPickVideo();
+      return;
+    }
+
     final controller = _cameraController;
     if (controller == null || !controller.value.isInitialized) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -283,6 +297,56 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error starting recording: $e')),
+        );
+      }
+    }
+  }
+
+  /// macOS fallback: pick a video file from the file system.
+  Future<void> _macOSPickVideo() async {
+    try {
+      final picked = await MacOSCameraHelper.pickVideo();
+      if (picked == null || !mounted) return;
+
+      final savedPath = await VideoStorageService.saveVideo(
+        File(picked.path),
+        customName: 'adhd_q${_currentQuestionIndex}_${DateTime.now().millisecondsSinceEpoch}.mp4',
+      );
+
+      setState(() {
+        _questionVideos[_currentQuestionIndex] = savedPath;
+      });
+
+      _addUserMessage("✓ Video selected");
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => VideoPreviewScreen(
+            videoPath: savedPath,
+            onRetake: () async {
+              try {
+                await VideoStorageService.deleteVideo(savedPath);
+              } catch (_) {}
+              if (mounted) {
+                setState(() => _questionVideos[_currentQuestionIndex] = null);
+                Navigator.pop(context);
+              }
+            },
+            onContinue: () {
+              if (mounted) {
+                Navigator.pop(context);
+                setState(() => _currentQuestionIndex++);
+                _askNextQuestion();
+              }
+            },
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error selecting video: $e')),
         );
       }
     }
@@ -444,10 +508,12 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
 
     final needsVideo = currentQuestion != null && currentQuestion.requiresVideo;
 
+    // On macOS there is no CameraController — video works via gallery picker
     final showVideoControls = needsVideo &&
         _cameraPermissionGranted &&
-        _cameraController != null &&
-        _cameraController!.value.isInitialized;
+        (MacOSCameraHelper.isMacOS ||
+            (_cameraController != null &&
+                _cameraController!.value.isInitialized));
 
     return Scaffold(
       backgroundColor: adhdTheme.backgroundColor,
@@ -508,8 +574,8 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
               ),
             ),
 
-            // ── Camera preview ──
-            if (showVideoControls && !_isRecording)
+            // ── Camera preview (not available on macOS) ──
+            if (showVideoControls && !_isRecording && !MacOSCameraHelper.isMacOS && _cameraController != null)
               Container(
                 height: 140,
                 margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -538,7 +604,7 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'We use text, video, and audio for better results.',
+                      'Voice analysis not available in this version. Text and video are used.',
                       style: GoogleFonts.inter(fontSize: 11, color: AppColors.primaryPurple, fontWeight: FontWeight.w500),
                     ),
                   ),
@@ -670,35 +736,8 @@ class _ADHDChatScreenState extends State<ADHDChatScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        GestureDetector(
-                          onTap: () {
-                            if (!_microphonePermissionGranted) {
-                               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Microphone permission required.')));
-                               return;
-                            }
-                            setState(() {
-                               _isMicActive = !_isMicActive;
-                            });
-                            if (!_isMicActive) {
-                               _addUserMessage("✓ Voice recorded (00:05)");
-                               setState(() => _currentQuestionIndex++);
-                               Future.delayed(const Duration(milliseconds: 300), _askNextQuestion);
-                            }
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: _isMicActive ? Colors.red : AppColors.surfaceLight,
-                              shape: BoxShape.circle,
-                              boxShadow: _isMicActive ? [
-                                BoxShadow(color: Colors.red.withValues(alpha: 0.4), blurRadius: 10, spreadRadius: 2)
-                              ] : [],
-                            ),
-                            child: Icon(Icons.mic, color: _isMicActive ? Colors.white : AppColors.textSecondary, size: 20),
-                          ),
-                        ),
+                        // Voice analysis is not available in this version.
+                        // The previous mic button only faked a recording; removed.
                         const SizedBox(width: 8),
                         GestureDetector(
                           onTap: () => _submitTextAnswer(_textController.text),

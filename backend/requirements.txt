@@ -16,3 +16,4 @@ soundfile>=0.12.1
 librosa>=0.10.1
 xgboost>=2.0.0
 tensorflow>=2.15.0
+opencv-python>=4.8.0

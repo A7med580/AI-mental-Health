@@ -11,7 +11,9 @@ import 'package:mindful/widgets/page_transitions.dart';
 import 'package:mindful/theme/module_themes.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:camera/camera.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:mindful/utils/macos_camera_helper.dart';
 
 /// Depression-specific chat interview screen.
 /// DAIC-WOZ aligned clinical interview with video recording capabilities.
@@ -45,6 +47,10 @@ class _DepressionQuestionnaireScreenState
   bool _microphonePermissionGranted = false;
 
   bool _cameraPermissionRequested = false;
+  // Once the user records one video it covers the whole screening.
+  // Subsequent video-required questions skip the recording step.
+  bool _videoRecorded = false;
+  String? _recordedVideoPath;
 
   final List<ChatMessage> _messages = [];
   int _currentQuestionIndex = 0;
@@ -169,6 +175,12 @@ class _DepressionQuestionnaireScreenState
   }
 
   Future<void> _initCameraController() async {
+    // macOS: camera plugin is not available — skip native camera init
+    if (MacOSCameraHelper.isMacOS) {
+      setState(() => _cameraPermissionGranted = true);
+      return;
+    }
+
     await _cameraController?.dispose();
     _cameraController = null;
 
@@ -232,6 +244,14 @@ class _DepressionQuestionnaireScreenState
 
     final question = _depressionQuestions[_currentQuestionIndex];
 
+    // If a video was already recorded, reuse it and skip asking again
+    if (question.requiresVideo && _videoRecorded) {
+      _questionVideos[_currentQuestionIndex] = _recordedVideoPath;
+      _addSystemMessage(question.text);
+      _addSystemMessage("✓ Using your recorded video.");
+      return;
+    }
+
     if (question.requiresVideo && !_cameraPermissionGranted) {
       if (!_cameraPermissionRequested) {
         _addSystemMessage(
@@ -246,8 +266,8 @@ class _DepressionQuestionnaireScreenState
 
     _addSystemMessage(question.text);
 
-    if (question.requiresVideo) {
-      _addSystemMessage("Record a short video (30-60 seconds).");
+    if (question.requiresVideo && !_videoRecorded) {
+      _addSystemMessage("Record a short video (30-60 seconds) of your face.");
     }
   }
 
@@ -268,6 +288,12 @@ class _DepressionQuestionnaireScreenState
   }
 
   Future<void> _startVideoRecording() async {
+    // macOS: no camera plugin — pick video from gallery instead
+    if (MacOSCameraHelper.isMacOS) {
+      await _macOSPickVideo();
+      return;
+    }
+
     final controller = _cameraController;
     if (controller == null || !controller.value.isInitialized) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -300,6 +326,63 @@ class _DepressionQuestionnaireScreenState
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error starting recording: $e')),
+        );
+      }
+    }
+  }
+
+  /// macOS fallback: pick a video file from the file system.
+  Future<void> _macOSPickVideo() async {
+    try {
+      final picked = await MacOSCameraHelper.pickVideo();
+      if (picked == null || !mounted) return;
+
+      final savedPath = await VideoStorageService.saveVideo(
+        File(picked.path),
+        customName:
+            'depression_q${_currentQuestionIndex}_${DateTime.now().millisecondsSinceEpoch}.mp4',
+      );
+
+      setState(() {
+        _questionVideos[_currentQuestionIndex] = savedPath;
+        _videoRecorded = true;
+        _recordedVideoPath = savedPath;
+      });
+
+      _addUserMessage("✓ Video selected");
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => VideoPreviewScreen(
+            videoPath: savedPath,
+            onRetake: () async {
+              try {
+                await VideoStorageService.deleteVideo(savedPath);
+              } catch (_) {}
+              if (mounted) {
+                setState(() {
+                  _questionVideos[_currentQuestionIndex] = null;
+                  _videoRecorded = false;
+                  _recordedVideoPath = null;
+                });
+                Navigator.pop(context);
+              }
+            },
+            onContinue: () {
+              if (mounted) {
+                Navigator.pop(context);
+                setState(() => _currentQuestionIndex++);
+                _askNextQuestion();
+              }
+            },
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error selecting video: $e')),
         );
       }
     }
@@ -347,6 +430,8 @@ class _DepressionQuestionnaireScreenState
       if (mounted) {
         setState(() {
           _questionVideos[_currentQuestionIndex] = savedPath;
+          _videoRecorded = true;
+          _recordedVideoPath = savedPath;
         });
 
         _addUserMessage("✓ Video recorded");
@@ -361,7 +446,11 @@ class _DepressionQuestionnaireScreenState
                   await VideoStorageService.deleteVideo(savedPath);
                 } catch (_) {}
                 if (mounted) {
-                  setState(() => _questionVideos[_currentQuestionIndex] = null);
+                  setState(() {
+                    _questionVideos[_currentQuestionIndex] = null;
+                    _videoRecorded = false;
+                    _recordedVideoPath = null;
+                  });
                   Navigator.pop(context);
                 }
               },
@@ -471,10 +560,12 @@ class _DepressionQuestionnaireScreenState
     final needsVideo =
         currentQuestion != null && currentQuestion.requiresVideo;
 
+    // On macOS there is no CameraController — video works via gallery picker
     final showVideoControls = needsVideo &&
         _cameraPermissionGranted &&
-        _cameraController != null &&
-        _cameraController!.value.isInitialized;
+        (MacOSCameraHelper.isMacOS ||
+            (_cameraController != null &&
+                _cameraController!.value.isInitialized));
 
     return Scaffold(
       body: Container(
@@ -566,8 +657,8 @@ class _DepressionQuestionnaireScreenState
                 ),
               ),
 
-              // ── Camera preview ──
-              if (showVideoControls && !_isRecording)
+              // ── Camera preview (not available on macOS) ──
+              if (showVideoControls && !_isRecording && !MacOSCameraHelper.isMacOS && _cameraController != null)
                 Container(
                   height: 140,
                   margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -665,8 +756,8 @@ class _DepressionQuestionnaireScreenState
                             ),
                           ),
 
-                        // Video record button
-                        if (showVideoControls && !_isRecording)
+                        // Video record button — only show if no video yet
+                        if (showVideoControls && !_isRecording && !_videoRecorded)
                           Padding(
                             padding: const EdgeInsets.only(bottom: 8),
                             child: SizedBox(
@@ -703,6 +794,36 @@ class _DepressionQuestionnaireScreenState
                                     ),
                                   ),
                                 ),
+                              ),
+                            ),
+                          ),
+
+                        // Video already recorded badge
+                        if (_videoRecorded && !_isRecording && needsVideo)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.green.withValues(alpha: 0.4)),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.check_circle_outline, color: Colors.green, size: 18),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Video recorded ✓ — type your answer too',
+                                    style: GoogleFonts.inter(
+                                      color: Colors.green.shade700,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),

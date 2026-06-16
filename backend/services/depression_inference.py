@@ -63,6 +63,7 @@ class DepressionAudioInference:
         # The COVAREP statistics used in training are: mean, std, min, max, skew, median
         # for each of the 73-74 features. 73 * 6 = 438.
         if len(raw_vec) != 438:
+            print(f"[DepressionAudio] WARNING: Feature dimension mismatch. Expected 438, got {len(raw_vec)}.", flush=True)
             vec = np.zeros(438)
             n = min(len(raw_vec), 438)
             vec[:n] = raw_vec[:n]

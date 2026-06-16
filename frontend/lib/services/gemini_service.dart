@@ -15,9 +15,9 @@ class GeminiService {
   // The conversation history sent to the API
   List<Map<String, dynamic>> _history = [];
   
-  // Update with the provided API key
-  final String _apiKey = "AIzaSyAChhohhZY6icUBjdXYULU4WT0ZnijZ5es";
-  final String _apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent";
+  // API key is loaded from .env via ApiConfig
+  String get _apiKey => ApiConfig.getGeminiApiKey();
+  final String _apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
   /// Whether the conversation has been initialized (system prompt sent).
   bool get hasHistory => _history.isNotEmpty;

@@ -136,17 +136,26 @@ class JobService {
       if (response.statusCode == 200) {
         final result = json.decode(response.body) as Map<String, dynamic>;
 
-        // Optional: push notification
+        // Optional: push notification, routed by condition
         final fusedResult = result['fused_result'] as Map<String, dynamic>?;
         if (fusedResult != null) {
-          final isAdhd = fusedResult['fused_prediction'] == 1;
+          final isPositive = fusedResult['fused_prediction'] == 1;
           final confidence = (fusedResult['fused_confidence'] as num).toDouble();
+          final condition = (result['condition'] ?? '').toString().toLowerCase();
 
-          await NotificationService.createADHDScreeningNotification(
-            jobId: jobId,
-            isAdhd: isAdhd,
-            confidence: confidence,
-          );
+          if (condition == 'depression') {
+            await NotificationService.createDepressionScreeningNotification(
+              jobId: jobId,
+              isDepression: isPositive,
+              confidence: confidence,
+            );
+          } else {
+            await NotificationService.createADHDScreeningNotification(
+              jobId: jobId,
+              isAdhd: isPositive,
+              confidence: confidence,
+            );
+          }
         }
 
         return result;

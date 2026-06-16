@@ -24,14 +24,20 @@ fi
 
 echo "Detected LAN IP: $IP"
 
-# 3. Path to api_config.dart relative from backend/
-API_CONFIG_PATH="../frontend/lib/core/config/api_config.dart"
+# 3. Path to frontend/.env (BACKEND_HOST is read by the Flutter app at runtime)
+ENV_PATH="../frontend/.env"
 
-# 4. Use sed to replace the IP in api_config.dart
-# On macOS, sed -i requires an empty string argument for the extension
-sed -i '' "s|static const String PHYSICAL_DEVICE_IP = 'http://.*:8000';|static const String PHYSICAL_DEVICE_IP = 'http://$IP:8000';|" "$API_CONFIG_PATH"
-
-echo "Updated $API_CONFIG_PATH with http://$IP:8000"
+if [ -f "$ENV_PATH" ]; then
+    # On macOS, sed -i requires an empty string argument for the extension
+    if grep -q "^BACKEND_HOST=" "$ENV_PATH"; then
+        sed -i '' "s|^BACKEND_HOST=.*|BACKEND_HOST=$IP|" "$ENV_PATH"
+    else
+        echo "BACKEND_HOST=$IP" >> "$ENV_PATH"
+    fi
+    echo "Updated $ENV_PATH with BACKEND_HOST=$IP"
+else
+    echo "Warning: $ENV_PATH not found; skipping BACKEND_HOST patch."
+fi
 
 # 5. Run ffmpeg -version
 ffmpeg -version

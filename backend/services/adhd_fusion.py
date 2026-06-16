@@ -10,12 +10,13 @@ import numpy as np
 
 
 class ADHDFusion:
-    # Base weights (you can tune later)
+    # Base weights — renormalized automatically over whichever models actually ran.
     MODEL_WEIGHTS = {
-        "behavior": 0.35,
-        "eye": 0.25,
-        "voice": 0.20,
-        "facial": 0.20,
+        "questionnaire": 0.40,  # DSM-5/ASRS-aligned text scoring
+        "eye": 0.35,
+        "facial": 0.25,
+        "behavior": 0.0,        # disabled: trained on sensor data, not questionnaire text
+        "voice": 0.0,           # disabled: audio extraction issues
     }
 
     # Final threshold
@@ -43,6 +44,7 @@ class ADHDFusion:
         modalities_used = []
 
         modality_map = {
+            "questionnaire": "questionnaire",
             "behavior": "questionnaire",
             "eye": "video",
             "voice": "audio",

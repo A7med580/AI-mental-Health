@@ -21,13 +21,13 @@ class ModelConfig:
               voice_cnn_model.h5
               voice_scaler.pkl
               voice_svm_model.pkl
-              young_affectnet_best_emotion_model_ResNet50.keras
+              young_affectnet_best_emotion_model_ResNet50.keras.bak
     - You can override by environment variables without touching code.
     """
 
     # backend/config -> backend
     BACKEND_DIR = Path(__file__).resolve().parent.parent
-    DEFAULT_ADHD_DIR = BACKEND_DIR / "Models" / "adhd"
+    DEFAULT_ADHD_DIR = BACKEND_DIR / "Models" / "ADHD"
 
     # ADHD Models (ENV override supported)
     ADHD_MODELS_DIR = Path(os.getenv("ADHD_MODELS_DIR", str(DEFAULT_ADHD_DIR)))
@@ -38,7 +38,7 @@ class ModelConfig:
     ADHD_VOICE_CNN = os.getenv("ADHD_VOICE_CNN", str(ADHD_MODELS_DIR / "voice_cnn_model.h5"))
     ADHD_VOICE_SVM = os.getenv("ADHD_VOICE_SVM", str(ADHD_MODELS_DIR / "voice_svm_model.pkl"))
     ADHD_VOICE_SCALER = os.getenv("ADHD_VOICE_SCALER", str(ADHD_MODELS_DIR / "voice_scaler.pkl"))
-    ADHD_FACIAL_MODEL = os.getenv("ADHD_FACIAL_MODEL", str(ADHD_MODELS_DIR / "young_affectnet_best_emotion_model_ResNet50.keras"))
+    ADHD_FACIAL_MODEL = os.getenv("ADHD_FACIAL_MODEL", str(ADHD_MODELS_DIR / "young_affectnet_best_emotion_model_ResNet50.keras.bak"))
 
     # Anxiety / ASD (keep your existing dirs if you want, but support env too)
     ANXIETY_MODEL = os.getenv("ANXIETY_MODEL", str(BACKEND_DIR / "Models" / "anxiety" / "anxiety_detection_model.pkl"))
@@ -49,7 +49,7 @@ class ModelConfig:
     ASD_TEXT_XGBOOST = os.getenv("ASD_TEXT_XGBOOST", str(BACKEND_DIR / "Models" / "asd" / "text" / "xgboost_model.joblib"))
     ASD_TEXT_RANDOMFOREST = os.getenv("ASD_TEXT_RANDOMFOREST", str(BACKEND_DIR / "Models" / "asd" / "text" / "random_forest_model.joblib"))
 
-    # Depression Models (DAIC-WOZ)
+    # Depression Models (DAIC-WOZ) - Old multimodal
     DEPRESSION_MODELS_DIR = Path(os.getenv("DEPRESSION_MODELS_DIR", str(BACKEND_DIR / "Models" / "depression")))
     DEP_AUDIO_MODEL = os.getenv("DEP_AUDIO_MODEL", str(DEPRESSION_MODELS_DIR / "audio_model.joblib"))
     DEP_AUDIO_SCALER = os.getenv("DEP_AUDIO_SCALER", str(DEPRESSION_MODELS_DIR / "audio_scaler.joblib"))
@@ -57,6 +57,9 @@ class ModelConfig:
     DEP_VISUAL_META = os.getenv("DEP_VISUAL_META", str(DEPRESSION_MODELS_DIR / "visual_model_meta.pt"))
     DEP_TEXT_MODEL_DIR = os.getenv("DEP_TEXT_MODEL_DIR", str(DEPRESSION_MODELS_DIR / "text_model_dir"))
     DEP_FUSION_MODEL = os.getenv("DEP_FUSION_MODEL", str(DEPRESSION_MODELS_DIR / "fusion_model.joblib"))
+
+    # New SVM Depression Model
+    DEPRESSION_SVM_DIR = Path(os.getenv("DEPRESSION_SVM_DIR", str(BACKEND_DIR / "Models" / "depression_svm")))
 
     MODELS = {
         "ADHD": {
