@@ -137,7 +137,7 @@ AI-mental-Health/
 │   │   ├── adhd_fusion.py         # ADHD multimodal fusion logic
 │   │   └── depression_fusion.py   # Depression fusion (DAIC-WOZ)
 │   ├── Models/                    # ⚠️ Downloaded separately (gitignored)
-│   │   ├── adhd/                  # ADHD .pkl, .keras model weights
+│   │   ├── ADHD/                  # ADHD .pkl, .keras model weights
 │   │   ├── asd/                   # ASD .joblib and face models
 │   │   └── depression/            # DAIC-WOZ .pt, .joblib, text_model_dir
 │   └── .env.example               # Backend environment template
@@ -151,6 +151,7 @@ AI-mental-Health/
 │   │   └── theme/                 # App colors & theming
 │   ├── pubspec.yaml               # Flutter dependencies
 │   ├── .env                       # ⚠️ YOU CREATE THIS (gitignored)
+│   ├── .env.example               # Frontend environment template
 │   └── assets/                    # Images, fonts, SVGs
 ├── .env.example                   # Root environment template
 ├── .gitignore                     # Comprehensive gitignore rules
@@ -171,6 +172,8 @@ AI-mental-Health/
 | **Git** | Any recent | [git-scm.com](https://git-scm.com/downloads) |
 | **FFmpeg** | Any *(optional, for audio extraction)* | [ffmpeg.org](https://ffmpeg.org/download.html) |
 
+---
+
 ### 1. Clone the Repository
 
 ```bash
@@ -178,59 +181,156 @@ git clone https://github.com/A7med580/AI-mental-Health.git
 cd AI-mental-Health
 ```
 
-### 2. Environment Variables
+---
 
-All secrets are loaded from `.env` files that are **gitignored** — you must create them manually.
+### 2. Configure Environment Variables
 
-#### Frontend `.env` (required)
+For security, all real API keys, credentials, and settings are loaded from `.env` files that are **gitignored** and must never be committed.
+
+#### Frontend `.env`
+
+Copy `.env.example` in the `frontend` folder to a new file named `.env`:
 
 ```bash
-cp .env.example frontend/.env
+cp frontend/.env.example frontend/.env
 ```
 
-Edit `frontend/.env` with your credentials:
+Open `frontend/.env` and configure your credentials:
 
 ```env
-SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_URL=https://your-project-id.supabase.co
 SUPABASE_ANON_KEY=your-supabase-anon-key
 GEMINI_API_KEY=your-gemini-api-key
-BACKEND_HOST=your-local-ip
+BACKEND_HOST=your-local-machine-ip
 ```
 
 > [!WARNING]
-> Without `frontend/.env`, the Flutter app will fail to build with: `No file or variants found for asset: .env`
+> Without `frontend/.env`, the Flutter build will fail with: `No file or variants found for asset: .env`
 
-#### Get Your API Keys
+#### Backend `.env`
 
-| Key | Where to Get It |
-|:---|:---|
-| **Supabase URL & Anon Key** | [Supabase Dashboard](https://supabase.com/dashboard) → Project Settings → API |
-| **Gemini API Key** | [Google AI Studio](https://aistudio.google.com/apikey) |
+Copy the root `.env.example` to a new file named `.env` in the root (or `backend/` depending on execution context):
 
-### 3. Download AI Models
+```bash
+cp .env.example .env
+```
 
-Pre-trained model weights are too large for Git. Download them separately:
+Open `.env` and fill in the values:
+
+```env
+SUPABASE_URL=https://your-project-id.supabase.co
+SUPABASE_ANON_KEY=your-supabase-anon-key
+GEMINI_API_KEY=your-gemini-api-key
+```
+
+#### Where to obtain API keys:
+
+- **Supabase URL & Anon Key**: Go to [Supabase Dashboard](https://supabase.com/dashboard) → Project Settings → API.
+- **Gemini API Key**: Create an API key in the [Google AI Studio](https://aistudio.google.com/apikey).
+
+---
+
+### 3. Setup Supabase Database
+
+You must create the following database tables in your Supabase project (using the SQL Editor in the Supabase Dashboard) to enable registration and profile loading.
+
+#### `users` Table
+
+```sql
+create table public.users (
+  id uuid references auth.users not null primary key,
+  first_name text not null,
+  last_name text not null,
+  full_name text not null,
+  phone_number text,
+  email text not null,
+  created_at timestamptz default timezone('utc'::text, now()) not null,
+  "termsAccepted" boolean default false not null,
+  "privacyAccepted" boolean default false not null
+);
+
+-- Enable Row Level Security (RLS)
+alter table public.users enable row level security;
+
+-- Policies
+create policy "Allow users to read their own profile" on public.users
+  for select using (auth.uid() = id);
+
+create policy "Allow users to update their own profile" on public.users
+  for update using (auth.uid() = id);
+
+create policy "Allow users to insert their own profile" on public.users
+  for insert with check (auth.uid() = id);
+```
+
+#### `assessments` Table
+
+```sql
+create table public.assessments (
+  id bigserial primary key,
+  user_id uuid references public.users not null,
+  type text not null,
+  score double precision not null,
+  created_at timestamptz default timezone('utc'::text, now()) not null,
+  details jsonb
+);
+
+-- Enable RLS
+alter table public.assessments enable row level security;
+
+-- Policies
+create policy "Allow users to read their own assessments" on public.assessments
+  for select using (auth.uid() = user_id);
+
+create policy "Allow users to insert their own assessments" on public.assessments
+  for insert with check (auth.uid() = user_id);
+```
+
+---
+
+### 4. Download Pre-trained ML Models
+
+Pre-trained model weights are too large for Git. Download them separately and place them in the correct directories under `backend/Models/`.
 
 1. **Download**: [📦 Mindful AI Models (Google Drive)](https://drive.google.com/drive/folders/1DlIcp-XBuJwFHGiEiisUnSHuxXqU59ZW?usp=sharing)
-2. **Place** the folders into `backend/Models/`:
+2. **Move** the downloaded directory structure into `backend/Models/` so that it looks exactly like this:
 
 ```
 backend/Models/
-├── adhd/          # ADHD .pkl and .keras files
-├── asd/           # ASD .joblib and face/ models
-└── depression/    # DAIC-WOZ .pt, .joblib and text_model_dir
+├── ADHD/
+│   ├── adhd_behavior_catboost.pkl
+│   ├── adhd_behavior_feature_names.pkl
+│   ├── adhd_eye_best_model.pkl
+│   ├── voice_cnn_model.h5
+│   ├── voice_scaler.pkl
+│   ├── voice_svm_model.pkl
+│   └── young_affectnet_best_emotion_model_ResNet50.keras.bak
+├── asd/
+│   ├── face/
+│   │   ├── asd_vgg19.h5
+│   │   ├── asd_vgg19_fixed.h5
+│   │   └── class_indices.json
+│   └── text/
+│       └── xgboost_model.joblib
+└── depression/
+    └── text_model_dir/
+        ├── config.json
+        ├── tokenizer.json
+        └── tokenizer_config.json
 ```
 
 > [!TIP]
 > The backend has **robust fallback loading** — if a model file is missing, the server will log a warning and continue with available models rather than crashing.
 
-### 4. Backend Setup
+---
+
+### 5. Backend Server Setup & Start
 
 ```bash
 # Navigate to backend
 cd backend
 
-# Create virtual environment
+# Create Python virtual environment
 python3 -m venv .venv
 source .venv/bin/activate          # macOS/Linux
 # .\.venv\Scripts\Activate         # Windows PowerShell
@@ -238,52 +338,45 @@ source .venv/bin/activate          # macOS/Linux
 # Install dependencies
 pip install -r requirements.txt
 
-# Start the server
+# Start the FastAPI dev server
 uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
 Verify it's running: open [http://localhost:8000/health](http://localhost:8000/health) — you should see `{"status": "healthy"}`.
 
-**Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Swagger/Interactive Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-### 5. Frontend Setup
+---
+
+### 6. Frontend App Setup & Run
 
 ```bash
 # Navigate to frontend
 cd frontend
 
-# Install Flutter dependencies
+# Fetch dependencies
 flutter pub get
 
-# Run the app
+# Run the application
 flutter run
 ```
 
 ---
 
-## 🔌 Connecting Frontend ↔ Backend
+## 🔌 Connecting Frontend & Backend
 
-The app auto-detects the correct backend URL based on the platform:
+The Flutter application automatically detects the correct backend host depending on the running target:
 
-| Platform | URL | Notes |
+| Target Platform | Default URL | Auto-Configuration |
 |:---|:---|:---|
 | Android Emulator | `http://10.0.2.2:8000` | Automatic |
 | iOS Simulator | `http://127.0.0.1:8000` | Automatic |
-| Web | `http://localhost:8000` | Automatic |
-| Physical Device | `http://<YOUR_IP>:8000` | Set `BACKEND_HOST` in `frontend/.env` |
+| Web Build | `http://localhost:8000` | Automatic |
+| Physical iOS/Android Device | `http://<YOUR_IP>:8000` | Enter your computer's LAN IP in `BACKEND_HOST` in `frontend/.env` |
 
-**For physical devices**, find your LAN IP and set it in `frontend/.env`:
-
-```bash
-# macOS
-ipconfig getifaddr en0
-
-# Windows
-ipconfig    # Look for IPv4 Address
-```
-
-> [!IMPORTANT]
-> Both your phone and computer must be on the **same Wi-Fi network**.
+To run on a physical phone:
+1. Ensure both your computer and the physical phone are connected to the **same Wi-Fi network**.
+2. Find your computer's local IP (e.g. `192.168.1.45`) and assign it to `BACKEND_HOST` in `frontend/.env`.
 
 ---
 
@@ -304,38 +397,17 @@ ipconfig    # Look for IPv4 Address
 | `POST` | `/extract-features` | Extract features from any modality |
 | `POST` | `/run-screening` | General multi-condition screening |
 
-Full interactive docs available at `/docs` (Swagger UI) when the server is running.
-
----
-
-## 🧪 Quick Start (TL;DR)
-
-```bash
-# Terminal 1 — Backend
-cd backend
-source .venv/bin/activate
-uvicorn main:app --host 0.0.0.0 --port 8000
-
-# Terminal 2 — Frontend
-cd frontend
-flutter run
-```
-
 ---
 
 ## ⚠️ Troubleshooting
 
-| Issue | Solution |
+| Problem | Potential Solution |
 |:---|:---|
-| `No file or variants found for asset: .env` | Create `frontend/.env` with Supabase + Gemini credentials |
-| `ModuleNotFoundError: No module named 'mediapipe'` | Run `pip install mediapipe` inside the activated venv |
-| `pandas==2.0.3` build fails on Python 3.12+ | Run `pip install pandas>=2.1.0` first |
-| App can't reach backend on physical device | Set `BACKEND_HOST` in `frontend/.env` to your LAN IP |
-| `gradle assembleDebug` fails | Run `cd frontend/android && ./gradlew clean` |
-| Emulator not detected | Run `flutter emulators --launch <id>`, wait, then retry |
-
-> [!NOTE]
-> **macOS External Drive Users**: Standard ExFAT drives do not support symlinks required by Flutter/Dart. Use an **APFS Sparse Disk Image** or an APFS-formatted drive.
+| `No file or variants found for asset: .env` | Make sure you copied `.env.example` to `.env` in the `frontend` folder |
+| `ModuleNotFoundError: No module named 'mediapipe'` | Run `pip install mediapipe` inside the activated virtual environment |
+| `pandas==2.0.3` build fails on Python 3.12+ | Run `pip install pandas>=2.1.0` inside your virtual environment |
+| App cannot reach backend on physical device | Double check that `BACKEND_HOST` in `frontend/.env` matches your LAN IP and both devices are on the same Wi-Fi |
+| `gradle assembleDebug` fails | Run `cd frontend/android && ./gradlew clean` and rebuild |
 
 ---
 

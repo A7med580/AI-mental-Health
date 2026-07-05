@@ -1,8 +1,13 @@
+# ============================================================
+# Mindful AI — .gitignore
+# ============================================================
+
 # ── Secrets & Environment ──────────────────────────────────
 .env
 *.env
 !.env.example
 !backend/.env.example
+!frontend/.env.example
 
 # ── Virtual Environments ───────────────────────────────────
 backend/.venv/
@@ -63,5 +68,16 @@ backend/Models/
 **/.DS_Store
 Thumbs.db
 
-# ── Misc generated files ──────────────────────────────────
+# ── Firebase / Google Services (contains API keys) ────────
+**/google-services.json
+**/GoogleService-Info.plist
+
+# ── AI assistant config ───────────────────────────────────
+.claude/
+
+# ── Misc generated / large files ──────────────────────────
 project_tree.txt
+*.docx
+*.pdf
+generate_docx.py
+test_adhd_models.py
